@@ -1273,6 +1273,103 @@ function BookCard({
 
 /* ─── Spinner ─────────────────────────────────────────────────────── */
 
+/* ─── Archived Books Section ──────────────────────────────────────── */
+
+function ArchivedSection({ books, theme }: { books: BookSummary[]; theme: AppTheme }) {
+  const [expanded, setExpanded] = useState(false)
+  const ps = getPageThemeStyle(theme)
+
+  return (
+    <div style={{ marginTop: '3rem' }}>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          fontFamily: 'var(--font-ui)',
+          fontSize: '0.82rem',
+          color: ps.bookInfoMeta,
+          letterSpacing: '0.04em',
+          padding: '8px 0',
+        }}
+      >
+        <span style={{
+          display: 'inline-block',
+          transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
+          transition: 'transform 200ms ease',
+          fontSize: '0.7rem',
+        }}>&#9654;</span>
+        Archived ({books.length})
+      </button>
+
+      {expanded && (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+            gap: '1.75rem',
+            marginTop: '1rem',
+            opacity: 0.6,
+          }}
+        >
+          {books.map((book, i) => (
+            <div key={book.id} style={{ position: 'relative' }}>
+              {/* Unarchive button */}
+              <button
+                onClick={async () => {
+                  try {
+                    await fetch(`/api/books/${book.id}/unarchive`, { method: 'POST' })
+                    window.location.reload()
+                  } catch { /* ignore */ }
+                }}
+                style={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  zIndex: 10,
+                  padding: '6px 14px',
+                  borderRadius: 6,
+                  background: 'rgba(212,175,55,0.15)',
+                  border: '1px solid rgba(212,175,55,0.3)',
+                  color: '#d4af37',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-ui)',
+                  fontSize: '0.72rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.04em',
+                  transition: 'all 200ms ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(212,175,55,0.25)'
+                  e.currentTarget.style.borderColor = '#d4af37'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(212,175,55,0.15)'
+                  e.currentTarget.style.borderColor = 'rgba(212,175,55,0.3)'
+                }}
+              >
+                Unarchive
+              </button>
+
+              <BookCard
+                book={book}
+                index={i}
+                theme={theme}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ─── Spinner ─────────────────────────────────────────────────────── */
+
 function Spinner() {
   return (
     <div
@@ -1567,6 +1664,11 @@ export default function Bookshelf() {
             />
           ))}
         </div>
+
+        {/* ── Archived Books Section ──────────────────── */}
+        {books.filter(b => (b as any).archived).length > 0 && (
+          <ArchivedSection books={books.filter(b => (b as any).archived)} theme={theme} />
+        )}
       </div>
 
       {/* Keyframe for spinner + book card menu hover */}

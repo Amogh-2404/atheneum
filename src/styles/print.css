@@ -1,13 +1,18 @@
 /* ==========================================================================
    Atheneum — Print Styles
-   Preserves the notebook aesthetic in PDF. Hides only chrome/UI controls.
-   The printed PDF should LOOK like Atheneum notebook — not a plain document.
+   Preserves the notebook aesthetic in PDF. Hides chrome/UI controls.
+   The printed PDF should LOOK like an Atheneum notebook — not a plain doc.
+
+   PHILOSOPHY: Allow blocks to break across pages rather than leaving huge
+   gaps. Only truly short blocks (callouts, quotes, math) avoid breaking.
+   Long blocks (code, diagrams, tables) break gracefully.
    ========================================================================== */
 
 @media print {
   /* ─── Hide chrome / UI / interactive elements ─── */
   .reader-sidebar,
   .annotation-toolbar,
+  .highlight-action-toolbar,
   .margin-note-layer,
   .bookmark-indicator,
   .confusion-indicator,
@@ -15,64 +20,84 @@
   .concept-tooltip,
   .glossary-panel,
   .search-panel,
+  .draft-action-bar,
+  [data-draft-bar],
   [data-print-hide],
-  button,
   nav {
     display: none !important;
   }
 
-  /* Hide fixed-position overlays (sidebar toggle, mobile backdrop, etc.) */
+  /* Hide UI buttons BUT keep quiz option buttons visible */
+  button:not(.quiz-option) {
+    display: none !important;
+  }
+  .quiz-option {
+    display: flex !important;
+    appearance: none;
+    -webkit-appearance: none;
+    border: none !important;
+    background: #f8f8f8 !important;
+    text-align: left !important;
+    width: 100% !important;
+    padding: 0.5rem 0.8rem !important;
+    font-family: 'Caveat', 'Lexend', cursive !important;
+    font-size: 1rem !important;
+    color: #2c2c2c !important;
+    cursor: default !important;
+  }
+
+  /* Hide ALL fixed/absolute positioned overlays */
   body > div > div > button[style*="position: fixed"],
-  div[style*="backdrop-filter"] {
+  div[style*="backdrop-filter"],
+  [style*="position: fixed"],
+  [style*="position: sticky"] {
+    position: static !important;
+  }
+
+  /* ─── Hide chapter header (blocks have the title) ─── */
+  .chapter-header-section {
     display: none !important;
   }
 
   /* ─── Page setup ─── */
   @page {
-    margin: 0.75in 0.8in 0.9in 0.8in;
+    margin: 0.7in 0.75in 0.85in 0.75in;
     size: A4;
   }
 
   @page :first {
-    margin-top: 1.2in;
+    margin-top: 1in;
   }
 
-  /* ─── Hide chapter header section in print (blocks have the title) ─── */
-  .chapter-header-section {
-    display: none !important;
-  }
-
-  /* ─── Body reset — keep paper feel ─── */
+  /* ─── Body reset ─── */
   body {
     background: white !important;
     margin: 0;
     padding: 0;
   }
 
-  /* ─── Force the flex layout to single column for content ─── */
+  /* ─── Force single column layout ─── */
   body > div > div {
     display: block !important;
   }
 
-  /* ─── Page container — preserve the notebook ─── */
+  /* ─── Page container ─── */
   .page-container {
     margin: 0 !important;
     max-width: 100% !important;
     padding: 0 !important;
     width: 100% !important;
     min-height: auto !important;
-    /* Keep the light paper feel */
     background: #fefdfb !important;
     background-image: none !important;
   }
 
-  /* Hide margin line and page curl for print */
   .page-container::before,
   .page-container::after {
     display: none !important;
   }
 
-  /* ─── Force light-theme tokens for print ─── */
+  /* ─── Force light-theme tokens ─── */
   :root,
   [data-theme="dark"],
   [data-theme="sepia"],
@@ -88,14 +113,13 @@
     --font-ui: 'Rajdhani', system-ui, sans-serif !important;
   }
 
-  /* ─── Typography — PRESERVE notebook fonts ─── */
+  /* ─── Typography ─── */
   .notebook-h1 {
     font-family: 'Caveat', cursive !important;
     font-size: 2.5rem !important;
     color: #1a1a1a !important;
     margin-bottom: 0.5rem !important;
     break-after: avoid;
-    page-break-after: avoid;
   }
 
   .notebook-h2 {
@@ -103,7 +127,6 @@
     font-size: 1.8rem !important;
     color: #1a1a1a !important;
     break-after: avoid;
-    page-break-after: avoid;
   }
 
   .notebook-h3 {
@@ -111,7 +134,6 @@
     font-size: 1.4rem !important;
     color: #2c2c2c !important;
     break-after: avoid;
-    page-break-after: avoid;
   }
 
   .notebook-text {
@@ -121,7 +143,6 @@
     line-height: 1.7 !important;
   }
 
-  /* Bold text — keep the marker-highlight aesthetic (softened for print) */
   .notebook-text strong {
     background: linear-gradient(
       to bottom,
@@ -134,109 +155,54 @@
     font-weight: 700 !important;
   }
 
-  /* ─── Callouts — preserve colors (muted for print) ─── */
+  /* ─── CALLOUTS — short ones avoid break, long ones allow ─── */
   .callout {
-    break-inside: avoid;
-    page-break-inside: avoid;
     border-radius: 6px !important;
-    padding: 0.8rem 1rem !important;
-    margin: 0.8rem 0 !important;
+    padding: 0.7rem 0.9rem !important;
+    margin: 0.6rem 0 !important;
     color: #2c2c2c !important;
-  }
-
-  .callout[data-variant="definition"] {
-    background: #eef4ff !important;
-    border-left: 4px solid #2563eb !important;
-  }
-
-  .callout[data-variant="example"] {
-    background: #f0fdf4 !important;
-    border-left: 4px solid #16a34a !important;
-  }
-
-  .callout[data-variant="key-concept"] {
-    background: #ecfeff !important;
-    border-left: 4px solid #0891b2 !important;
-  }
-
-  .callout[data-variant="warning"] {
-    background: #fef2f2 !important;
-    border-left: 4px solid #dc2626 !important;
-  }
-
-  .callout[data-variant="tip"] {
-    background: #f5f3ff !important;
-    border-left: 4px solid #7c3aed !important;
-  }
-
-  .callout[data-variant="note"] {
-    background: #f9fafb !important;
-    border-left: 4px solid #6b7280 !important;
-  }
-
-  .callout-title {
-    font-family: 'Caveat', cursive !important;
-    font-weight: 700 !important;
-    color: #1a1a1a !important;
-  }
-
-  .callout-body {
-    color: #2c2c2c !important;
-  }
-
-  /* ─── Terminal code blocks — KEEP the terminal aesthetic ─── */
-  .terminal-window {
-    /* Allow tall code blocks to split across pages — only short ones avoid */
+    /* Allow breaking for long callouts — prevents huge page gaps */
     break-inside: auto;
     page-break-inside: auto;
-    /* Flatten — no rotation or deep shadow for print */
+  }
+
+  .callout[data-variant="definition"] { background: #eef4ff !important; border-left: 4px solid #2563eb !important; }
+  .callout[data-variant="example"]    { background: #f0fdf4 !important; border-left: 4px solid #16a34a !important; }
+  .callout[data-variant="key-concept"]{ background: #ecfeff !important; border-left: 4px solid #0891b2 !important; }
+  .callout[data-variant="warning"]    { background: #fef2f2 !important; border-left: 4px solid #dc2626 !important; }
+  .callout[data-variant="tip"]        { background: #f5f3ff !important; border-left: 4px solid #7c3aed !important; }
+  .callout[data-variant="note"]       { background: #f9fafb !important; border-left: 4px solid #6b7280 !important; }
+
+  .callout-title { font-family: 'Caveat', cursive !important; font-weight: 700 !important; color: #1a1a1a !important; }
+  .callout-body { color: #2c2c2c !important; }
+
+  /* ─── CODE BLOCKS — allow graceful splitting ─── */
+  .terminal-window {
+    break-inside: auto;
+    page-break-inside: auto;
     transform: none !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
     border-radius: 8px !important;
     overflow: hidden !important;
-    margin: 1rem 0 !important;
+    margin: 0.8rem 0 !important;
     border: 1px solid #333 !important;
   }
 
-  /* Keep titlebar with the first few lines of code */
   .terminal-titlebar {
     break-after: avoid;
     page-break-after: avoid;
-  }
-
-  /* Hide scotch tape in print */
-  .terminal-window::before {
-    display: none !important;
-  }
-
-  /* Title bar — keep the macOS look */
-  .terminal-titlebar {
     background: #e8e6e8 !important;
     color: #555 !important;
     padding: 6px 12px !important;
   }
 
-  .terminal-dot {
-    display: inline-block !important;
-  }
+  .terminal-window::before { display: none !important; }
+  .terminal-dot { display: inline-block !important; }
+  .terminal-dot-close { background: #ff5f57 !important; }
+  .terminal-dot-minimize { background: #ffbd2e !important; }
+  .terminal-dot-maximize { background: #28c840 !important; }
+  .terminal-filename { color: #555 !important; }
 
-  .terminal-dot-close {
-    background: #ff5f57 !important;
-  }
-
-  .terminal-dot-minimize {
-    background: #ffbd2e !important;
-  }
-
-  .terminal-dot-maximize {
-    background: #28c840 !important;
-  }
-
-  .terminal-filename {
-    color: #555 !important;
-  }
-
-  /* Terminal body — keep dark */
   .terminal-body {
     background: #1e1e1e !important;
     color: #d4d4d4 !important;
@@ -245,51 +211,81 @@
   .terminal-body pre,
   .terminal-body code {
     font-family: 'JetBrains Mono', monospace !important;
-    font-size: 0.8rem !important;
+    font-size: 0.75rem !important;
     color: #d4d4d4 !important;
     white-space: pre-wrap !important;
     word-wrap: break-word !important;
   }
 
-  .terminal-line-number {
-    color: #555 !important;
+  .terminal-line-number { color: #555 !important; }
+  .terminal-annotation { color: #fbbf24 !important; font-family: 'Virgil', 'Caveat', cursive !important; }
+  .terminal-line-highlighted { background: rgba(255, 255, 255, 0.06) !important; }
+
+  /* ─── USER MARGIN NOTES (annotation layer) — hide ─── */
+  .margin-note-layer {
+    display: none !important;
   }
 
-  .terminal-annotation {
-    color: #fbbf24 !important;
-    font-family: 'Virgil', 'Caveat', cursive !important;
-  }
-
-  .terminal-line-highlighted {
-    background: rgba(255, 255, 255, 0.06) !important;
-  }
-
-  /* ─── Figures — no float, full width for print ─── */
-  .figure-left,
-  .figure-right,
-  .figure-full,
-  .figure-center {
-    break-inside: avoid;
+  /* ─── MARGIN ANNOTATION BLOCKS (content sticky notes) — flatten to inline ─── */
+  /* These are <aside> with marginLeft:auto that float right as sticky notes.
+     In print: make them full-width inline blocks with a left border, no rotation. */
+  aside {
+    display: block !important;
     float: none !important;
-    max-width: 80% !important;
-    margin: 1rem auto !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    transform: none !important;
+    break-inside: avoid;
   }
 
-  /* ─── Diagrams ─── */
-  figure {
+  /* Style the margin annotation content nicely as a quote-like block */
+  aside > div {
+    background: #fef9e7 !important;
+    border-left: 3px solid #d4af37 !important;
+    border-radius: 4px !important;
+    padding: 0.7rem 1rem !important;
+    box-shadow: none !important;
+  }
+
+  /* Kill the RoughBox SVG border on margin annotations in print */
+  aside svg {
+    display: none !important;
+  }
+
+  /* ─── DIAGRAMS — avoid break, constrain size ─── */
+  figure,
+  .diagram-preview {
     break-inside: avoid;
     page-break-inside: avoid;
   }
 
-  /* Hide the "click to interact" badge in print */
   figure > div > div:last-child {
     display: none !important;
   }
 
-  /* ─── Tables — preserve styling ─── */
+  .diagram-preview svg {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* ─── FIGURES — no float, center ─── */
+  .figure-left, .figure-right, .figure-full, .figure-center {
+    break-inside: avoid;
+    float: none !important;
+    max-width: 80% !important;
+    margin: 0.8rem auto !important;
+  }
+
+  /* ─── TABLES — allow breaking for long tables ─── */
   .notebook-table {
     color: #2c2c2c !important;
-    break-inside: avoid;
+    break-inside: auto;
+  }
+
+  .notebook-table thead {
+    display: table-header-group; /* Repeat header on each page */
   }
 
   .notebook-table th {
@@ -303,20 +299,82 @@
     border-bottom: 1px solid #ddd !important;
   }
 
-  /* ─── Quotes ─── */
+  /* ─── MATH — short, avoid break ─── */
+  .math-block {
+    break-inside: avoid;
+    color: #1a1a1a !important;
+    margin: 0.5rem 0 !important;
+  }
+
+  /* ─── QUOTES — avoid break ─── */
   .notebook-quote {
     color: #3a3a3a !important;
     font-style: italic !important;
     break-inside: avoid;
   }
 
-  /* ─── Math blocks ─── */
-  .math-block {
-    break-inside: avoid;
+  /* ─── QUIZ — proper print formatting ─── */
+  .quiz-title {
+    font-family: 'Caveat', cursive !important;
+    font-size: 1.3rem !important;
+    font-weight: 700 !important;
     color: #1a1a1a !important;
+    margin-bottom: 0.75rem !important;
+    border-bottom: 2px solid #2c2c2c !important;
+    padding-bottom: 0.3rem !important;
   }
 
-  /* ─── Links — show URL for external, flatten color ─── */
+  .quiz-question {
+    break-inside: avoid;
+    margin-bottom: 0.5rem !important;
+    padding: 0.3rem 0 !important;
+    font-weight: 600 !important;
+  }
+
+  .quiz-option-letter {
+    font-weight: 700 !important;
+    margin-right: 0.4rem !important;
+    color: #333 !important;
+    min-width: 1.5em !important;
+  }
+
+  /* Each quiz question group — avoid orphaning */
+  .quiz-question + div {
+    break-inside: avoid;
+  }
+
+  /* Hide quiz results (show questions only in print) */
+  .quiz-result { display: none !important; }
+
+  /* ─── FLASHCARDS — show both sides, avoid break per card ─── */
+  .flashcard-card {
+    break-inside: avoid;
+    margin: 0.3rem 0 !important;
+  }
+
+  /* ─── SUMMARY — avoid break ─── */
+  .summary-block,
+  [class*="summary"] {
+    break-inside: avoid;
+  }
+
+  /* ─── TIMELINE — allow break for long timelines ─── */
+  .timeline-content {
+    color: #2c2c2c !important;
+  }
+
+  .timeline-node {
+    break-inside: avoid;
+  }
+
+  /* ─── TOGGLE — show expanded ─── */
+  .toggle-content {
+    display: block !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* ─── LINKS ─── */
   .notebook-text a[href] {
     color: #2563eb !important;
     text-decoration: underline !important;
@@ -325,16 +383,14 @@
 
   .notebook-text a[href^="http"]::after {
     content: ' (' attr(href) ')';
-    font-size: 0.75em;
-    color: #888;
+    font-size: 0.7em;
+    color: #999;
     font-family: 'JetBrains Mono', monospace;
   }
 
-  .notebook-text a[href^="#"]::after {
-    content: '';
-  }
+  .notebook-text a[href^="#"]::after { content: ''; }
 
-  /* ─── Inline code ─── */
+  /* ─── INLINE CODE ─── */
   .notebook-text code {
     background: #f0f0f0 !important;
     color: #c7254e !important;
@@ -343,42 +399,56 @@
     border-radius: 3px !important;
   }
 
-  /* ─── Timeline blocks ─── */
-  .timeline-content {
+  /* ─── CONCEPT REFS ─── */
+  .concept-ref {
+    border-bottom: 1px solid #888 !important;
     color: #2c2c2c !important;
-    break-inside: avoid;
   }
 
-  /* ─── Prevent orphan headings ─── */
+  /* ─── DRAFT indicators ─── */
+  .draft-indicator {
+    border: none !important;
+    background: none !important;
+  }
+
+  /* ─── CHAPTER-END FLOURISH — keep tight, no page break before ─── */
+  .chapter-end-flourish {
+    break-before: avoid;
+    break-inside: avoid;
+    margin-top: 1.5rem !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    text-align: center !important;
+    color: #aaa !important;
+  }
+
+  /* Kill any trailing empty space after the last block */
+  .page-container > div:last-child {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  /* ─── HEADINGS: never orphan ─── */
   h1, h2, h3,
   .notebook-h1, .notebook-h2, .notebook-h3 {
     break-after: avoid;
     page-break-after: avoid;
+    orphans: 3;
+    widows: 3;
   }
 
-  /* ─── Prevent splitting key blocks ─── */
-  .callout,
-  .terminal-window,
-  .figure,
-  .timeline-node,
-  .notebook-quote,
-  .notebook-table-wrap,
-  pre {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-
+  /* ─── LIST ITEMS ─── */
   li {
     page-break-inside: avoid;
   }
 
-  /* ─── Ensure images are constrained ─── */
+  /* ─── IMAGES ─── */
   img {
     max-width: 100% !important;
     height: auto !important;
   }
 
-  /* ─── Disable animations but keep opacity visible ─── */
+  /* ─── DISABLE ALL ANIMATIONS ─── */
   * {
     animation: none !important;
     transition: none !important;
@@ -388,107 +458,34 @@
     opacity: 1 !important;
   }
 
-  /* ─── Rough.js SVGs — keep visible ─── */
-  svg {
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
+  /* ─── FOCUS MODE RESET ─── */
+  [data-focus-mode] * {
+    opacity: 1 !important;
   }
 
-  /* ─── Force color printing (backgrounds, etc.) ─── */
+  /* ─── FORCE COLOR PRINTING ─── */
   * {
     print-color-adjust: exact !important;
     -webkit-print-color-adjust: exact !important;
   }
 
-  /* ─── Chapter header for print ─── */
-  .page-container > header {
-    margin-bottom: 2rem !important;
-    padding-bottom: 1rem !important;
-    border-bottom: 2px solid #2c2c2c !important;
+  svg {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 
-  /* ─── Draft indicators — hide watermark, show subtle badge ─── */
-  .draft-indicator {
-    border: none !important;
-    background: none !important;
-  }
-
-  .draft-indicator::before {
-    content: 'DRAFT';
-    font-family: var(--font-ui);
-    font-size: 0.6rem;
-    color: #999;
-    letter-spacing: 0.1em;
-    position: absolute;
-    top: 4px;
-    right: 8px;
-  }
-
-  /* ─── Draft action bar — hide completely ─── */
-  .draft-action-bar,
-  [data-draft-bar] {
-    display: none !important;
-  }
-
-  /* ─── Chapter-end flourish — keep visible ─── */
-  .chapter-end-flourish {
-    break-before: avoid;
-    margin-top: 2rem !important;
-    text-align: center !important;
-    color: #aaa !important;
-  }
-
-  /* ─── Quiz blocks — flatten interactive elements ─── */
-  .quiz-option {
-    cursor: default !important;
-  }
-
-  .quiz-option:hover {
-    background: inherit !important;
-  }
-
-  /* ─── Flashcard blocks — show both sides ─── */
-  .flashcard-card {
-    break-inside: avoid;
-  }
-
-  /* ─── Focus mode reset ─── */
-  [data-focus-mode] * {
-    opacity: 1 !important;
-  }
-
-  /* ─── Concept references — underline style ─── */
-  .concept-ref {
-    border-bottom: 1px solid #888 !important;
-    color: #2c2c2c !important;
-  }
-
-  /* ─── Excalidraw diagrams — ensure SVG renders ─── */
-  .diagram-preview svg {
-    max-width: 100% !important;
-    height: auto !important;
-  }
-
-  /* ─── Toggle/disclosure blocks — show expanded ─── */
-  .toggle-content {
-    display: block !important;
-    max-height: none !important;
-    overflow: visible !important;
-  }
-
-  /* ─── Page header/footer (CSS Paged Media — works in Prince, WeasyPrint) ─── */
+  /* ─── PAGE HEADER/FOOTER (CSS Paged Media — Prince, WeasyPrint) ─── */
   @page {
     @top-center {
       content: 'Atheneum';
       font-size: 9pt;
-      color: #aaa;
-      letter-spacing: 0.05em;
+      color: #bbb;
+      letter-spacing: 0.08em;
     }
-
     @bottom-center {
       content: counter(page);
       font-size: 9pt;
-      color: #aaa;
+      color: #bbb;
     }
   }
 

@@ -402,6 +402,14 @@ export default function Reader() {
     return () => clearTimeout(timer)
   }, [chapterLoading, chapter])
 
+  // --- Set document title for PDF filename ---
+  useEffect(() => {
+    if (book?.title && chapter?.title) {
+      document.title = `Atheneum — ${book.title}`
+    }
+    return () => { document.title = 'Atheneum' }
+  }, [book?.title, chapter?.title])
+
   // --- Loading ---
   if (bookLoading) return <Spinner />
 

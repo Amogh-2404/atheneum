@@ -52,6 +52,8 @@ booksRouter.get('/', (c) => {
           chapterCount: book.chapterCount ?? countChapters(entry.name),
           createdAt: book.createdAt ?? '',
           updatedAt: book.updatedAt ?? '',
+          archived: book.archived ?? false,
+          archivedAt: book.archivedAt,
         })
       } catch {
         // Skip malformed book.json
