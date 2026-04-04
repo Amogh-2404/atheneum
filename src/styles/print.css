@@ -1,0 +1,418 @@
+/* ==========================================================================
+   The Codex — Print Styles
+   Preserves the notebook aesthetic in PDF. Hides only chrome/UI controls.
+   The printed PDF should LOOK like The Codex notebook — not a plain document.
+   ========================================================================== */
+
+@media print {
+  /* ─── Hide chrome / UI / interactive elements ─── */
+  .reader-sidebar,
+  .annotation-toolbar,
+  .margin-note-layer,
+  .bookmark-indicator,
+  .confusion-indicator,
+  .reading-progress-bar,
+  .concept-tooltip,
+  .glossary-panel,
+  .search-panel,
+  [data-print-hide],
+  button,
+  nav {
+    display: none !important;
+  }
+
+  /* Hide fixed-position overlays (sidebar toggle, mobile backdrop, etc.) */
+  body > div > div > button[style*="position: fixed"],
+  div[style*="backdrop-filter"] {
+    display: none !important;
+  }
+
+  /* ─── Page setup ─── */
+  @page {
+    margin: 0.6in 0.8in;
+    size: A4;
+  }
+
+  @page :first {
+    margin-top: 1.2in;
+  }
+
+  /* ─── Body reset — keep paper feel ─── */
+  body {
+    background: white !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* ─── Force the flex layout to single column for content ─── */
+  body > div > div {
+    display: block !important;
+  }
+
+  /* ─── Page container — preserve the notebook ─── */
+  .page-container {
+    margin: 0 !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    width: 100% !important;
+    min-height: auto !important;
+    /* Keep the light paper feel */
+    background: #fefdfb !important;
+    background-image: none !important;
+  }
+
+  /* Hide margin line and page curl for print */
+  .page-container::before,
+  .page-container::after {
+    display: none !important;
+  }
+
+  /* ─── Force light-theme tokens for print ─── */
+  :root,
+  [data-theme="dark"],
+  [data-theme="sepia"],
+  [data-theme="light"] {
+    --paper-bg: #fefdfb !important;
+    --ink-primary: #2c2c2c !important;
+    --ink-secondary: #4a4a4a !important;
+    --ink-faint: #888 !important;
+    --font-heading: 'Caveat', cursive !important;
+    --font-body: 'Caveat', 'Lexend', cursive !important;
+    --font-handwritten: 'Virgil', 'Caveat', cursive !important;
+    --font-code: 'JetBrains Mono', monospace !important;
+    --font-ui: 'Rajdhani', system-ui, sans-serif !important;
+  }
+
+  /* ─── Typography — PRESERVE notebook fonts ─── */
+  .notebook-h1 {
+    font-family: 'Caveat', cursive !important;
+    font-size: 2.5rem !important;
+    color: #1a1a1a !important;
+    margin-bottom: 0.5rem !important;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .notebook-h2 {
+    font-family: 'Caveat', cursive !important;
+    font-size: 1.8rem !important;
+    color: #1a1a1a !important;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .notebook-h3 {
+    font-family: 'Caveat', cursive !important;
+    font-size: 1.4rem !important;
+    color: #2c2c2c !important;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .notebook-text {
+    font-family: 'Caveat', 'Lexend', cursive !important;
+    font-size: 1.1rem !important;
+    color: #2c2c2c !important;
+    line-height: 1.7 !important;
+  }
+
+  /* Bold text — keep the marker-highlight aesthetic (softened for print) */
+  .notebook-text strong {
+    background: linear-gradient(
+      to bottom,
+      transparent 40%,
+      rgba(255, 235, 59, 0.25) 40%,
+      rgba(255, 235, 59, 0.25) 85%,
+      transparent 85%
+    ) !important;
+    padding: 0 2px !important;
+    font-weight: 700 !important;
+  }
+
+  /* ─── Callouts — preserve colors (muted for print) ─── */
+  .callout {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border-radius: 6px !important;
+    padding: 0.8rem 1rem !important;
+    margin: 0.8rem 0 !important;
+    color: #2c2c2c !important;
+  }
+
+  .callout[data-variant="definition"] {
+    background: #eef4ff !important;
+    border-left: 4px solid #2563eb !important;
+  }
+
+  .callout[data-variant="example"] {
+    background: #f0fdf4 !important;
+    border-left: 4px solid #16a34a !important;
+  }
+
+  .callout[data-variant="key-concept"] {
+    background: #ecfeff !important;
+    border-left: 4px solid #0891b2 !important;
+  }
+
+  .callout[data-variant="warning"] {
+    background: #fef2f2 !important;
+    border-left: 4px solid #dc2626 !important;
+  }
+
+  .callout[data-variant="tip"] {
+    background: #f5f3ff !important;
+    border-left: 4px solid #7c3aed !important;
+  }
+
+  .callout[data-variant="note"] {
+    background: #f9fafb !important;
+    border-left: 4px solid #6b7280 !important;
+  }
+
+  .callout-title {
+    font-family: 'Caveat', cursive !important;
+    font-weight: 700 !important;
+    color: #1a1a1a !important;
+  }
+
+  .callout-body {
+    color: #2c2c2c !important;
+  }
+
+  /* ─── Terminal code blocks — KEEP the terminal aesthetic ─── */
+  .terminal-window {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    /* Flatten — no rotation or deep shadow for print */
+    transform: none !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    margin: 1rem 0 !important;
+    border: 1px solid #333 !important;
+  }
+
+  /* Hide scotch tape in print */
+  .terminal-window::before {
+    display: none !important;
+  }
+
+  /* Title bar — keep the macOS look */
+  .terminal-titlebar {
+    background: #e8e6e8 !important;
+    color: #555 !important;
+    padding: 6px 12px !important;
+  }
+
+  .terminal-dot {
+    display: inline-block !important;
+  }
+
+  .terminal-dot-close {
+    background: #ff5f57 !important;
+  }
+
+  .terminal-dot-minimize {
+    background: #ffbd2e !important;
+  }
+
+  .terminal-dot-maximize {
+    background: #28c840 !important;
+  }
+
+  .terminal-filename {
+    color: #555 !important;
+  }
+
+  /* Terminal body — keep dark */
+  .terminal-body {
+    background: #1e1e1e !important;
+    color: #d4d4d4 !important;
+  }
+
+  .terminal-body pre,
+  .terminal-body code {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.8rem !important;
+    color: #d4d4d4 !important;
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+  }
+
+  .terminal-line-number {
+    color: #555 !important;
+  }
+
+  .terminal-annotation {
+    color: #fbbf24 !important;
+    font-family: 'Virgil', 'Caveat', cursive !important;
+  }
+
+  .terminal-line-highlighted {
+    background: rgba(255, 255, 255, 0.06) !important;
+  }
+
+  /* ─── Figures — no float, full width for print ─── */
+  .figure-left,
+  .figure-right,
+  .figure-full,
+  .figure-center {
+    break-inside: avoid;
+    float: none !important;
+    max-width: 80% !important;
+    margin: 1rem auto !important;
+  }
+
+  /* ─── Diagrams ─── */
+  figure {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Hide the "click to interact" badge in print */
+  figure > div > div:last-child {
+    display: none !important;
+  }
+
+  /* ─── Tables — preserve styling ─── */
+  .notebook-table {
+    color: #2c2c2c !important;
+    break-inside: avoid;
+  }
+
+  .notebook-table th {
+    border-bottom: 2px solid #333 !important;
+    color: #1a1a1a !important;
+    font-family: 'Caveat', cursive !important;
+    font-weight: 700 !important;
+  }
+
+  .notebook-table td {
+    border-bottom: 1px solid #ddd !important;
+  }
+
+  /* ─── Quotes ─── */
+  .notebook-quote {
+    color: #3a3a3a !important;
+    font-style: italic !important;
+    break-inside: avoid;
+  }
+
+  /* ─── Math blocks ─── */
+  .math-block {
+    break-inside: avoid;
+    color: #1a1a1a !important;
+  }
+
+  /* ─── Links — show URL for external, flatten color ─── */
+  .notebook-text a[href] {
+    color: #2563eb !important;
+    text-decoration: underline !important;
+    background-image: none !important;
+  }
+
+  .notebook-text a[href^="http"]::after {
+    content: ' (' attr(href) ')';
+    font-size: 0.75em;
+    color: #888;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .notebook-text a[href^="#"]::after {
+    content: '';
+  }
+
+  /* ─── Inline code ─── */
+  .notebook-text code {
+    background: #f0f0f0 !important;
+    color: #c7254e !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    padding: 1px 4px !important;
+    border-radius: 3px !important;
+  }
+
+  /* ─── Timeline blocks ─── */
+  .timeline-content {
+    color: #2c2c2c !important;
+    break-inside: avoid;
+  }
+
+  /* ─── Prevent orphan headings ─── */
+  h1, h2, h3,
+  .notebook-h1, .notebook-h2, .notebook-h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  /* ─── Prevent splitting key blocks ─── */
+  .callout,
+  .terminal-window,
+  .figure,
+  .timeline-node,
+  .notebook-quote,
+  .notebook-table-wrap,
+  pre {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  li {
+    page-break-inside: avoid;
+  }
+
+  /* ─── Ensure images are constrained ─── */
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* ─── Disable animations but keep opacity visible ─── */
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  [style*="opacity: 0"] {
+    opacity: 1 !important;
+  }
+
+  /* ─── Rough.js SVGs — keep visible ─── */
+  svg {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* ─── Force color printing (backgrounds, etc.) ─── */
+  * {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  /* ─── Chapter header for print ─── */
+  .page-container > header {
+    margin-bottom: 2rem !important;
+    padding-bottom: 1rem !important;
+    border-bottom: 2px solid #2c2c2c !important;
+  }
+
+  /* ─── Page header/footer ─── */
+  @page {
+    @top-center {
+      content: 'The Codex';
+      font-size: 9pt;
+      color: #aaa;
+      letter-spacing: 0.05em;
+    }
+
+    @bottom-center {
+      content: counter(page);
+      font-size: 9pt;
+      color: #aaa;
+    }
+  }
+
+  @page :first {
+    @top-center { content: none; }
+    @bottom-center { content: none; }
+  }
+}

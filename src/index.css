@@ -1,0 +1,68 @@
+/* ==========================================================================
+   The Codex — Main Stylesheet
+   Imports all modules, sets global defaults.
+   ========================================================================== */
+
+@import "tailwindcss";
+@import "./styles/fonts.css";
+@import "./styles/notebook.css";
+@import "./styles/terminal.css";
+@import "./styles/print.css";
+
+/* --------------------------------------------------------------------------
+   Global Defaults
+   -------------------------------------------------------------------------- */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #243044 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #243044;
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #344058;
+}
+
+body {
+  margin: 0;
+  background: var(--chrome-bg, #0a0e17);
+  font-family: var(--font-ui, system-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgba(82, 254, 254, 0.2);
+  color: #52FEFE;
+}
+
+/* --------------------------------------------------------------------------
+   Smooth Transitions for Theme Switching
+   -------------------------------------------------------------------------- */
+
+.page-container,
+.callout,
+.notebook-text,
+.notebook-h1,
+.notebook-h2,
+.notebook-h3,
+.notebook-quote,
+.terminal-titlebar {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
+}

@@ -1,0 +1,778 @@
+/* ==========================================================================
+   The Codex — Notebook Aesthetic
+   Core visual identity: paper, ink, callouts, figures, typography.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Theme Tokens
+   -------------------------------------------------------------------------- */
+
+:root,
+[data-theme="light"] {
+  /* Paper & ink */
+  --paper-bg: #faf8f3;
+  --ink-primary: #2c2c2c;
+  --ink-secondary: #5a5a5a;
+  --ink-faint: #9a9a9a;
+  --margin-line: rgba(220, 50, 50, 0.15);
+  --ruled-line-color: rgba(140, 160, 200, 0.12);
+  --marker-yellow: rgba(255, 235, 59, 0.35);
+  --marker-yellow-edge: rgba(255, 235, 59, 0.15);
+
+  /* Callout palette */
+  --callout-definition-bg: #dbeafe;
+  --callout-definition-border: #2563eb;
+  --callout-example-bg: #dcfce7;
+  --callout-example-border: #16a34a;
+  --callout-key-concept-bg: #cffafe;
+  --callout-key-concept-border: #0891b2;
+  --callout-warning-bg: #fee2e2;
+  --callout-warning-border: #dc2626;
+  --callout-tip-bg: #ede9fe;
+  --callout-tip-border: #7c3aed;
+  --callout-note-bg: #f3f4f6;
+  --callout-note-border: #6b7280;
+
+  /* Font stacks */
+  --font-heading: 'Caveat', cursive;
+  --font-body: 'Caveat', 'Lexend', cursive;
+  --font-handwritten: 'Virgil', 'Caveat', cursive;
+  --font-code: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-ui: 'Rajdhani', system-ui, sans-serif;
+
+  /* JARVIS chrome (sidebar, top bar, overlays) */
+  --chrome-bg: #0a0e17;
+  --chrome-surface: #111827;
+  --chrome-border: #1e293b;
+  --chrome-text: #94a3b8;
+  --chrome-accent: #52FEFE;
+}
+
+[data-theme="dark"] {
+  --paper-bg: #1a1a2e;
+  --ink-primary: #e2e2e2;
+  --ink-secondary: #a0a0a0;
+  --ink-faint: #606060;
+  --margin-line: rgba(220, 100, 100, 0.1);
+  --ruled-line-color: rgba(180, 180, 220, 0.06);
+  --marker-yellow: rgba(255, 235, 59, 0.18);
+  --marker-yellow-edge: rgba(255, 235, 59, 0.08);
+
+  --callout-definition-bg: #1e3a5f;
+  --callout-definition-border: #3b82f6;
+  --callout-example-bg: #14352a;
+  --callout-example-border: #22c55e;
+  --callout-key-concept-bg: #133e4a;
+  --callout-key-concept-border: #06b6d4;
+  --callout-warning-bg: #3f1c1c;
+  --callout-warning-border: #ef4444;
+  --callout-tip-bg: #2e1a5e;
+  --callout-tip-border: #8b5cf6;
+  --callout-note-bg: #1f2937;
+  --callout-note-border: #9ca3af;
+
+  --font-heading: 'Caveat', cursive;
+  --font-body: 'Caveat', 'Lexend', cursive;
+  --font-handwritten: 'Virgil', 'Caveat', cursive;
+  --font-code: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-ui: 'Rajdhani', system-ui, sans-serif;
+
+  --chrome-bg: #050810;
+  --chrome-surface: #0c1220;
+  --chrome-border: #162035;
+  --chrome-text: #7a8ba3;
+  --chrome-accent: #52FEFE;
+}
+
+[data-theme="sepia"] {
+  --paper-bg: #f4ecd8;
+  --ink-primary: #3d3229;
+  --ink-secondary: #6b5d4f;
+  --ink-faint: #9a8a7a;
+  --margin-line: rgba(180, 80, 60, 0.15);
+  --ruled-line-color: rgba(140, 110, 80, 0.12);
+  --marker-yellow: rgba(255, 200, 50, 0.3);
+  --marker-yellow-edge: rgba(255, 200, 50, 0.12);
+
+  --callout-definition-bg: #e8dcc8;
+  --callout-definition-border: #7a6240;
+  --callout-example-bg: #dfe8d0;
+  --callout-example-border: #5a7a3a;
+  --callout-key-concept-bg: #d5e4dc;
+  --callout-key-concept-border: #3a7a6a;
+  --callout-warning-bg: #f0d8c8;
+  --callout-warning-border: #b05030;
+  --callout-tip-bg: #e4dae8;
+  --callout-tip-border: #7a5a8a;
+  --callout-note-bg: #e8e0d0;
+  --callout-note-border: #8a7a6a;
+
+  --font-heading: 'Caveat', cursive;
+  --font-body: 'Caveat', 'Lexend', cursive;
+  --font-handwritten: 'Virgil', 'Caveat', cursive;
+  --font-code: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-ui: 'Rajdhani', system-ui, sans-serif;
+
+  --chrome-bg: #2a2218;
+  --chrome-surface: #3a3025;
+  --chrome-border: #4a4035;
+  --chrome-text: #9a8a7a;
+  --chrome-accent: #d4a373;
+}
+
+/* --------------------------------------------------------------------------
+   Page Container (the paper area)
+   -------------------------------------------------------------------------- */
+
+.page-container {
+  background-color: var(--paper-bg);
+  min-height: 100vh;
+  padding: 3rem 4rem 4rem 5rem;
+  position: relative;
+  max-width: 800px;
+  margin: 0 auto;
+
+  /* ── Ruled lines ──
+     Faint horizontal lines repeating every 2rem (32px at default 16px root).
+     The line sits at the BOTTOM of each 2rem band so text baselines land on it. */
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent calc(2rem - 1px),
+      var(--ruled-line-color, rgba(0, 0, 0, 0.07)) calc(2rem - 1px),
+      var(--ruled-line-color, rgba(0, 0, 0, 0.07)) 2rem
+    );
+  background-size: 100% 2rem;
+  /* Offset so the first ruled line appears at the top of the text area */
+  background-position: 0 0;
+}
+
+/* Red margin line */
+.page-container::before {
+  content: '';
+  position: absolute;
+  left: 3.5rem;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--margin-line);
+  z-index: 1;
+}
+
+/* ── Page curl (bottom-right corner) ── */
+.page-container::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 40px 40px;
+  border-color: transparent transparent var(--chrome-bg, #0a0e17) transparent;
+  /* The paper-colored triangle beneath the fold */
+  box-shadow: -2px -2px 5px rgba(0, 0, 0, 0.08);
+  border-radius: 0 0 0 0;
+  z-index: 2;
+}
+
+/* The paper edge gets a faint shadow for depth — like a real page */
+
+/* --------------------------------------------------------------------------
+   Body Text
+   --------------------------------------------------------------------------
+   Line-height of 2rem matches the ruled-line grid so every line of text
+   sits exactly on a ruled line.  This is the single most important detail
+   that makes it feel like a real notebook.                                 */
+
+.notebook-text {
+  font-family: var(--font-body);
+  font-size: 1.25rem; /* 20px — larger for Caveat readability */
+  line-height: 2rem;  /* Matches ruled-line spacing exactly */
+  letter-spacing: 0.01em;
+  color: var(--ink-primary);
+  max-width: 60ch;
+}
+
+.notebook-text p {
+  margin: 0 0 2rem 0; /* One blank ruled-line gap between paragraphs */
+}
+
+/* --------------------------------------------------------------------------
+   Headings (Caveat)
+   --------------------------------------------------------------------------
+   Headings snap to the 2rem ruled grid. H1 occupies 2 ruled lines,
+   H2 and H3 occupy 1.  Margins are multiples of 2rem.                     */
+
+.notebook-h1 {
+  font-family: var(--font-heading);
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: var(--ink-primary);
+  margin: 2rem 0 0 0;
+  line-height: 4rem; /* 2 ruled lines */
+  letter-spacing: -0.01em;
+}
+
+.notebook-h2 {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--ink-primary);
+  margin: 2rem 0 0 0;
+  line-height: 2rem; /* 1 ruled line */
+}
+
+.notebook-h3 {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  margin: 2rem 0 0 0;
+  line-height: 2rem; /* 1 ruled line */
+}
+
+/* --------------------------------------------------------------------------
+   Callouts
+   -------------------------------------------------------------------------- */
+
+.callout {
+  padding: 1rem 1.5rem;
+  margin: 2rem 0;
+  border-radius: 4px;
+  border-left: 4px solid;
+}
+
+.callout-definition {
+  background: var(--callout-definition-bg);
+  border-color: var(--callout-definition-border);
+}
+
+.callout-example {
+  background: var(--callout-example-bg);
+  border-color: var(--callout-example-border);
+}
+
+.callout-key-concept {
+  background: var(--callout-key-concept-bg);
+  border-color: var(--callout-key-concept-border);
+}
+
+.callout-warning {
+  background: var(--callout-warning-bg);
+  border-color: var(--callout-warning-border);
+}
+
+.callout-tip {
+  background: var(--callout-tip-bg);
+  border-color: var(--callout-tip-border);
+}
+
+.callout-note {
+  background: var(--callout-note-bg);
+  border-color: var(--callout-note-border);
+}
+
+.callout-title {
+  font-family: var(--font-handwritten);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.5em;
+  color: inherit;
+}
+
+.callout-body {
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  line-height: 2rem; /* Snap to ruled lines */
+  color: var(--ink-primary);
+}
+
+/* --------------------------------------------------------------------------
+   Figures
+   -------------------------------------------------------------------------- */
+
+.figure-left {
+  float: left;
+  margin: 0.5rem 1.5rem 1rem 0;
+  max-width: 45%;
+  shape-outside: margin-box;
+  clear: left;
+}
+
+.figure-right {
+  float: right;
+  margin: 0.5rem 0 1rem 1.5rem;
+  max-width: 45%;
+  shape-outside: margin-box;
+  clear: right;
+}
+
+.figure-full {
+  width: 100%;
+  margin: 2rem 0;
+  clear: both;
+}
+
+.figure-center {
+  display: block;
+  margin: 2rem auto;
+  max-width: 80%;
+}
+
+/* Figure images — slight tape/washi-tape vibe */
+.figure-left img,
+.figure-right img,
+.figure-full img,
+.figure-center img {
+  border-radius: 2px;
+  box-shadow: 1px 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* Captions — scrapbook annotation style */
+.figure-caption {
+  font-family: var(--font-handwritten);
+  font-size: 0.95rem;
+  color: var(--ink-secondary);
+  text-align: center;
+  margin-top: 0.4rem;
+  line-height: 1.5;
+  /* Slight rotation like a handwritten annotation taped beneath a photo */
+  transform: rotate(-0.4deg);
+  font-style: italic;
+  letter-spacing: 0.02em;
+  /* Small arrow/caret pointing up toward the image */
+  position: relative;
+}
+
+.figure-caption::before {
+  content: '\2191  ';
+  font-style: normal;
+  opacity: 0.4;
+  font-size: 0.8em;
+}
+
+/* --------------------------------------------------------------------------
+   Drop Cap
+   -------------------------------------------------------------------------- */
+
+.drop-cap::first-letter {
+  font-family: var(--font-heading);
+  font-size: 4rem;
+  float: left;
+  line-height: 4rem; /* Exactly 2 ruled lines */
+  margin-right: 0.1em;
+  margin-top: 0;
+  color: var(--ink-primary);
+}
+
+/* --------------------------------------------------------------------------
+   Blockquote
+   -------------------------------------------------------------------------- */
+
+.notebook-quote {
+  border-left: 3px solid var(--ink-faint);
+  padding-left: 1.5rem;
+  margin: 2rem 0;
+  font-style: italic;
+  color: var(--ink-secondary);
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  line-height: 2rem; /* Snap to ruled lines */
+}
+
+/* --------------------------------------------------------------------------
+   Timeline
+   -------------------------------------------------------------------------- */
+
+.timeline {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 0.5rem;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--ink-faint);
+}
+
+.timeline-node {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.timeline-node::before {
+  content: '';
+  position: absolute;
+  left: -1.75rem;
+  top: 0.5rem;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--chrome-accent);
+  border: 2px solid var(--paper-bg);
+}
+
+.timeline-date {
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--chrome-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.timeline-content {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--ink-primary);
+}
+
+/* --------------------------------------------------------------------------
+   Inline Elements
+   -------------------------------------------------------------------------- */
+
+/* Bold text — marker-highlighted like a real highlighter stroke */
+.notebook-text strong {
+  font-weight: 700;
+  color: var(--ink-primary);
+  background: linear-gradient(
+    104deg,
+    var(--marker-yellow-edge) 0%,
+    var(--marker-yellow) 3%,
+    var(--marker-yellow) 97%,
+    var(--marker-yellow-edge) 100%
+  );
+  /* Slightly uneven vertical spread like a real marker */
+  padding: 0.05em 0.15em;
+  margin: 0 -0.05em;
+  border-radius: 2px 4px 3px 5px;
+  /* Marker strokes aren't perfectly rectangular */
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.notebook-text em {
+  font-style: italic;
+  color: var(--ink-secondary);
+}
+
+.notebook-text code {
+  font-family: var(--font-code);
+  font-size: 0.875em;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+  color: var(--ink-primary);
+}
+
+[data-theme="dark"] .notebook-text code {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="sepia"] .notebook-text code {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Links — wavy sketchy underline instead of straight */
+.notebook-text a {
+  color: var(--callout-definition-border);
+  text-decoration: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='6' viewBox='0 0 80 6'%3E%3Cpath d='M0 3 Q10 0.5 20 3 Q30 5.5 40 3 Q50 0.5 60 3 Q70 5.5 80 3' fill='none' stroke='%232563eb' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-position: 0 100%;
+  background-size: 80px 6px;
+  padding-bottom: 3px;
+  transition: color 0.15s ease, background-image 0.15s ease;
+}
+
+.notebook-text a:hover {
+  color: var(--chrome-accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='6' viewBox='0 0 80 6'%3E%3Cpath d='M0 3 Q10 0.5 20 3 Q30 5.5 40 3 Q50 0.5 60 3 Q70 5.5 80 3' fill='none' stroke='%2352FEFE' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+/* --------------------------------------------------------------------------
+   Horizontal Rule
+   -------------------------------------------------------------------------- */
+
+.notebook-divider {
+  border: none;
+  height: 1px;
+  background: var(--ink-faint);
+  opacity: 0.4;
+  margin: 2rem 0;
+}
+
+/* --------------------------------------------------------------------------
+   Lists
+   -------------------------------------------------------------------------- */
+
+.notebook-text ul,
+.notebook-text ol {
+  padding-left: 1.5em;
+  margin: 0 0 2rem 0;
+}
+
+.notebook-text li {
+  margin-bottom: 0;
+  line-height: 2rem; /* Snap to ruled lines */
+}
+
+.notebook-text ul li::marker {
+  color: var(--ink-faint);
+}
+
+.notebook-text ol li::marker {
+  color: var(--ink-secondary);
+  font-weight: 500;
+}
+
+/* ── Notebook-style lists (used by ListBlock component) ── */
+
+.notebook-list {
+  margin: 0 0 2rem 0;
+  padding: 0;
+}
+
+.notebook-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  line-height: 2rem; /* Snap to ruled lines */
+  min-height: 2rem;
+  font-family: var(--font-body);
+  font-size: 1.25rem;
+  color: var(--ink-primary);
+}
+
+/* Ordered list numbers in Caveat, not monospace */
+.notebook-list-ordered .notebook-list-item > span:first-child {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  color: var(--ink-secondary);
+  min-width: 1.5rem;
+  line-height: 2rem;
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   Hand-drawn Tables
+   --------------------------------------------------------------------------
+   Tables look like something sketched with a ruler — slightly rough lines,
+   handwritten font, not pixel-perfect.                                     */
+
+.notebook-table-wrap {
+  margin: 2rem 0;
+  overflow-x: auto;
+}
+
+.notebook-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: var(--font-body);
+  font-size: 1.15rem;
+  line-height: 2rem; /* Snap to ruled lines */
+  color: var(--ink-primary);
+}
+
+.notebook-table th {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.2rem;
+  text-align: left;
+  padding: 0.25rem 1rem;
+  color: var(--ink-primary);
+  /* Thick bottom line like someone underlined the header with a pen */
+  border-bottom: 2px solid var(--ink-secondary);
+  position: relative;
+}
+
+.notebook-table td {
+  padding: 0.25rem 1rem;
+  vertical-align: top;
+  /* Faint ruled-line separator between rows */
+  border-bottom: 1px solid var(--ruled-line-color, rgba(0, 0, 0, 0.07));
+}
+
+/* Last row — no bottom border */
+.notebook-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Slight alternating row shading like pencil smudge */
+.notebook-table tbody tr:nth-child(even) td {
+  background: rgba(0, 0, 0, 0.015);
+}
+
+[data-theme="dark"] .notebook-table tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Table caption — same scrapbook annotation style as figure captions */
+.notebook-table-caption {
+  font-family: var(--font-handwritten);
+  font-size: 0.9rem;
+  color: var(--ink-faint);
+  text-align: center;
+  margin-top: 0.5rem;
+  font-style: italic;
+  transform: rotate(-0.3deg);
+}
+
+/* --------------------------------------------------------------------------
+   Dyslexia Mode
+   -------------------------------------------------------------------------- */
+
+[data-dyslexia="true"] .notebook-text,
+[data-dyslexia="true"] .callout {
+  font-family: 'OpenDyslexic', var(--font-body);
+  line-height: 2.0;
+  letter-spacing: 0.05em;
+  max-width: 55ch;
+}
+
+[data-dyslexia="true"] .callout-body {
+  font-family: 'OpenDyslexic', var(--font-body);
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 1.5rem 1.5rem 2.5rem 2rem;
+  }
+
+  .page-container::before {
+    left: 1rem;
+  }
+
+  /* Smaller page curl on mobile */
+  .page-container::after {
+    border-width: 0 0 24px 24px;
+  }
+
+  .notebook-text {
+    font-size: 1.1rem;
+    max-width: 100%;
+  }
+
+  .notebook-h1 {
+    font-size: 2.2rem;
+    line-height: 4rem;
+  }
+
+  .notebook-h2 {
+    font-size: 1.6rem;
+  }
+
+  .notebook-h3 {
+    font-size: 1.25rem;
+  }
+
+  .figure-left,
+  .figure-right {
+    float: none;
+    max-width: 100%;
+    margin: 2rem 0;
+    shape-outside: none;
+  }
+
+  /* Flatten terminal tape effect on mobile */
+  .terminal-window {
+    transform: none !important;
+  }
+
+  .terminal-window::before {
+    display: none;
+  }
+
+  /* Callouts: tighter padding on mobile */
+  .callout {
+    padding: 0.75rem 1rem;
+    margin: 1.5rem 0;
+  }
+
+  /* Table horizontal scroll */
+  .notebook-table-wrap {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    padding: 0 0.5rem;
+  }
+
+  .notebook-table {
+    font-size: 1rem;
+  }
+
+  .notebook-table th,
+  .notebook-table td {
+    padding: 0.25rem 0.5rem;
+  }
+
+  /* Timeline: tighter spacing */
+  .timeline {
+    padding-left: 1.5rem;
+  }
+
+  /* Drop cap: slightly smaller on mobile */
+  .drop-cap::first-letter {
+    font-size: 3rem;
+    line-height: 4rem;
+  }
+
+  /* Lists: tighter indent */
+  .notebook-text ul,
+  .notebook-text ol {
+    padding-left: 1.2em;
+  }
+
+  /* Blockquote: tighter */
+  .notebook-quote {
+    padding-left: 1rem;
+    font-size: 1rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Very small screens (phones in portrait)
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 480px) {
+  .page-container {
+    padding: 1rem 1rem 2rem 1.5rem;
+  }
+
+  .page-container::before {
+    left: 0.75rem;
+  }
+
+  .notebook-text {
+    font-size: 1rem;
+  }
+
+  .notebook-h1 {
+    font-size: 1.8rem;
+    line-height: 2rem;
+  }
+
+  .notebook-h2 {
+    font-size: 1.4rem;
+  }
+
+  .notebook-h3 {
+    font-size: 1.15rem;
+  }
+
+  .callout-body {
+    font-size: 0.95rem;
+  }
+}

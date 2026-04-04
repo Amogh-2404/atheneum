@@ -1,0 +1,74 @@
+/* ==========================================================================
+   The Codex — Font Declarations
+   Self-hosted fonts for the notebook learning platform.
+   ========================================================================== */
+
+/* --- Caveat (headings, handwritten accents) --- */
+@font-face {
+  font-family: 'Caveat';
+  src: url('/fonts/Caveat-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Caveat';
+  src: url('/fonts/Caveat-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* --- Lexend (body text) — single face with weight range, browser synthesizes --- */
+@font-face {
+  font-family: 'Lexend';
+  src: url('/fonts/Lexend-wlptgwvFAVdoq2_F94zlCfv0bz1WC9wR_LA.ttf') format('truetype');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* --- Rajdhani (UI / chrome text) — single face with weight range --- */
+@font-face {
+  font-family: 'Rajdhani';
+  src: url('/fonts/Rajdhani-LDIxapCSOBg7S-QT7q4A.ttf') format('truetype');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* --- JetBrains Mono (code blocks) --- */
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/JBMono-tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKxjPQ.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/JBMono-tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8L6tjPQ.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* --- Virgil (handwritten annotations, margin notes) --- */
+@font-face {
+  font-family: 'Virgil';
+  src: url('/fonts/Virgil.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* --- OpenDyslexic (accessibility) --- */
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/fonts/OpenDyslexic-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
