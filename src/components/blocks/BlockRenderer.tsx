@@ -22,12 +22,12 @@ import EmbedBlock from './EmbedBlock'
 import MarginAnnotationBlock from './MarginAnnotationBlock'
 import UnknownBlock from './UnknownBlock'
 
-function renderBlock(block: Block) {
+function renderBlock(block: Block, isFirstTextBlock?: boolean) {
   switch (block.type) {
     case 'heading':
       return <HeadingBlock {...block} />
     case 'text':
-      return <TextBlock {...block} />
+      return <TextBlock {...block} isFirstInChapter={isFirstTextBlock} />
     case 'callout':
       return <CalloutBlock {...block} />
     case 'code':
@@ -65,12 +65,37 @@ function renderBlock(block: Block) {
   }
 }
 
-export default function BlockRenderer({ block }: { block: Block }) {
+interface BlockRendererProps {
+  block: Block
+  isFirstTextBlock?: boolean
+  bookId?: string
+  chapterId?: string
+  className?: string
+  onBlockApproved?: (blockId: string) => void
+  onBlockDismissed?: (blockId: string) => void
+}
+
+export default function BlockRenderer({
+  block,
+  isFirstTextBlock,
+  bookId,
+  chapterId,
+  className,
+  onBlockApproved,
+  onBlockDismissed,
+}: BlockRendererProps) {
   return (
-    <div id={block.id}>
+    <div id={block.id} className={className}>
       <ErrorBoundary>
-        <DraftIndicator isDraft={block.status === 'draft'}>
-          {renderBlock(block)}
+        <DraftIndicator
+          isDraft={block.status === 'draft'}
+          blockId={block.id}
+          bookId={bookId}
+          chapterId={chapterId}
+          onApprove={onBlockApproved}
+          onDismiss={onBlockDismissed}
+        >
+          {renderBlock(block, isFirstTextBlock)}
         </DraftIndicator>
       </ErrorBoundary>
     </div>

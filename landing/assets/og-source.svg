@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <!-- Dark background -->
+  <rect width="1200" height="630" fill="#0f0f0f"/>
+
+  <!-- Subtle radial glow -->
+  <radialGradient id="glow" cx="50%" cy="45%" r="40%">
+    <stop offset="0%" stop-color="#d4af37" stop-opacity="0.06"/>
+    <stop offset="100%" stop-color="#0f0f0f" stop-opacity="0"/>
+  </radialGradient>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+
+  <!-- Logo mark (A from book pages) -->
+  <g transform="translate(560, 160)">
+    <path d="M-20 100 L20 0 L30 0 L30 100 Z" fill="#d4af37" opacity="0.9"/>
+    <path d="M80 100 L40 0 L30 0 L30 100 Z" fill="#c9a961" opacity="0.9"/>
+    <rect x="0" y="70" width="60" height="10" rx="2" fill="#0f0f0f"/>
+    <circle cx="30" cy="-10" r="4" fill="#d4af37" opacity="0.7"/>
+  </g>
+
+  <!-- ATHENEUM text -->
+  <text x="600" y="340" font-family="Georgia, 'Times New Roman', serif" font-size="52" font-weight="700" fill="#f0ebe5" text-anchor="middle" letter-spacing="8">ATHENEUM</text>
+
+  <!-- Tagline -->
+  <text x="600" y="390" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="#9a9a9a" text-anchor="middle" letter-spacing="1">The AI-native textbook platform</text>
+
+  <!-- Subtle bottom line -->
+  <line x1="480" y1="440" x2="720" y2="440" stroke="#d4af37" stroke-width="1" opacity="0.3"/>
+</svg>

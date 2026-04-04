@@ -1,5 +1,5 @@
 /* ==========================================================================
-   The Codex — Terminal Code Blocks
+   Atheneum — Terminal Code Blocks
    macOS-style terminal windows taped into the notebook.
    ========================================================================== */
 
@@ -263,15 +263,49 @@
   .terminal-window {
     margin: 1.5rem -0.5rem;
     border-radius: 6px;
-    transform: none; /* no rotation on mobile */
+    transform: none !important; /* no rotation on mobile */
   }
 
   .terminal-window::before {
     display: none; /* no tape on mobile */
   }
 
+  .terminal-window:hover {
+    transform: none !important;
+  }
+
   .terminal-body {
     padding: 0.75rem 1rem;
     font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .terminal-window {
+    margin: 1rem -0.75rem;
+  }
+
+  .terminal-body {
+    padding: 0.5rem 0.75rem;
+    font-size: 11.5px;
+  }
+
+  /* Hide line numbers on very small screens to save space */
+  .terminal-line-number {
+    display: none;
+  }
+
+  .terminal-annotation {
+    display: none;
+  }
+
+  .terminal-titlebar {
+    padding: 6px 10px;
+    gap: 6px;
+  }
+
+  .terminal-dot {
+    width: 10px;
+    height: 10px;
   }
 }

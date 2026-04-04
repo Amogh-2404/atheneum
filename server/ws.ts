@@ -5,6 +5,7 @@ interface Client {
   id: string
   ws: WebSocket
   subscriptions: Set<string>  // bookId or bookId/chapterId
+  lastPong: number
 }
 
 export class ConnectionManager {
@@ -23,7 +24,7 @@ export class ConnectionManager {
   private handleConnection(ws: WebSocket, req: IncomingMessage) {
     console.log(`[ws] Client connected from ${req.headers.origin || 'unknown'}`)
     const clientId = crypto.randomUUID()
-    const client: Client = { id: clientId, ws, subscriptions: new Set() }
+    const client: Client = { id: clientId, ws, subscriptions: new Set(), lastPong: Date.now() }
     this.clients.set(clientId, client)
 
     ws.send(JSON.stringify({ type: 'connected', clientId }))
@@ -43,13 +44,14 @@ export class ConnectionManager {
             }
           }
         } else if (msg.type === 'pong') {
-          // keepalive response, no action needed
+          client.lastPong = Date.now()
         }
       } catch {
         // Ignore malformed messages
       }
     })
 
+    ws.on('pong', () => { client.lastPong = Date.now() })
     ws.on('close', () => { this.clients.delete(clientId) })
     ws.on('error', () => { this.clients.delete(clientId) })
   }
@@ -77,6 +79,19 @@ export class ConnectionManager {
 
   private startHeartbeat() {
     this.heartbeatInterval = setInterval(() => {
+      const now = Date.now()
+      for (const [id, client] of this.clients) {
+        // Terminate clients that haven't responded in 60s
+        if (now - client.lastPong > 60000) {
+          client.ws.terminate()
+          this.clients.delete(id)
+          continue
+        }
+        // Send WebSocket-level ping + application-level heartbeat
+        if (client.ws.readyState === WebSocket.OPEN) {
+          client.ws.ping()
+        }
+      }
       this.broadcastAll({ type: 'heartbeat' })
     }, 30000)
   }

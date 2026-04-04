@@ -1,5 +1,29 @@
 import { execSync } from 'child_process'
+import lockfile from 'proper-lockfile'
+import { existsSync, writeFileSync, mkdirSync } from 'fs'
+import path from 'path'
 
+/* ─── Per-file OS-level lock (cross-process safe) ─────────────────── */
+
+export async function withFileLock<T>(filePath: string, fn: () => Promise<T>): Promise<T> {
+  // Ensure parent directory and file exist for lockfile
+  const dir = path.dirname(filePath)
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
+  if (!existsSync(filePath)) writeFileSync(filePath, '{}', 'utf-8')
+
+  const release = await lockfile.lock(filePath, {
+    retries: { retries: 5, factor: 2, minTimeout: 100, maxTimeout: 2000 },
+    stale: 10000,
+    realpath: false,
+  })
+  try {
+    return await fn()
+  } finally {
+    await release()
+  }
+}
+
+/* ─── Batched git commits ─────────────────────────────────────────── */
 let commitTimer: ReturnType<typeof setTimeout> | null = null
 let pendingFiles: Set<string> = new Set()
 let pendingDescription: string = ''
@@ -30,8 +54,8 @@ export function scheduleCommit(contentDir: string, filePath: string, description
       }
 
       const message = pendingFiles.size === 1
-        ? `[codex] ${pendingDescription}`
-        : `[codex] Updated ${pendingFiles.size} files`
+        ? `[atheneum] ${pendingDescription}`
+        : `[atheneum] Updated ${pendingFiles.size} files`
 
       execSync(`git commit -m "${message.replace(/"/g, '\\"')}"`, {
         cwd: contentDir,

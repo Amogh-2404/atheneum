@@ -1,24 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none">
-  <!-- Book shape -->
-  <rect x="6" y="4" width="36" height="40" rx="3" fill="#0a0e17" stroke="#1e293b" stroke-width="1.5"/>
+  <rect width="48" height="48" rx="10" fill="#0f0f0f"/>
+  <!-- A mark: two pages meeting -->
+  <path d="M12,40 L22,8 L24,8 L24,40 Z" fill="#d4af37" opacity="0.92"/>
+  <path d="M36,40 L26,8 L24,8 L24,40 Z" fill="#c9a961" opacity="0.92"/>
+  <!-- Crossbar -->
+  <rect x="16" y="28" width="16" height="3" rx="1" fill="#0f0f0f"/>
   <!-- Spine -->
-  <rect x="6" y="4" width="6" height="40" rx="3" fill="#111827"/>
-  <line x1="12" y1="4" x2="12" y2="44" stroke="#1e293b" stroke-width="1"/>
-  <!-- Pages edge -->
-  <rect x="13" y="6" width="27" height="36" rx="1" fill="#111827" opacity="0.5"/>
-  <!-- Open page -->
-  <rect x="14" y="7" width="26" height="34" rx="1" fill="#1a1a2e"/>
-  <!-- Ruled lines on page -->
-  <line x1="16" y1="14" x2="38" y2="14" stroke="#52FEFE" stroke-width="0.5" opacity="0.2"/>
-  <line x1="16" y1="18" x2="38" y2="18" stroke="#52FEFE" stroke-width="0.5" opacity="0.2"/>
-  <line x1="16" y1="22" x2="38" y2="22" stroke="#52FEFE" stroke-width="0.5" opacity="0.2"/>
-  <line x1="16" y1="26" x2="38" y2="26" stroke="#52FEFE" stroke-width="0.5" opacity="0.2"/>
-  <line x1="16" y1="30" x2="38" y2="30" stroke="#52FEFE" stroke-width="0.5" opacity="0.2"/>
-  <line x1="16" y1="34" x2="38" y2="34" stroke="#52FEFE" stroke-width="0.5" opacity="0.2"/>
-  <!-- Margin line -->
-  <line x1="19" y1="7" x2="19" y2="41" stroke="#dc2626" stroke-width="0.5" opacity="0.3"/>
-  <!-- "C" letter in cyan -->
-  <text x="27" y="28" font-family="system-ui, sans-serif" font-size="16" font-weight="700" fill="#52FEFE" text-anchor="middle" dominant-baseline="central">C</text>
-  <!-- Subtle glow -->
-  <circle cx="27" cy="26" r="8" fill="#52FEFE" opacity="0.05"/>
+  <line x1="24" y1="8" x2="24" y2="40" stroke="#0f0f0f" stroke-width="1" opacity="0.3"/>
+  <!-- Wisdom dot -->
+  <circle cx="24" cy="5.5" r="1.8" fill="#d4af37" opacity="0.75"/>
 </svg>

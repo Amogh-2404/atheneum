@@ -159,7 +159,7 @@ export default function ConceptTooltip({
             style={{
               fontFamily: 'var(--font-body)',
               fontSize: '0.95rem',
-              color: '#cbd5e1',
+              color: 'var(--ink-primary, #cbd5e1)',
               lineHeight: 1.5,
               marginBottom: 10,
               display: '-webkit-box',

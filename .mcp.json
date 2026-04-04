@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "atheneum": {
+      "command": "npx",
+      "args": ["tsx", "mcp/src/index.ts"],
+      "env": {
+        "ATHENEUM_CONTENT_DIR": "./content"
+      }
+    }
+  }
+}

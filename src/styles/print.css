@@ -1,7 +1,7 @@
 /* ==========================================================================
-   The Codex — Print Styles
+   Atheneum — Print Styles
    Preserves the notebook aesthetic in PDF. Hides only chrome/UI controls.
-   The printed PDF should LOOK like The Codex notebook — not a plain document.
+   The printed PDF should LOOK like Atheneum notebook — not a plain document.
    ========================================================================== */
 
 @media print {
@@ -29,12 +29,17 @@
 
   /* ─── Page setup ─── */
   @page {
-    margin: 0.6in 0.8in;
+    margin: 0.75in 0.8in 0.9in 0.8in;
     size: A4;
   }
 
   @page :first {
     margin-top: 1.2in;
+  }
+
+  /* ─── Hide chapter header section in print (blocks have the title) ─── */
+  .chapter-header-section {
+    display: none !important;
   }
 
   /* ─── Body reset — keep paper feel ─── */
@@ -181,8 +186,9 @@
 
   /* ─── Terminal code blocks — KEEP the terminal aesthetic ─── */
   .terminal-window {
-    break-inside: avoid;
-    page-break-inside: avoid;
+    /* Allow tall code blocks to split across pages — only short ones avoid */
+    break-inside: auto;
+    page-break-inside: auto;
     /* Flatten — no rotation or deep shadow for print */
     transform: none !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
@@ -190,6 +196,12 @@
     overflow: hidden !important;
     margin: 1rem 0 !important;
     border: 1px solid #333 !important;
+  }
+
+  /* Keep titlebar with the first few lines of code */
+  .terminal-titlebar {
+    break-after: avoid;
+    page-break-after: avoid;
   }
 
   /* Hide scotch tape in print */
@@ -395,10 +407,79 @@
     border-bottom: 2px solid #2c2c2c !important;
   }
 
-  /* ─── Page header/footer ─── */
+  /* ─── Draft indicators — hide watermark, show subtle badge ─── */
+  .draft-indicator {
+    border: none !important;
+    background: none !important;
+  }
+
+  .draft-indicator::before {
+    content: 'DRAFT';
+    font-family: var(--font-ui);
+    font-size: 0.6rem;
+    color: #999;
+    letter-spacing: 0.1em;
+    position: absolute;
+    top: 4px;
+    right: 8px;
+  }
+
+  /* ─── Draft action bar — hide completely ─── */
+  .draft-action-bar,
+  [data-draft-bar] {
+    display: none !important;
+  }
+
+  /* ─── Chapter-end flourish — keep visible ─── */
+  .chapter-end-flourish {
+    break-before: avoid;
+    margin-top: 2rem !important;
+    text-align: center !important;
+    color: #aaa !important;
+  }
+
+  /* ─── Quiz blocks — flatten interactive elements ─── */
+  .quiz-option {
+    cursor: default !important;
+  }
+
+  .quiz-option:hover {
+    background: inherit !important;
+  }
+
+  /* ─── Flashcard blocks — show both sides ─── */
+  .flashcard-card {
+    break-inside: avoid;
+  }
+
+  /* ─── Focus mode reset ─── */
+  [data-focus-mode] * {
+    opacity: 1 !important;
+  }
+
+  /* ─── Concept references — underline style ─── */
+  .concept-ref {
+    border-bottom: 1px solid #888 !important;
+    color: #2c2c2c !important;
+  }
+
+  /* ─── Excalidraw diagrams — ensure SVG renders ─── */
+  .diagram-preview svg {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* ─── Toggle/disclosure blocks — show expanded ─── */
+  .toggle-content {
+    display: block !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* ─── Page header/footer (CSS Paged Media — works in Prince, WeasyPrint) ─── */
   @page {
     @top-center {
-      content: 'The Codex';
+      content: 'Atheneum';
       font-size: 9pt;
       color: #aaa;
       letter-spacing: 0.05em;

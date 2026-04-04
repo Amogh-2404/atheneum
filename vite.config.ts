@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['fonts/*', 'textures/*'],
       manifest: {
-        name: 'The Codex',
-        short_name: 'Codex',
+        name: 'Atheneum',
+        short_name: 'Atheneum',
         description: 'Your learning notebook',
         theme_color: '#0a0e17',
         background_color: '#0a0e17',

@@ -1,6 +1,6 @@
 import { chapterToMarkdown } from './markdown-export'
 
-// ─── EPUB embedded CSS — preserves The Codex notebook aesthetic ─────
+// ─── EPUB embedded CSS — preserves Atheneum notebook aesthetic ─────
 
 const EPUB_CSS = `
 /* Body */
@@ -196,9 +196,9 @@ export async function exportToEpub(book: any, chapters: any[]): Promise<Blob> {
 
     const options: any = {
       title: book.title,
-      author: 'The Codex',
+      author: 'Atheneum',
       description: book.description || '',
-      publisher: 'The Codex Learning Platform',
+      publisher: 'Atheneum Learning Platform',
       content: epubChapters,
       css: EPUB_CSS,
     }

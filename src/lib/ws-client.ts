@@ -1,5 +1,7 @@
 type MessageHandler = (message: any) => void
 
+export type WSStatus = 'connected' | 'connecting' | 'disconnected'
+
 export class WSClient {
   private ws: WebSocket | null = null
   private url: string
@@ -8,18 +10,26 @@ export class WSClient {
   private maxReconnectAttempts = 10
   private reconnectTimer: number | null = null
   private closed = false
+  status: WSStatus = 'connecting'
 
   constructor(url: string) {
     this.url = url
     this.connect()
   }
 
+  private setStatus(s: WSStatus) {
+    this.status = s
+    this.emit('_status', { status: s })
+  }
+
   private connect() {
     if (this.closed) return
+    this.setStatus('connecting')
     try {
       this.ws = new WebSocket(this.url)
       this.ws.onopen = () => {
         this.reconnectAttempts = 0
+        this.setStatus('connected')
         this.emit('_connected', {})
       }
       this.ws.onmessage = (event) => {
@@ -28,15 +38,20 @@ export class WSClient {
           this.emit(msg.type, msg)
         } catch {}
       }
-      this.ws.onclose = () => { this.scheduleReconnect() }
+      this.ws.onclose = () => {
+        this.setStatus('disconnected')
+        this.scheduleReconnect()
+      }
       this.ws.onerror = () => { /* onclose will fire */ }
     } catch {
+      this.setStatus('disconnected')
       this.scheduleReconnect()
     }
   }
 
   private scheduleReconnect() {
     if (this.closed || this.reconnectAttempts >= this.maxReconnectAttempts) return
+    this.setStatus('connecting')
     const delay = Math.min(1000 * 2 ** this.reconnectAttempts, 30000)
     this.reconnectAttempts++
     this.reconnectTimer = window.setTimeout(() => this.connect(), delay)

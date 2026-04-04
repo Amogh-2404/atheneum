@@ -1,7 +1,21 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import type { ConceptIndex, Concept } from '@/lib/concept-extractor'
+
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth < breakpoint
+  )
+  useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${breakpoint - 1}px)`)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mql.addEventListener('change', handler)
+    setIsMobile(mql.matches)
+    return () => mql.removeEventListener('change', handler)
+  }, [breakpoint])
+  return isMobile
+}
 
 interface Props {
   conceptIndex: ConceptIndex
@@ -12,6 +26,7 @@ interface Props {
 export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }: Props) {
   const [filter, setFilter] = useState('')
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
 
   // Build sorted alphabetical list
   const entries = useMemo(() => {
@@ -93,8 +108,8 @@ export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }
           top: 0,
           right: 0,
           bottom: 0,
-          width: 380,
-          maxWidth: '90vw',
+          width: isMobile ? '100vw' : 380,
+          maxWidth: isMobile ? '100vw' : '90vw',
           zIndex: 100,
           background: 'var(--chrome-bg)',
           borderLeft: '1px solid var(--chrome-border)',
@@ -116,7 +131,7 @@ export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }
           <h2
             style={{
               fontFamily: 'var(--font-heading)',
-              fontSize: '1.5rem',
+              fontSize: isMobile ? '1.25rem' : '1.5rem',
               fontWeight: 700,
               color: 'var(--chrome-accent)',
               margin: 0,
@@ -127,18 +142,19 @@ export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }
           <button
             onClick={onClose}
             style={{
-              background: 'none',
+              background: isMobile ? 'rgba(82, 254, 254, 0.08)' : 'none',
               border: '1px solid var(--chrome-border)',
-              borderRadius: 4,
+              borderRadius: isMobile ? 8 : 4,
               color: 'var(--chrome-text)',
               cursor: 'pointer',
-              width: 28,
-              height: 28,
+              width: isMobile ? 44 : 28,
+              height: isMobile ? 44 : 28,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '14px',
+              fontSize: isMobile ? '20px' : '14px',
               fontFamily: 'var(--font-ui)',
+              fontWeight: isMobile ? 700 : 400,
               transition: 'color 200ms ease, border-color 200ms ease',
             }}
             onMouseEnter={(e) => {
@@ -164,9 +180,9 @@ export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }
             autoFocus
             style={{
               width: '100%',
-              padding: '0.5rem 0.75rem',
+              padding: isMobile ? '0.75rem 1rem' : '0.5rem 0.75rem',
               fontFamily: 'var(--font-ui)',
-              fontSize: '0.85rem',
+              fontSize: isMobile ? '1rem' : '0.85rem',
               background: 'var(--chrome-surface)',
               border: '1px solid var(--chrome-border)',
               borderRadius: 6,
@@ -262,7 +278,7 @@ export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }
                   <div
                     style={{
                       fontFamily: 'var(--font-heading)',
-                      fontSize: '1.1rem',
+                      fontSize: isMobile ? '0.95rem' : '1.1rem',
                       fontWeight: 700,
                       color: '#e2e8f0',
                       marginBottom: 2,
@@ -288,7 +304,7 @@ export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }
                   <div
                     style={{
                       fontFamily: 'var(--font-body)',
-                      fontSize: '0.9rem',
+                      fontSize: isMobile ? '0.8rem' : '0.9rem',
                       color: 'var(--chrome-text)',
                       lineHeight: 1.4,
                       display: '-webkit-box',

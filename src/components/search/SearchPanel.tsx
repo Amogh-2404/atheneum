@@ -122,7 +122,7 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
             display: 'flex',
             alignItems: 'flex-start',
             justifyContent: 'center',
-            paddingTop: '12vh',
+            paddingTop: 'max(2rem, 8vh)',
           }}
         >
           <motion.div
@@ -133,8 +133,8 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
             onClick={(e) => e.stopPropagation()}
             style={{
               width: 600,
-              maxWidth: 'calc(100vw - 2rem)',
-              maxHeight: 500,
+              maxWidth: 'calc(100vw - 1.5rem)',
+              maxHeight: 'calc(100vh - 6rem)',
               background: 'var(--chrome-surface)',
               border: '1px solid var(--chrome-border)',
               borderRadius: 12,
@@ -266,7 +266,7 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
                       display: 'block',
                       width: '100%',
                       textAlign: 'left',
-                      padding: '10px 20px',
+                      padding: '10px 16px',
                       background: isSelected ? 'rgba(82, 254, 254, 0.06)' : 'transparent',
                       border: 'none',
                       borderLeft: isSelected ? '2px solid var(--chrome-accent)' : '2px solid transparent',
@@ -331,7 +331,7 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
                     <div
                       style={{
                         fontSize: '0.82rem',
-                        color: isSelected ? '#cbd5e1' : '#94a3b8',
+                        color: isSelected ? 'var(--ink-primary, #cbd5e1)' : 'var(--chrome-text, #94a3b8)',
                         lineHeight: 1.5,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -352,22 +352,27 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
               <div
                 style={{
                   borderTop: '1px solid var(--chrome-border)',
-                  padding: '8px 20px',
+                  padding: '8px 16px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 16,
+                  gap: 12,
                   fontFamily: 'var(--font-ui)',
-                  fontSize: '0.65rem',
+                  fontSize: '0.7rem',
                   color: 'var(--chrome-text)',
                   opacity: 0.5,
                 }}
               >
-                <span>
-                  <kbd style={{ opacity: 0.7, fontSize: '0.6rem' }}>↑↓</kbd> navigate
-                </span>
-                <span>
-                  <kbd style={{ opacity: 0.7, fontSize: '0.6rem' }}>↵</kbd> open
-                </span>
+                {/* Hide keyboard hints on touch devices */}
+                {!('ontouchstart' in window) && (
+                  <>
+                    <span>
+                      <kbd style={{ opacity: 0.7, fontSize: '0.65rem' }}>↑↓</kbd> navigate
+                    </span>
+                    <span>
+                      <kbd style={{ opacity: 0.7, fontSize: '0.65rem' }}>↵</kbd> open
+                    </span>
+                  </>
+                )}
                 <span style={{ marginLeft: 'auto' }}>
                   {results.length} result{results.length !== 1 ? 's' : ''}
                 </span>

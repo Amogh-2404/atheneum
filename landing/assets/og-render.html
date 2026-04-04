@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:1200px;height:630px;background:#0f0f0f;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.glow{position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,#d4af3708,#d4af3700);top:50%;left:50%;transform:translate(-50%,-55%)}
+svg.mark{margin-bottom:28px}
+h1{font-family:'Playfair Display',Georgia,serif;font-size:52px;color:#f0ebe5;letter-spacing:10px;margin-bottom:14px}
+p{font-family:system-ui,-apple-system,sans-serif;font-size:19px;color:#9a9a9a;letter-spacing:1.5px}
+.line{width:200px;height:1px;background:linear-gradient(90deg,transparent,#d4af3740,transparent);margin-top:28px}
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<svg class="mark" width="80" height="90" viewBox="0 0 80 90">
+  <path d="M10,85 L35,5 L40,5 L40,85 Z" fill="#d4af37" opacity="0.92"/>
+  <path d="M70,85 L45,5 L40,5 L40,85 Z" fill="#c9a961" opacity="0.92"/>
+  <rect x="18" y="58" width="44" height="6" rx="1.5" fill="#0f0f0f"/>
+  <line x1="40" y1="5" x2="40" y2="85" stroke="#0f0f0f" stroke-width="1.5" opacity="0.3"/>
+  <circle cx="40" cy="1" r="2.5" fill="#d4af37" opacity="0.75"/>
+</svg>
+<h1>ATHENEUM</h1>
+<p>The AI-native textbook platform</p>
+<div class="line"></div>
+</body>
+</html>

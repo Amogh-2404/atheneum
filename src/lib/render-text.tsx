@@ -128,7 +128,10 @@ function parseMarkdownInline(text: string): React.ReactNode {
 function renderSegment(seg: RichTextSegment, key: number): React.ReactNode {
   const { text, annotations, href } = seg
 
-  let node: React.ReactNode = text
+  // Parse [[concept]] references even inside RichText segments
+  let node: React.ReactNode = text.includes('[[')
+    ? parseMarkdownInline(text)
+    : text
 
   if (annotations) {
     const classes: string[] = []

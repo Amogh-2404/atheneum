@@ -35,7 +35,7 @@ function StickyNote({
         position: 'relative',
         width: 180,
         background: 'rgba(254, 243, 199, 0.85)',
-        borderLeft: '3px solid #f59e0b',
+        borderLeft: '3px solid var(--color-warning, #f59e0b)',
         borderRadius: 2,
         padding: '8px 10px',
         transform: `rotate(${rotation}deg)`,
@@ -54,7 +54,7 @@ function StickyNote({
           background: 'none',
           border: 'none',
           cursor: 'pointer',
-          color: '#b45309',
+          color: 'var(--color-warning, #b45309)',
           fontSize: '14px',
           lineHeight: 1,
           padding: 0,
@@ -90,7 +90,7 @@ function StickyNote({
         style={{
           fontFamily: 'var(--font-ui)',
           fontSize: '0.6rem',
-          color: '#b45309',
+          color: 'var(--color-warning, #b45309)',
           opacity: 0.5,
           marginTop: 4,
         }}

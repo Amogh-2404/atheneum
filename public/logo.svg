@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" fill="none">
+  <!-- Book/A mark: two pages forming an "A" silhouette -->
+
+  <!-- Left page -->
+  <path d="M32 100 L54 20 L60 20 L60 100 Z" fill="#d4af37"/>
+  <!-- Right page (slightly different gold for depth) -->
+  <path d="M88 100 L66 20 L60 20 L60 100 Z" fill="#c9a961"/>
+
+  <!-- Crossbar (negative space forming the A) -->
+  <rect x="40" y="68" width="40" height="7" rx="2" fill="#0f0f0f"/>
+
+  <!-- Spine line -->
+  <line x1="60" y1="20" x2="60" y2="100" stroke="#0f0f0f" stroke-width="2" opacity="0.3"/>
+
+  <!-- Wisdom dot at apex -->
+  <circle cx="60" cy="14" r="3" fill="#d4af37" opacity="0.8"/>
+
+  <!-- Subtle ruled lines on left page -->
+  <line x1="38" y1="45" x2="56" y2="45" stroke="#0f0f0f" stroke-width="0.7" opacity="0.12"/>
+  <line x1="39" y1="52" x2="57" y2="52" stroke="#0f0f0f" stroke-width="0.7" opacity="0.12"/>
+  <line x1="40" y1="59" x2="58" y2="59" stroke="#0f0f0f" stroke-width="0.7" opacity="0.12"/>
+
+  <!-- Subtle ruled lines on right page -->
+  <line x1="64" y1="45" x2="82" y2="45" stroke="#0f0f0f" stroke-width="0.7" opacity="0.12"/>
+  <line x1="63" y1="52" x2="81" y2="52" stroke="#0f0f0f" stroke-width="0.7" opacity="0.12"/>
+  <line x1="62" y1="59" x2="80" y2="59" stroke="#0f0f0f" stroke-width="0.7" opacity="0.12"/>
+</svg>

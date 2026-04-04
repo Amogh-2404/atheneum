@@ -6,6 +6,9 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { booksRouter } from './routes/books.js'
 import { chaptersRouter } from './routes/chapters.js'
+import { annotationsRouter } from './routes/annotations.js'
+import { readingPositionRouter } from './routes/reading-position.js'
+import { historyRouter } from './routes/history.js'
 import { ConnectionManager } from './ws.js'
 import { startWatcher } from './watcher.js'
 
@@ -19,7 +22,7 @@ const app = new Hono()
 // ─── Middleware ────────────────────────────────────────────────────
 app.use('*', cors({
   origin: ['http://localhost:5173', 'http://localhost:3100'],
-  allowMethods: ['GET', 'POST', 'OPTIONS'],
+  allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
 }))
 
 // ─── API Routes ───────────────────────────────────────────────────
@@ -27,6 +30,15 @@ app.route('/api/books', booksRouter)
 
 // Mount chapters under books/:bookId/chapters
 app.route('/api/books/:bookId/chapters', chaptersRouter)
+
+// Annotations sync (server-side persistence)
+app.route('/api/annotations', annotationsRouter)
+
+// Reading position sync (cross-device)
+app.route('/api/reading-position', readingPositionRouter)
+
+// Version history (git-backed)
+app.route('/api/books/:bookId/chapters/:chapterId/history', historyRouter)
 
 // ─── Static Content (images, diagrams per book) ───────────────────
 // Serve /content/:bookId/images/* and /content/:bookId/diagrams/*
@@ -49,6 +61,27 @@ app.get('/api/ws-status', (c) => {
   return c.json({ clients: cm?.clientCount ?? 0 })
 })
 
+// ─── Production: Serve built frontend from dist/ ─────────────────
+import { existsSync, readFileSync } from 'fs'
+
+const distDir = path.join(__dirname, '..', 'dist')
+if (existsSync(distDir)) {
+  // Serve static assets from dist/
+  app.use('/*', serveStatic({ root: './dist' }))
+  // SPA fallback: serve index.html for client-side routes
+  app.get('*', (c) => {
+    const reqPath = c.req.path
+    if (reqPath.startsWith('/api/') || reqPath.startsWith('/content/') || reqPath.startsWith('/ws')) {
+      return c.json({ error: 'not found' }, 404)
+    }
+    const indexHtml = path.join(distDir, 'index.html')
+    if (existsSync(indexHtml)) {
+      return c.html(readFileSync(indexHtml, 'utf-8'))
+    }
+    return c.json({ error: 'not found' }, 404)
+  })
+}
+
 // ─── 404 fallback ─────────────────────────────────────────────────
 app.notFound((c) => {
   return c.json({ error: 'not found' }, 404)
@@ -68,7 +101,7 @@ const server = serve({
   port: PORT,
   hostname: '0.0.0.0',
 }, (info) => {
-  console.log(`The Codex server running on http://0.0.0.0:${info.port}`)
+  console.log(`Atheneum server running on http://0.0.0.0:${info.port}`)
 })
 
 // Attach WebSocket server and file watcher to the HTTP server

@@ -45,7 +45,7 @@ export default function ConfusionIndicator({ marker, onRemove }: ConfusionIndica
         e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.5)'
       }}
     >
-      <span style={{ color: '#f59e0b' }}>?</span>
+      <span style={{ color: 'var(--color-warning, #f59e0b)' }}>?</span>
     </motion.button>
   )
 }

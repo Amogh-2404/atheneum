@@ -1,0 +1,22 @@
+{
+  "name": "@atheneum/mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Atheneum — the AI-native textbook platform",
+  "type": "module",
+  "main": "src/index.ts",
+  "bin": {
+    "atheneum-mcp": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "npx tsx src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "proper-lockfile": "^4.1.2",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/proper-lockfile": "^4.1.4"
+  }
+}

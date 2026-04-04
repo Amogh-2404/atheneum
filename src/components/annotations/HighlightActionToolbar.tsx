@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 /* ─── Types ────────────────────────────────────────────────────────── */
@@ -40,6 +40,13 @@ export default function HighlightActionToolbar({
 }: HighlightActionToolbarProps) {
   const toolbarRef = useRef<HTMLDivElement>(null)
 
+  // Viewport bounds checking
+  const clampedX = Math.max(20, Math.min(x, typeof window !== 'undefined' ? window.innerWidth - 20 : x))
+  // If toolbar would appear above viewport, flip it below the selection
+  const scrollY = typeof window !== 'undefined' ? window.scrollY : 0
+  const flippedBelow = (y - scrollY) < 0
+  const finalY = flippedBelow ? y + 40 : y
+
   // Close on click outside
   useEffect(() => {
     if (!highlightId) return
@@ -79,9 +86,11 @@ export default function HighlightActionToolbar({
           transition={{ duration: 0.15, ease: 'easeOut' }}
           style={{
             position: 'absolute',
-            left: x,
-            top: y,
-            transform: 'translate(-50%, -100%)',
+            left: clampedX,
+            top: finalY,
+            transform: flippedBelow
+              ? 'translate(-50%, 0%)'
+              : 'translate(-50%, -100%)',
             zIndex: 100,
             background: 'var(--chrome-surface, #111827)',
             border: '1px solid var(--chrome-border, #1e293b)',
@@ -104,30 +113,50 @@ export default function HighlightActionToolbar({
                 onClose()
               }}
               style={{
-                width: 18,
-                height: 18,
+                width: 40,
+                height: 40,
                 borderRadius: '50%',
-                background: c.hex,
-                border: c.key === currentColor
-                  ? '2px solid #fff'
-                  : '2px solid transparent',
+                background: 'transparent',
+                border: 'none',
                 cursor: 'pointer',
                 padding: 0,
-                transition: 'border-color 150ms ease, transform 150ms ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 flexShrink: 0,
-                transform: c.key === currentColor ? 'scale(1.2)' : 'scale(1)',
+                margin: '-4px -6px',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#fff'
-                e.currentTarget.style.transform = 'scale(1.2)'
-              }}
-              onMouseLeave={(e) => {
-                if (c.key !== currentColor) {
-                  e.currentTarget.style.borderColor = 'transparent'
-                  e.currentTarget.style.transform = 'scale(1)'
+                const circle = e.currentTarget.firstElementChild as HTMLElement
+                if (circle) {
+                  circle.style.borderColor = '#fff'
+                  circle.style.transform = 'scale(1.2)'
                 }
               }}
-            />
+              onMouseLeave={(e) => {
+                const circle = e.currentTarget.firstElementChild as HTMLElement
+                if (circle && c.key !== currentColor) {
+                  circle.style.borderColor = 'transparent'
+                  circle.style.transform = 'scale(1)'
+                }
+              }}
+            >
+              <span
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: '50%',
+                  background: c.hex,
+                  border: c.key === currentColor
+                    ? '2px solid #fff'
+                    : '2px solid transparent',
+                  display: 'block',
+                  transition: 'border-color 150ms ease, transform 150ms ease',
+                  pointerEvents: 'none',
+                  transform: c.key === currentColor ? 'scale(1.2)' : 'scale(1)',
+                }}
+              />
+            </button>
           ))}
 
           {/* Divider */}
@@ -151,7 +180,8 @@ export default function HighlightActionToolbar({
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              padding: 2,
+              padding: 10,
+              margin: -8,
               display: 'flex',
               alignItems: 'center',
               color: 'var(--chrome-text, #94a3b8)',

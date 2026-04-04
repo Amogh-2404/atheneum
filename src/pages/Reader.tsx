@@ -6,13 +6,16 @@ import { useChapter } from '@/hooks/useChapter'
 import { useActiveHeading } from '@/hooks/useActiveHeading'
 import { useConcepts } from '@/hooks/useConcepts'
 import { useAnnotations } from '@/hooks/useAnnotations'
-import { useWS } from '@/providers/WebSocketProvider'
+import { useFocusMode } from '@/hooks/useFocusMode'
+import { useWS, useWSStatus } from '@/providers/WebSocketProvider'
 import BlockRenderer from '@/components/blocks/BlockRenderer'
+import DraftActionBar from '@/components/blocks/DraftActionBar'
 import TableOfContents from '@/components/layout/TableOfContents'
 import ChapterNav from '@/components/layout/ChapterNav'
 import ReadingProgress from '@/components/layout/ReadingProgress'
 import ConceptTooltip from '@/components/knowledge/ConceptTooltip'
 import GlossaryPanel from '@/components/knowledge/GlossaryPanel'
+import PreferencesPanel from '@/components/preferences/PreferencesPanel'
 import AnnotationToolbar from '@/components/annotations/AnnotationToolbar'
 import MarginNoteLayer from '@/components/annotations/MarginNoteLayer'
 import ConfusionIndicator from '@/components/annotations/ConfusionIndicator'
@@ -20,6 +23,8 @@ import BookmarkIndicator from '@/components/annotations/BookmarkIndicator'
 import { useHighlightRenderer } from '@/components/annotations/HighlightRenderer'
 import HighlightActionToolbar from '@/components/annotations/HighlightActionToolbar'
 import ExportMenu from '@/components/export/ExportMenu'
+import VersionTimeline from '@/components/history/VersionTimeline'
+import type { Commit } from '@/components/history/VersionTimeline'
 
 /* ─── Theme Toggle ─────────────────────────────────────────────────── */
 type Theme = 'light' | 'dark' | 'sepia'
@@ -31,7 +36,7 @@ const THEMES: { key: Theme; color: string; label: string }[] = [
 ]
 
 function getInitialTheme(): Theme {
-  const stored = localStorage.getItem('codex-theme')
+  const stored = localStorage.getItem('atheneum-theme')
   if (stored === 'light' || stored === 'dark' || stored === 'sepia') return stored
   return 'light'
 }
@@ -41,7 +46,7 @@ function ThemeToggle() {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', active)
-    localStorage.setItem('codex-theme', active)
+    localStorage.setItem('atheneum-theme', active)
   }, [active])
 
   return (
@@ -110,7 +115,8 @@ function useIsMobile(breakpoint = 768) {
 export default function Reader() {
   const { bookId, chapterId } = useParams()
   const navigate = useNavigate()
-  const { connected } = useWS()
+  useWS() // ensure WS connection is active
+  const wsStatus = useWSStatus()
   const { book, loading: bookLoading, error: bookError } = useBook(bookId)
   const { conceptIndex } = useConcepts(bookId)
   const activeHeadingId = useActiveHeading()
@@ -118,6 +124,12 @@ export default function Reader() {
   const isMobile = useIsMobile()
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 768)
   const [glossaryOpen, setGlossaryOpen] = useState(false)
+  const [preferencesOpen, setPreferencesOpen] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [historyData, setHistoryData] = useState<Commit[]>([])
+
+  // Focus mode
+  const { focusModeActive, focusedBlockId, toggleFocusMode } = useFocusMode(contentAreaRef)
 
   // Redirect to first chapter if none specified
   useEffect(() => {
@@ -129,6 +141,16 @@ export default function Reader() {
   // Resolve the active chapter ID (from URL or first chapter)
   const activeChapterId = chapterId ?? book?.chapters[0]?.id
   const { chapter, loading: chapterLoading, error: chapterError } = useChapter(bookId, activeChapterId)
+
+  // Fetch history when panel opens
+  const openHistory = useCallback(() => {
+    if (!bookId || !activeChapterId) return
+    setHistoryOpen(true)
+    fetch(`/api/books/${bookId}/chapters/${activeChapterId}/history`)
+      .then((res) => (res.ok ? res.json() : Promise.reject('failed')))
+      .then((data: { commits: Commit[] }) => setHistoryData(data.commits))
+      .catch(() => setHistoryData([]))
+  }, [bookId, activeChapterId])
 
   // Annotations (persisted to localStorage)
   const {
@@ -172,10 +194,10 @@ export default function Reader() {
 
   // Cycle through themes
   const cycleTheme = useCallback(() => {
-    const current = (localStorage.getItem('codex-theme') || 'light') as Theme
+    const current = (localStorage.getItem('atheneum-theme') || 'light') as Theme
     const order: Theme[] = ['light', 'dark', 'sepia']
     const next = order[(order.indexOf(current) + 1) % order.length]
-    localStorage.setItem('codex-theme', next)
+    localStorage.setItem('atheneum-theme', next)
     document.documentElement.setAttribute('data-theme', next)
     // Force ThemeToggle to re-render via storage event workaround
     window.dispatchEvent(new Event('storage'))
@@ -208,14 +230,62 @@ export default function Reader() {
         case 'g':
           if (conceptIndex) setGlossaryOpen((v) => !v)
           break
+        case 'f':
+          toggleFocusMode()
+          break
+        case 'p':
+          setPreferencesOpen((v) => !v)
+          break
+        case 'h':
+          if (!historyOpen) openHistory()
+          else setHistoryOpen(false)
+          break
       }
     }
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [prevChapter, nextChapter, book, navigate, cycleTheme, conceptIndex])
+  }, [prevChapter, nextChapter, book, navigate, cycleTheme, conceptIndex, historyOpen, openHistory])
 
-  // --- Scroll position: save (debounced 2s) ---
+  // --- Swipe gestures for chapter navigation (mobile) ---
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null)
+
+  useEffect(() => {
+    if (!isMobile) return
+
+    function onTouchStart(e: TouchEvent) {
+      const t = e.touches[0]
+      touchStartRef.current = { x: t.clientX, y: t.clientY }
+    }
+
+    function onTouchEnd(e: TouchEvent) {
+      if (!touchStartRef.current) return
+      const t = e.changedTouches[0]
+      const dx = t.clientX - touchStartRef.current.x
+      const dy = t.clientY - touchStartRef.current.y
+      touchStartRef.current = null
+
+      // Must be a horizontal swipe: >80px horizontal, <50px vertical drift
+      if (Math.abs(dx) < 80 || Math.abs(dy) > 50) return
+
+      if (dx < 0 && nextChapter && book) {
+        // Swipe left → next chapter
+        navigate(`/book/${book.id}/${nextChapter.id}`)
+      } else if (dx > 0 && prevChapter && book) {
+        // Swipe right → previous chapter
+        navigate(`/book/${book.id}/${prevChapter.id}`)
+      }
+    }
+
+    document.addEventListener('touchstart', onTouchStart, { passive: true })
+    document.addEventListener('touchend', onTouchEnd, { passive: true })
+    return () => {
+      document.removeEventListener('touchstart', onTouchStart)
+      document.removeEventListener('touchend', onTouchEnd)
+    }
+  }, [isMobile, prevChapter, nextChapter, book, navigate])
+
+  // --- Scroll position: save (debounced 2s) + server sync ---
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hasRestoredRef = useRef(false)
 
@@ -228,15 +298,20 @@ export default function Reader() {
         const maxScroll = document.body.scrollHeight - window.innerHeight
         if (maxScroll <= 0) return
         const scrollPercent = window.scrollY / maxScroll
-        localStorage.setItem(
-          'codex-last-read',
-          JSON.stringify({
-            bookId,
-            chapterId: activeChapterId,
-            scrollPercent,
-            timestamp: new Date().toISOString(),
-          })
-        )
+        const position = {
+          bookId,
+          chapterId: activeChapterId,
+          scrollPercent,
+          timestamp: new Date().toISOString(),
+        }
+        localStorage.setItem('atheneum-last-read', JSON.stringify(position))
+
+        // Background sync to server (fire-and-forget)
+        fetch('/api/reading-position', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(position),
+        }).catch(() => {})
       }, 2000)
     }
 
@@ -247,28 +322,57 @@ export default function Reader() {
     }
   }, [bookId, activeChapterId])
 
-  // --- Scroll position: restore on chapter load ---
+  // --- Scroll position: restore on chapter load (localStorage + server) ---
   useEffect(() => {
     if (chapterLoading || !chapter || !bookId || !activeChapterId) return
     if (hasRestoredRef.current) return
+    hasRestoredRef.current = true
 
+    // Helper to apply a scroll position
+    function applyScroll(scrollPercent: number) {
+      requestAnimationFrame(() => {
+        const maxScroll = document.body.scrollHeight - window.innerHeight
+        if (maxScroll > 0) {
+          window.scrollTo({ top: maxScroll * scrollPercent, behavior: 'instant' })
+        }
+      })
+    }
+
+    // 1) Immediately restore from localStorage (instant)
+    let localSaved: { bookId: string; chapterId: string; scrollPercent: number; timestamp: string } | null = null
     try {
-      const raw = localStorage.getItem('codex-last-read')
-      if (!raw) return
-      const saved = JSON.parse(raw)
-      if (saved.bookId === bookId && saved.chapterId === activeChapterId && saved.scrollPercent > 0) {
-        // Wait a tick for DOM to render blocks
-        requestAnimationFrame(() => {
-          const maxScroll = document.body.scrollHeight - window.innerHeight
-          if (maxScroll > 0) {
-            window.scrollTo({ top: maxScroll * saved.scrollPercent, behavior: 'instant' })
-          }
-        })
+      const raw = localStorage.getItem('atheneum-last-read')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (parsed.bookId === bookId && parsed.chapterId === activeChapterId && parsed.scrollPercent > 0) {
+          localSaved = parsed
+          applyScroll(parsed.scrollPercent)
+        }
       }
     } catch {
       // ignore
     }
-    hasRestoredRef.current = true
+
+    // 2) Also check server — use server position if more recent
+    fetch(`/api/reading-position/${bookId}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
+      .then((serverPos: { bookId: string; chapterId: string; scrollPercent: number; timestamp: string }) => {
+        if (!serverPos || serverPos.bookId !== bookId || serverPos.chapterId !== activeChapterId) return
+        if (serverPos.scrollPercent <= 0) return
+
+        // Use server position if it's more recent than local
+        const serverTime = new Date(serverPos.timestamp).getTime()
+        const localTime = localSaved ? new Date(localSaved.timestamp).getTime() : 0
+
+        if (serverTime > localTime) {
+          // Server is newer — update localStorage and scroll
+          localStorage.setItem('atheneum-last-read', JSON.stringify(serverPos))
+          applyScroll(serverPos.scrollPercent)
+        }
+      })
+      .catch(() => {
+        // Server unavailable — localStorage already applied
+      })
   }, [chapterLoading, chapter, bookId, activeChapterId])
 
   // Reset restore flag when chapter changes
@@ -318,6 +422,31 @@ export default function Reader() {
     )
   }
 
+  // --- No chapters ---
+  if (book && book.chapters.length === 0) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          gap: '1rem',
+          background: 'var(--chrome-bg)',
+          fontFamily: 'var(--font-ui)',
+        }}
+      >
+        <p style={{ color: 'var(--chrome-text)', fontSize: '1.1rem' }}>
+          This book has no chapters yet.
+        </p>
+        <p style={{ color: 'var(--chrome-text)', fontSize: '0.85rem', opacity: 0.6 }}>
+          Use the Atheneum MCP tools to add content.
+        </p>
+      </div>
+    )
+  }
+
   // --- No book ---
   if (!book) {
     return (
@@ -341,6 +470,29 @@ export default function Reader() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
+      {/* ─── Skip to content (keyboard accessibility) ─── */}
+      <a
+        href="#main-content"
+        style={{
+          position: 'absolute',
+          left: -9999,
+          top: 0,
+          zIndex: 9999,
+          padding: '8px 16px',
+          background: 'var(--chrome-accent)',
+          color: '#0a0e17',
+          fontFamily: 'var(--font-ui)',
+          fontWeight: 600,
+          fontSize: '0.85rem',
+          borderRadius: '0 0 6px 0',
+          textDecoration: 'none',
+        }}
+        onFocus={(e) => { e.currentTarget.style.left = '0' }}
+        onBlur={(e) => { e.currentTarget.style.left = '-9999px' }}
+      >
+        Skip to content
+      </a>
+
       {/* ─── Reading progress bar ─── */}
       <ReadingProgress />
 
@@ -361,6 +513,8 @@ export default function Reader() {
       {/* ─── Sidebar (JARVIS chrome zone) ─── */}
       <aside
         className="reader-sidebar"
+        role="navigation"
+        aria-label="Table of contents"
         style={{
           width: isMobile ? 280 : sidebarWidth,
           flexShrink: 0,
@@ -614,6 +768,46 @@ export default function Reader() {
                   chapter={chapter}
                 />
               )}
+
+              {/* History button */}
+              {bookId && activeChapterId && (
+                <button
+                  onClick={openHistory}
+                  style={{
+                    fontFamily: 'var(--font-ui)',
+                    fontSize: '0.82rem',
+                    textDecoration: 'none',
+                    padding: '0.4rem 0.75rem',
+                    borderRadius: 4,
+                    color: 'var(--chrome-text)',
+                    background: 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    transition: 'color 200ms ease, background 200ms ease',
+                    letterSpacing: '0.01em',
+                    border: 'none',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    width: '100%',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = 'var(--chrome-accent)'
+                    e.currentTarget.style.background = 'rgba(82, 254, 254, 0.06)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = 'var(--chrome-text)'
+                    e.currentTarget.style.background = 'transparent'
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                  History
+                </button>
+              )}
+
               <ThemeToggle />
               <div>
                 <div
@@ -631,15 +825,20 @@ export default function Reader() {
                 >
                   Progress
                   <span
-                    title={connected ? 'Live' : 'Disconnected'}
+                    title={wsStatus === 'connected' ? 'Connected' : wsStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}
                     style={{
-                      width: 6,
-                      height: 6,
+                      width: 8,
+                      height: 8,
                       borderRadius: '50%',
-                      background: connected ? '#34d399' : '#f87171',
+                      background: wsStatus === 'connected' ? '#4ade80' : wsStatus === 'connecting' ? '#f59e0b' : '#f87171',
                       display: 'inline-block',
                       flexShrink: 0,
                       transition: 'background 300ms ease',
+                      boxShadow: wsStatus === 'connected'
+                        ? '0 0 4px rgba(74, 222, 128, 0.5)'
+                        : wsStatus === 'connecting'
+                        ? '0 0 4px rgba(245, 158, 11, 0.5)'
+                        : '0 0 4px rgba(248, 113, 113, 0.5)',
                     }}
                   />
                 </div>
@@ -674,6 +873,43 @@ export default function Reader() {
                 </div>
               </div>
 
+              {/* Preferences gear button */}
+              <button
+                onClick={() => setPreferencesOpen(true)}
+                style={{
+                  fontFamily: 'var(--font-ui)',
+                  fontSize: '0.82rem',
+                  textDecoration: 'none',
+                  padding: '0.4rem 0.75rem',
+                  borderRadius: 4,
+                  color: 'var(--chrome-text)',
+                  background: 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  transition: 'color 200ms ease, background 200ms ease',
+                  letterSpacing: '0.01em',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  width: '100%',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--chrome-accent)'
+                  e.currentTarget.style.background = 'rgba(82, 254, 254, 0.06)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--chrome-text)'
+                  e.currentTarget.style.background = 'transparent'
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+                Preferences
+              </button>
+
               {/* Keyboard shortcut hints */}
               <div
                 style={{
@@ -691,6 +927,10 @@ export default function Reader() {
                 <kbd style={{ opacity: 0.7 }}>s</kbd> sidebar
                 &nbsp;&middot;&nbsp;
                 <kbd style={{ opacity: 0.7 }}>g</kbd> glossary
+                &nbsp;&middot;&nbsp;
+                <kbd style={{ opacity: 0.7 }}>h</kbd> history
+                &nbsp;&middot;&nbsp;
+                <kbd style={{ opacity: 0.7 }}>p</kbd> prefs
               </div>
             </div>
           </>
@@ -701,28 +941,33 @@ export default function Reader() {
       <button
         onClick={() => setSidebarOpen((v) => !v)}
         title={sidebarOpen ? 'Hide sidebar (s)' : 'Show sidebar (s)'}
+        aria-label={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+        data-print-hide
         style={{
           position: 'fixed',
-          top: 12,
+          top: 10,
           left: isMobile
-            ? (sidebarOpen ? 268 : 12)
-            : (sidebarOpen ? 248 : 12),
+            ? (sidebarOpen ? 264 : 10)
+            : (sidebarOpen ? 248 : 10),
           zIndex: 60,
-          width: 24,
-          height: 24,
+          width: isMobile ? 36 : 28,
+          height: isMobile ? 36 : 28,
           background: 'var(--chrome-bg)',
           border: '1px solid var(--chrome-border)',
-          borderRadius: 4,
+          borderRadius: 6,
           color: 'var(--chrome-text)',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: '12px',
+          fontSize: isMobile ? '16px' : '12px',
           fontFamily: 'var(--font-ui)',
           transition: 'left 250ms ease, opacity 200ms ease',
-          opacity: 0.6,
+          opacity: 0.7,
           padding: 0,
+          /* Ensure 44px touch target even if visual is smaller */
+          minWidth: 44,
+          minHeight: 44,
         }}
         onMouseEnter={(e) => { e.currentTarget.style.opacity = '1' }}
         onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.6' }}
@@ -732,7 +977,10 @@ export default function Reader() {
 
       {/* ─── Main content (notebook zone) ─── */}
       <main
+        id="main-content"
         className="page-container"
+        role="main"
+        aria-label="Chapter content"
         style={{
           flex: 1,
           minWidth: 0,
@@ -756,8 +1004,8 @@ export default function Reader() {
           </div>
         ) : chapter ? (
           <>
-            {/* Chapter header */}
-            <header style={{ marginBottom: '2.5rem' }}>
+            {/* Chapter header (hidden in print — blocks have the title) */}
+            <header className="chapter-header-section" style={{ marginBottom: '2.5rem' }}>
               <p
                 style={{
                   fontFamily: 'var(--font-ui)',
@@ -804,9 +1052,15 @@ export default function Reader() {
             </header>
 
             {/* Blocks + Annotations */}
-            <div ref={contentAreaRef} style={{ display: 'block', position: 'relative' }}>
+            <div
+              ref={contentAreaRef}
+              data-focus-mode={focusModeActive ? 'true' : undefined}
+              style={{ display: 'block', position: 'relative' }}
+            >
               <AnimatePresence mode="popLayout">
-                {chapter.blocks.map((block, i) => {
+                {(() => {
+                  const firstTextIdx = chapter.blocks.findIndex(b => b.type === 'text')
+                  return chapter.blocks.map((block, i) => {
                   const blockBookmarks = bookmarks.filter(b => b.blockId === block.id)
                   const blockConfusion = confusionMarkers.filter(c => c.blockId === block.id)
                   return (
@@ -818,7 +1072,13 @@ export default function Reader() {
                       transition={{ duration: 0.25, delay: i * 0.015 }}
                       style={{ position: 'relative' }}
                     >
-                      <BlockRenderer block={block} />
+                      <BlockRenderer
+                        block={block}
+                        isFirstTextBlock={i === firstTextIdx}
+                        bookId={bookId}
+                        chapterId={activeChapterId}
+                        className={focusModeActive && focusedBlockId === block.id ? 'focus-active' : undefined}
+                      />
                       {/* Bookmark ribbon */}
                       {blockBookmarks.map(bm => (
                         <BookmarkIndicator
@@ -837,8 +1097,39 @@ export default function Reader() {
                       ))}
                     </motion.div>
                   )
-                })}
+                })})()}
               </AnimatePresence>
+
+              {/* Chapter-end flourish */}
+              {chapter.blocks.length > 0 && (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '3rem 0 2rem',
+                  color: 'var(--ink-faint)',
+                  opacity: 0.5,
+                }}>
+                  <svg width="120" height="20" viewBox="0 0 120 20" style={{ display: 'block', margin: '0 auto 0.75rem' }}>
+                    <path
+                      d="M10 10 Q30 2 60 10 Q90 18 110 10"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
+                    <circle cx="10" cy="10" r="2" fill="currentColor" />
+                    <circle cx="60" cy="10" r="2" fill="currentColor" />
+                    <circle cx="110" cy="10" r="2" fill="currentColor" />
+                  </svg>
+                  <p style={{
+                    fontFamily: 'var(--font-handwritten)',
+                    fontSize: '0.85rem',
+                    margin: 0,
+                    letterSpacing: '0.05em',
+                  }}>
+                    — end of Chapter {chapter.number} —
+                  </p>
+                </div>
+              )}
 
               {/* Floating annotation toolbar (appears on text selection) */}
               {bookId && activeChapterId && (
@@ -867,6 +1158,18 @@ export default function Reader() {
                 onRemove={removeAnnotation}
               />
             </div>
+
+            {/* Draft action bar (floating, for batch approve/dismiss) */}
+            {bookId && activeChapterId && chapter.blocks.some(b => b.status === 'draft') && (
+              <DraftActionBar
+                draftCount={chapter.blocks.filter(b => b.status === 'draft').length}
+                bookId={bookId}
+                chapterId={activeChapterId}
+                draftBlockIds={chapter.blocks.filter(b => b.status === 'draft').map(b => b.id)}
+                onApproveAll={() => { /* WebSocket will push updated chapter */ }}
+                onDismissAll={() => { /* WebSocket will push updated chapter */ }}
+              />
+            )}
 
             {/* Prev / Next chapter navigation */}
             <ChapterNav
@@ -903,6 +1206,32 @@ export default function Reader() {
             conceptIndex={conceptIndex}
             bookId={book.id}
             onClose={() => setGlossaryOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ─── Preferences side panel ─── */}
+      <AnimatePresence>
+        {preferencesOpen && (
+          <PreferencesPanel
+            onClose={() => setPreferencesOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ─── Version history side panel ─── */}
+      <AnimatePresence>
+        {historyOpen && bookId && activeChapterId && chapter && (
+          <VersionTimeline
+            bookId={bookId}
+            chapterId={activeChapterId}
+            commits={historyData}
+            currentChapter={chapter}
+            onClose={() => setHistoryOpen(false)}
+            onReverted={() => {
+              // Force reload the chapter by navigating to the same page
+              window.location.reload()
+            }}
           />
         )}
       </AnimatePresence>

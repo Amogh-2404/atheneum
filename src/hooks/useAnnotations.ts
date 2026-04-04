@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 
 /* ─── Types ────────────────────────────────────────────────────────── */
 
@@ -50,7 +50,7 @@ type Annotation = Highlight | Bookmark | MarginNote | ConfusionMarker
 
 /* ─── Storage ──────────────────────────────────────────────────────── */
 
-const STORAGE_KEY = 'codex-annotations'
+const STORAGE_KEY = 'atheneum-annotations'
 
 function loadAnnotations(): Annotation[] {
   try {
@@ -65,12 +65,61 @@ function saveAnnotations(annotations: Annotation[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(annotations))
 }
 
+/* ─── Server Sync Helpers ─────────────────────────────────────────── */
+
+function syncAnnotationsToServer(bookId: string, annotations: Annotation[]) {
+  const bookAnnotations = annotations.filter((a) => a.bookId === bookId)
+  fetch(`/api/annotations/${bookId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(bookAnnotations),
+  }).catch(() => {
+    // Fire-and-forget — server sync is best-effort
+  })
+}
+
+function deleteAnnotationFromServer(bookId: string, annotationId: string) {
+  fetch(`/api/annotations/${bookId}/${annotationId}`, {
+    method: 'DELETE',
+  }).catch(() => {
+    // Fire-and-forget
+  })
+}
+
 /* ─── Hook ─────────────────────────────────────────────────────────── */
 
 export function useAnnotations(bookId?: string, chapterId?: string) {
   const [all, setAll] = useState<Annotation[]>(loadAnnotations)
+  const hasFetchedRef = useRef<string | null>(null)
 
-  // Persist on every change
+  // Fetch from server on mount (per bookId) and merge — server wins on ID conflict
+  useEffect(() => {
+    if (!bookId || hasFetchedRef.current === bookId) return
+    hasFetchedRef.current = bookId
+
+    fetch(`/api/annotations/${bookId}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
+      .then((serverAnnotations: Annotation[]) => {
+        if (!Array.isArray(serverAnnotations) || serverAnnotations.length === 0) return
+
+        setAll((prev) => {
+          // Build a map of server annotations by ID (server wins)
+          const merged = new Map<string, Annotation>()
+          // Start with all local annotations
+          for (const a of prev) merged.set(a.id, a)
+          // Overwrite / add server annotations (server wins on conflict)
+          for (const a of serverAnnotations) merged.set(a.id, a)
+          const result = Array.from(merged.values())
+          saveAnnotations(result)
+          return result
+        })
+      })
+      .catch(() => {
+        // Server unavailable — localStorage is the fallback
+      })
+  }, [bookId])
+
+  // Persist to localStorage on every change
   useEffect(() => {
     saveAnnotations(all)
   }, [all])
@@ -105,23 +154,39 @@ export function useAnnotations(bookId?: string, chapterId?: string) {
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString(),
       } as Annotation
-      setAll((prev) => [...prev, newA])
+      setAll((prev) => {
+        const next = [...prev, newA]
+        // Background sync to server
+        if (bookId) syncAnnotationsToServer(bookId, next)
+        return next
+      })
       return newA.id
     },
-    []
+    [bookId]
   )
 
   const removeAnnotation = useCallback((id: string) => {
-    setAll((prev) => prev.filter((a) => a.id !== id))
-  }, [])
+    setAll((prev) => {
+      const next = prev.filter((a) => a.id !== id)
+      // Background sync: delete from server + push updated array
+      if (bookId) {
+        deleteAnnotationFromServer(bookId, id)
+        syncAnnotationsToServer(bookId, next)
+      }
+      return next
+    })
+  }, [bookId])
 
   const updateAnnotation = useCallback(
     (id: string, updates: Partial<Omit<Annotation, 'id' | 'type' | 'createdAt'>>) => {
-      setAll((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, ...updates } : a))
-      )
+      setAll((prev) => {
+        const next = prev.map((a) => (a.id === id ? { ...a, ...updates } : a))
+        // Background sync to server
+        if (bookId) syncAnnotationsToServer(bookId, next)
+        return next
+      })
     },
-    []
+    [bookId]
   )
 
   return {

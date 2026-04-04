@@ -1,5 +1,5 @@
 /* ==========================================================================
-   The Codex — Notebook Aesthetic
+   Atheneum — Notebook Aesthetic
    Core visual identity: paper, ink, callouts, figures, typography.
    ========================================================================== */
 
@@ -40,6 +40,13 @@
   --font-code: 'JetBrains Mono', 'Fira Code', monospace;
   --font-ui: 'Rajdhani', system-ui, sans-serif;
 
+  /* Semantic colors */
+  --color-error: #f87171;
+  --color-warning: #f59e0b;
+  --color-success: #4ade80;
+  --color-muted: #94a3b8;
+  --color-link: #3b82f6;
+
   /* JARVIS chrome (sidebar, top bar, overlays) */
   --chrome-bg: #0a0e17;
   --chrome-surface: #111827;
@@ -77,6 +84,12 @@
   --font-code: 'JetBrains Mono', 'Fira Code', monospace;
   --font-ui: 'Rajdhani', system-ui, sans-serif;
 
+  --color-error: #f87171;
+  --color-warning: #f59e0b;
+  --color-success: #4ade80;
+  --color-muted: #7a8ba3;
+  --color-link: #60a5fa;
+
   --chrome-bg: #050810;
   --chrome-surface: #0c1220;
   --chrome-border: #162035;
@@ -112,6 +125,12 @@
   --font-handwritten: 'Virgil', 'Caveat', cursive;
   --font-code: 'JetBrains Mono', 'Fira Code', monospace;
   --font-ui: 'Rajdhani', system-ui, sans-serif;
+
+  --color-error: #dc6b50;
+  --color-warning: #d4a040;
+  --color-success: #6a9a50;
+  --color-muted: #9a8a7a;
+  --color-link: #7a6240;
 
   --chrome-bg: #2a2218;
   --chrome-surface: #3a3025;
@@ -188,11 +207,12 @@
 
 .notebook-text {
   font-family: var(--font-body);
-  font-size: 1.25rem; /* 20px — larger for Caveat readability */
+  font-size: var(--user-font-size, 1.25rem); /* Preferences slider controls this */
   line-height: 2rem;  /* Matches ruled-line spacing exactly */
   letter-spacing: 0.01em;
   color: var(--ink-primary);
-  max-width: 60ch;
+  /* No max-width here — page-container's max-width: 800px + padding
+     controls the reading width uniformly for ALL block types */
 }
 
 .notebook-text p {
@@ -284,7 +304,7 @@
 
 .callout-body {
   font-family: var(--font-body);
-  font-size: 1.1rem;
+  font-size: var(--user-font-size, 1.1rem);
   line-height: 2rem; /* Snap to ruled lines */
   color: var(--ink-primary);
 }
@@ -761,7 +781,8 @@
 
   .notebook-h1 {
     font-size: 1.8rem;
-    line-height: 2rem;
+    /* Keep ruled-line grid: must be multiple of 2rem */
+    line-height: 4rem;
   }
 
   .notebook-h2 {
@@ -775,4 +796,95 @@
   .callout-body {
     font-size: 0.95rem;
   }
+
+  /* Drop cap smaller on phones */
+  .drop-cap::first-letter {
+    font-size: 2.5rem;
+    line-height: 4rem;
+  }
+
+  /* Tighter callout padding */
+  .callout {
+    padding: 0.6rem 0.75rem;
+    margin: 1rem 0;
+  }
+
+  /* Quote */
+  .notebook-quote {
+    padding-left: 0.75rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Focus Mode — dims all blocks except the "active" one
+   -------------------------------------------------------------------------- */
+
+[data-focus-mode="true"] [id^="blk_"] {
+  opacity: 0.12;
+  transition: opacity 0.4s ease;
+}
+
+[data-focus-mode="true"] [id^="blk_"].focus-active {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+/* --------------------------------------------------------------------------
+   Prevent horizontal overflow on all screens
+   -------------------------------------------------------------------------- */
+
+html {
+  overflow-x: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   Touch devices: disable hover-only effects
+   -------------------------------------------------------------------------- */
+
+@media (hover: none) {
+  .terminal-window:hover {
+    transform: none;
+    box-shadow:
+      0 20px 50px rgba(0, 0, 0, 0.3),
+      0 10px 20px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Horizontal scroll indicator for tables and code blocks
+   -------------------------------------------------------------------------- */
+
+.notebook-table-wrap,
+.terminal-body {
+  position: relative;
+}
+
+/* Gradient fade on the right edge when content overflows */
+.notebook-table-wrap::after,
+.terminal-body::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 2rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.notebook-table-wrap.has-scroll::after {
+  background: linear-gradient(to right, transparent, var(--paper-bg, #faf8f3));
+  opacity: 1;
+}
+
+/* --------------------------------------------------------------------------
+   Focus-visible for keyboard navigation
+   -------------------------------------------------------------------------- */
+
+*:focus-visible {
+  outline: 2px solid var(--chrome-accent, #52FEFE);
+  outline-offset: 2px;
+  border-radius: 4px;
 }

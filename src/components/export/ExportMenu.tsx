@@ -154,7 +154,7 @@ export default function ExportMenu({ bookId: _bookId, chapterId: _chapterId, boo
           style={{
             fontFamily: 'var(--font-ui)',
             fontSize: '0.7rem',
-            color: '#f87171',
+            color: 'var(--color-error, #f87171)',
             padding: '0.25rem 0.75rem',
             lineHeight: 1.4,
           }}

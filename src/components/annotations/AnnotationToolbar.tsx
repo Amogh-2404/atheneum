@@ -7,6 +7,7 @@ interface ToolbarState {
   visible: boolean
   x: number
   y: number
+  flippedBelow: boolean
   blockId: string
   selectedText: string
   startOffset: number
@@ -67,6 +68,7 @@ export default function AnnotationToolbar({
     visible: false,
     x: 0,
     y: 0,
+    flippedBelow: false,
     blockId: '',
     selectedText: '',
     startOffset: 0,
@@ -105,15 +107,26 @@ export default function AnnotationToolbar({
       const startOff = textOffsetInBlock(blockEl, range.startContainer, range.startOffset)
       const endOff = textOffsetInBlock(blockEl, range.endContainer, range.endOffset)
 
-      // Position toolbar above selection
+      // Position toolbar above selection with viewport bounds checking
       const rect = range.getBoundingClientRect()
       const scrollY = window.scrollY
       const scrollX = window.scrollX
 
+      // Clamp horizontal position so toolbar stays within viewport
+      const rawX = rect.left + scrollX + rect.width / 2
+      const clampedX = Math.max(20, Math.min(rawX, window.innerWidth - 20))
+
+      // If toolbar would appear above the viewport, flip it below the selection
+      const aboveY = rect.top + scrollY - 8
+      const belowY = rect.bottom + scrollY + 8
+      const flippedBelow = rect.top < 0
+      const finalY = flippedBelow ? belowY : aboveY
+
       setState({
         visible: true,
-        x: rect.left + scrollX + rect.width / 2,
-        y: rect.top + scrollY - 8,
+        x: clampedX,
+        y: finalY,
+        flippedBelow,
         blockId,
         selectedText: text,
         startOffset: startOff,
@@ -236,7 +249,9 @@ export default function AnnotationToolbar({
             position: 'absolute',
             left: state.x,
             top: state.y,
-            transform: 'translate(-50%, -100%)',
+            transform: state.flippedBelow
+              ? 'translate(-50%, 0%)'
+              : 'translate(-50%, -100%)',
             zIndex: 100,
             background: 'var(--chrome-surface, #111827)',
             border: '1px solid var(--chrome-border, #1e293b)',
@@ -259,25 +274,47 @@ export default function AnnotationToolbar({
                 title={`Highlight ${c.key}`}
                 onClick={() => handleHighlight(c.key)}
                 style={{
-                  width: 18,
-                  height: 18,
+                  width: 40,
+                  height: 40,
                   borderRadius: '50%',
-                  background: c.hex,
-                  border: '2px solid transparent',
+                  background: 'transparent',
+                  border: 'none',
                   cursor: 'pointer',
                   padding: 0,
-                  transition: 'border-color 150ms ease, transform 150ms ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   flexShrink: 0,
+                  margin: '-4px -6px',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = '#fff'
-                  e.currentTarget.style.transform = 'scale(1.2)'
+                  const circle = e.currentTarget.firstElementChild as HTMLElement
+                  if (circle) {
+                    circle.style.borderColor = '#fff'
+                    circle.style.transform = 'scale(1.2)'
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'transparent'
-                  e.currentTarget.style.transform = 'scale(1)'
+                  const circle = e.currentTarget.firstElementChild as HTMLElement
+                  if (circle) {
+                    circle.style.borderColor = 'transparent'
+                    circle.style.transform = 'scale(1)'
+                  }
                 }}
-              />
+              >
+                <span
+                  style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: '50%',
+                    background: c.hex,
+                    border: '2px solid transparent',
+                    display: 'block',
+                    transition: 'border-color 150ms ease, transform 150ms ease',
+                    pointerEvents: 'none',
+                  }}
+                />
+              </button>
             ))}
 
             {/* Divider */}
@@ -298,7 +335,8 @@ export default function AnnotationToolbar({
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                padding: 2,
+                padding: 10,
+                margin: -8,
                 display: 'flex',
                 alignItems: 'center',
                 color: 'var(--chrome-text, #94a3b8)',
@@ -324,7 +362,8 @@ export default function AnnotationToolbar({
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                padding: 2,
+                padding: 10,
+                margin: -8,
                 display: 'flex',
                 alignItems: 'center',
                 color: showNoteInput
@@ -357,7 +396,8 @@ export default function AnnotationToolbar({
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                padding: 2,
+                padding: 10,
+                margin: -8,
                 display: 'flex',
                 alignItems: 'center',
                 color: 'var(--chrome-text, #94a3b8)',
@@ -388,7 +428,8 @@ export default function AnnotationToolbar({
                 display: 'flex',
                 gap: 4,
                 width: '100%',
-                minWidth: 240,
+                minWidth: Math.min(240, window.innerWidth - 48),
+                maxWidth: 'calc(100vw - 3rem)',
               }}
             >
               <textarea
