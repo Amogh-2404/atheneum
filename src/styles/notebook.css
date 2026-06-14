@@ -35,10 +35,15 @@
 
   /* Font stacks */
   --font-heading: 'Caveat', cursive;
-  --font-body: 'Caveat', 'Lexend', cursive;
+  --font-body: 'Source Serif 4', 'Lexend', Georgia, serif;
   --font-handwritten: 'Virgil', 'Caveat', cursive;
   --font-code: 'JetBrains Mono', 'Fira Code', monospace;
   --font-ui: 'Rajdhani', system-ui, sans-serif;
+
+  /* Reading rhythm — the ruled-line grid derives from the user's font-size slider so
+     baselines stay on the lines at EVERY slider position, not just the default.
+     Default: 1.25rem × 1.6 = 2rem, identical to the original hardcoded grid. */
+  --leading: calc(var(--user-font-size, 1.25rem) * 1.6);
 
   /* Semantic colors */
   --color-error: #f87171;
@@ -83,7 +88,7 @@
   --callout-note-border: #9ca3af;
 
   --font-heading: 'Caveat', cursive;
-  --font-body: 'Caveat', 'Lexend', cursive;
+  --font-body: 'Source Serif 4', 'Lexend', Georgia, serif;
   --font-handwritten: 'Virgil', 'Caveat', cursive;
   --font-code: 'JetBrains Mono', 'Fira Code', monospace;
   --font-ui: 'Rajdhani', system-ui, sans-serif;
@@ -129,7 +134,7 @@
   --callout-note-border: #8a7a6a;
 
   --font-heading: 'Caveat', cursive;
-  --font-body: 'Caveat', 'Lexend', cursive;
+  --font-body: 'Source Serif 4', 'Lexend', Georgia, serif;
   --font-handwritten: 'Virgil', 'Caveat', cursive;
   --font-code: 'JetBrains Mono', 'Fira Code', monospace;
   --font-ui: 'Rajdhani', system-ui, sans-serif;
@@ -164,17 +169,18 @@
   margin: 0 auto;
 
   /* ── Ruled lines ──
-     Faint horizontal lines repeating every 2rem (32px at default 16px root).
-     The line sits at the BOTTOM of each 2rem band so text baselines land on it. */
+     Faint horizontal lines repeating every --leading. The line sits at the BOTTOM
+     of each band so text baselines land on it — and because both the line pitch and
+     the body line-height are --leading, they stay locked together at any font size. */
   background-image:
     repeating-linear-gradient(
       to bottom,
       transparent 0px,
-      transparent calc(2rem - 1px),
-      var(--ruled-line-color, rgba(0, 0, 0, 0.07)) calc(2rem - 1px),
-      var(--ruled-line-color, rgba(0, 0, 0, 0.07)) 2rem
+      transparent calc(var(--leading) - 1px),
+      var(--ruled-line-color, rgba(0, 0, 0, 0.07)) calc(var(--leading) - 1px),
+      var(--ruled-line-color, rgba(0, 0, 0, 0.07)) var(--leading)
     );
-  background-size: 100% 2rem;
+  background-size: 100% var(--leading);
   /* Offset so the first ruled line appears at the top of the text area */
   background-position: 0 0;
 }
@@ -220,7 +226,7 @@
 .notebook-text {
   font-family: var(--font-body);
   font-size: var(--user-font-size, 1.25rem); /* Preferences slider controls this */
-  line-height: 2rem;  /* Matches ruled-line spacing exactly */
+  line-height: var(--leading);  /* Matches ruled-line spacing exactly */
   letter-spacing: 0.01em;
   color: var(--ink-primary);
   /* No max-width here — page-container's max-width: 800px + padding
@@ -228,7 +234,7 @@
 }
 
 .notebook-text p {
-  margin: 0 0 2rem 0; /* One blank ruled-line gap between paragraphs */
+  margin: 0 0 var(--leading) 0; /* One blank ruled-line gap between paragraphs */
 }
 
 /* --------------------------------------------------------------------------
@@ -242,8 +248,8 @@
   font-size: 2.8rem;
   font-weight: 700;
   color: var(--ink-primary);
-  margin: 2rem 0 0 0;
-  line-height: 4rem; /* 2 ruled lines */
+  margin: var(--leading) 0 0 0;
+  line-height: calc(var(--leading) * 2); /* 2 ruled lines */
   letter-spacing: -0.01em;
 }
 
@@ -252,8 +258,8 @@
   font-size: 2rem;
   font-weight: 700;
   color: var(--ink-primary);
-  margin: 2rem 0 0 0;
-  line-height: 2rem; /* 1 ruled line */
+  margin: var(--leading) 0 0 0;
+  line-height: var(--leading); /* 1 ruled line */
 }
 
 .notebook-h3 {
@@ -261,8 +267,8 @@
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--ink-secondary);
-  margin: 2rem 0 0 0;
-  line-height: 2rem; /* 1 ruled line */
+  margin: var(--leading) 0 0 0;
+  line-height: var(--leading); /* 1 ruled line */
 }
 
 /* --------------------------------------------------------------------------
@@ -271,7 +277,7 @@
 
 .callout {
   padding: 1rem 1.5rem;
-  margin: 2rem 0;
+  margin: var(--leading) 0;
   border-radius: 4px;
   border-left: 4px solid;
 }
@@ -317,7 +323,7 @@
 .callout-body {
   font-family: var(--font-body);
   font-size: var(--user-font-size, 1.1rem);
-  line-height: 2rem; /* Snap to ruled lines */
+  line-height: var(--leading); /* Snap to ruled lines */
   color: var(--ink-primary);
 }
 
@@ -343,7 +349,7 @@
 
 .figure-full {
   width: 100%;
-  margin: 2rem 0;
+  margin: var(--leading) 0;
   clear: both;
 }
 
@@ -391,9 +397,9 @@
 
 .drop-cap::first-letter {
   font-family: var(--font-heading);
-  font-size: 4rem;
+  font-size: calc(var(--leading) * 2);
   float: left;
-  line-height: 4rem; /* Exactly 2 ruled lines */
+  line-height: calc(var(--leading) * 2); /* Exactly 2 ruled lines */
   margin-right: 0.1em;
   margin-top: 0;
   color: var(--ink-primary);
@@ -406,12 +412,12 @@
 .notebook-quote {
   border-left: 3px solid var(--ink-faint);
   padding-left: 1.5rem;
-  margin: 2rem 0;
+  margin: var(--leading) 0;
   font-style: italic;
   color: var(--ink-secondary);
   font-family: var(--font-body);
   font-size: 1.1rem;
-  line-height: 2rem; /* Snap to ruled lines */
+  line-height: var(--leading); /* Snap to ruled lines */
 }
 
 /* --------------------------------------------------------------------------
@@ -471,24 +477,11 @@
    Inline Elements
    -------------------------------------------------------------------------- */
 
-/* Bold text — marker-highlighted like a real highlighter stroke */
+/* Bold text — clean ink emphasis. The marker-highlighter was visual noise on
+   every emphasised phrase; weight alone carries emphasis in a serif reading face. */
 .notebook-text strong {
   font-weight: 700;
   color: var(--ink-primary);
-  background: linear-gradient(
-    104deg,
-    var(--marker-yellow-edge) 0%,
-    var(--marker-yellow) 3%,
-    var(--marker-yellow) 97%,
-    var(--marker-yellow-edge) 100%
-  );
-  /* Slightly uneven vertical spread like a real marker */
-  padding: 0.05em 0.15em;
-  margin: 0 -0.05em;
-  border-radius: 2px 4px 3px 5px;
-  /* Marker strokes aren't perfectly rectangular */
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
 }
 
 .notebook-text em {
@@ -513,21 +506,20 @@
   background: rgba(0, 0, 0, 0.05);
 }
 
-/* Links — wavy sketchy underline instead of straight */
+/* Links — a clean, calm underline. The hand-drawn squiggle fought the serif's
+   rhythm and the ink; a thin offset underline reads as a link without shouting. */
 .notebook-text a {
   color: var(--callout-definition-border);
-  text-decoration: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='6' viewBox='0 0 80 6'%3E%3Cpath d='M0 3 Q10 0.5 20 3 Q30 5.5 40 3 Q50 0.5 60 3 Q70 5.5 80 3' fill='none' stroke='%232563eb' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: repeat-x;
-  background-position: 0 100%;
-  background-size: 80px 6px;
-  padding-bottom: 3px;
-  transition: color 0.15s ease, background-image 0.15s ease;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  text-decoration-color: color-mix(in srgb, var(--callout-definition-border) 45%, transparent);
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
 }
 
 .notebook-text a:hover {
   color: var(--chrome-accent);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='6' viewBox='0 0 80 6'%3E%3Cpath d='M0 3 Q10 0.5 20 3 Q30 5.5 40 3 Q50 0.5 60 3 Q70 5.5 80 3' fill='none' stroke='%2352FEFE' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E");
+  text-decoration-color: var(--chrome-accent);
 }
 
 /* --------------------------------------------------------------------------
@@ -539,7 +531,7 @@
   height: 1px;
   background: var(--ink-faint);
   opacity: 0.4;
-  margin: 2rem 0;
+  margin: var(--leading) 0;
 }
 
 /* --------------------------------------------------------------------------
@@ -549,12 +541,12 @@
 .notebook-text ul,
 .notebook-text ol {
   padding-left: 1.5em;
-  margin: 0 0 2rem 0;
+  margin: 0 0 var(--leading) 0;
 }
 
 .notebook-text li {
   margin-bottom: 0;
-  line-height: 2rem; /* Snap to ruled lines */
+  line-height: var(--leading); /* Snap to ruled lines */
 }
 
 .notebook-text ul li::marker {
@@ -569,7 +561,7 @@
 /* ── Notebook-style lists (used by ListBlock component) ── */
 
 .notebook-list {
-  margin: 0 0 2rem 0;
+  margin: 0 0 var(--leading) 0;
   padding: 0;
 }
 
@@ -577,8 +569,8 @@
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
-  line-height: 2rem; /* Snap to ruled lines */
-  min-height: 2rem;
+  line-height: var(--leading); /* Snap to ruled lines */
+  min-height: var(--leading);
   font-family: var(--font-body);
   font-size: 1.25rem;
   color: var(--ink-primary);
@@ -590,7 +582,7 @@
   font-size: 1.25rem;
   color: var(--ink-secondary);
   min-width: 1.5rem;
-  line-height: 2rem;
+  line-height: var(--leading);
   font-weight: 700;
 }
 
@@ -601,7 +593,7 @@
    handwritten font, not pixel-perfect.                                     */
 
 .notebook-table-wrap {
-  margin: 2rem 0;
+  margin: var(--leading) 0;
   overflow-x: auto;
 }
 
@@ -611,7 +603,7 @@
   border-spacing: 0;
   font-family: var(--font-body);
   font-size: 1.15rem;
-  line-height: 2rem; /* Snap to ruled lines */
+  line-height: var(--leading); /* Snap to ruled lines */
   color: var(--ink-primary);
 }
 
@@ -700,7 +692,7 @@
 
   .notebook-h1 {
     font-size: 2.2rem;
-    line-height: 4rem;
+    line-height: calc(var(--leading) * 2);
   }
 
   .notebook-h2 {
@@ -715,7 +707,7 @@
   .figure-right {
     float: none;
     max-width: 100%;
-    margin: 2rem 0;
+    margin: var(--leading) 0;
     shape-outside: none;
   }
 
@@ -758,7 +750,7 @@
   /* Drop cap: slightly smaller on mobile */
   .drop-cap::first-letter {
     font-size: 3rem;
-    line-height: 4rem;
+    line-height: calc(var(--leading) * 2);
   }
 
   /* Lists: tighter indent */
@@ -794,7 +786,7 @@
   .notebook-h1 {
     font-size: 1.8rem;
     /* Keep ruled-line grid: must be multiple of 2rem */
-    line-height: 4rem;
+    line-height: calc(var(--leading) * 2);
   }
 
   .notebook-h2 {
@@ -812,7 +804,7 @@
   /* Drop cap smaller on phones */
   .drop-cap::first-letter {
     font-size: 2.5rem;
-    line-height: 4rem;
+    line-height: calc(var(--leading) * 2);
   }
 
   /* Tighter callout padding */
