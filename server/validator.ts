@@ -181,6 +181,10 @@ const MarginAnnotationBlockSchema = BlockBaseSchema.extend({
 
 // ─── Discriminated Union ──────────────────────────────────────────
 
+// ToggleBlockSchema is typed `z.ZodType<any>` because it is recursive (z.lazy),
+// which erases the literal `type` discriminant the union needs to infer. The
+// cast restores the discriminant typing for tsc; runtime validation is identical
+// (zod still parses every member by its `type` literal).
 const BlockSchema = z.discriminatedUnion('type', [
   HeadingBlockSchema,
   TextBlockSchema,
@@ -200,7 +204,7 @@ const BlockSchema = z.discriminatedUnion('type', [
   SummaryBlockSchema,
   EmbedBlockSchema,
   MarginAnnotationBlockSchema,
-])
+] as Parameters<typeof z.discriminatedUnion>[1])
 
 // ─── Chapter ──────────────────────────────────────────────────────
 

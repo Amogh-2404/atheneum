@@ -1,3 +1,4 @@
+/// <reference path="./proper-lockfile-shim.d.ts" />
 import { execSync } from 'child_process'
 import lockfile from 'proper-lockfile'
 import { existsSync, writeFileSync, mkdirSync } from 'fs'

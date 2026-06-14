@@ -3,6 +3,7 @@ import { z } from 'zod'
 import path from 'path'
 import { existsSync, readdirSync, mkdirSync } from 'fs'
 import { sanitizeId, safePath } from '../../../server/utils.js'
+import { validatedWrite } from '../../../server/lib/write-gate.js'
 import { safeReadJSON, safeWriteJSON, safeWriteJSONDirect, safeDeleteFile } from '../lib/file-ops.js'
 import { generateBlockId, ensureBlockIds, calcReadTime } from '../lib/block-utils.js'
 
@@ -181,7 +182,12 @@ export function registerWritingTools(server: McpServer, contentDir: string) {
         let updated = 0
         const now = new Date().toISOString()
 
-        await safeWriteJSON(chapterPath, (current) => {
+        // Routed through the strict write-gate: the resulting chapter is
+        // validated against the Atheneum schema inside the lock, and persisted
+        // ONLY if it passes. A schema failure throws with the exact issue path
+        // (e.g. "blocks.7.correctIndex: Required"), which the catch below hands
+        // back to the AI author as an isError result — never a malformed write.
+        await validatedWrite(chapterPath, (current) => {
           if (!current?.blocks) throw new Error('Chapter has no blocks')
 
           const blockMap = new Map<string, any>()

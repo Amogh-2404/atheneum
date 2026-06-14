@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { sanitizeId, safePath } from '../utils.js'
+import { withFileLock } from '../git.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -62,17 +63,27 @@ learningProgressRouter.post('/:bookId', async (c) => {
   try {
     ensureDir(filePath)
 
-    // Merge: if server has newer data, keep server's
-    if (existsSync(filePath)) {
-      try {
-        const existing = JSON.parse(readFileSync(filePath, 'utf-8'))
-        if (existing.updatedAt && body.updatedAt && existing.updatedAt > body.updatedAt) {
-          return c.json({ saved: false, reason: 'server is newer' })
-        }
-      } catch { /* overwrite if corrupt */ }
-    }
+    // Read the staleness guard AND write inside one lock, so the newer-than
+    // check and the write are atomic against a racing save. Behaviour is
+    // unchanged: if the server copy is newer, skip the write.
+    const saved = await withFileLock(filePath, async () => {
+      // Merge: if server has newer data, keep server's
+      if (existsSync(filePath)) {
+        try {
+          const existing = JSON.parse(readFileSync(filePath, 'utf-8'))
+          if (existing.updatedAt && body.updatedAt && existing.updatedAt > body.updatedAt) {
+            return false
+          }
+        } catch { /* overwrite if corrupt */ }
+      }
 
-    writeFileSync(filePath, JSON.stringify(body, null, 2) + '\n', 'utf-8')
+      writeFileSync(filePath, JSON.stringify(body, null, 2) + '\n', 'utf-8')
+      return true
+    })
+
+    if (!saved) {
+      return c.json({ saved: false, reason: 'server is newer' })
+    }
     return c.json({ saved: true })
   } catch (e) {
     console.error('[learning-progress] save failed:', (e as Error).message)

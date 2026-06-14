@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { sanitizeId, safePath } from '../utils.js'
+import { withFileLock } from '../git.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -73,18 +74,23 @@ annotationsRouter.post('/:bookId', async (c) => {
 
   try {
     ensureDir(filePath)
-    // Merge strategy: incoming annotations replace by ID, new ones are added
-    const existing = readAnnotations(filePath)
-    const existingMap = new Map(existing.map((a: any) => [a.id, a]))
+    // Read-merge-write inside a per-file lock so a concurrent annotation sync
+    // (or any other writer racing this file) can't clobber the merge. Behaviour
+    // is otherwise identical: incoming annotations replace by ID, new ones added.
+    const merged = await withFileLock(filePath, async () => {
+      const existing = readAnnotations(filePath)
+      const existingMap = new Map(existing.map((a: any) => [a.id, a]))
 
-    for (const ann of body.annotations) {
-      if (ann.id) {
-        existingMap.set(ann.id, ann)
+      for (const ann of body.annotations!) {
+        if (ann.id) {
+          existingMap.set(ann.id, ann)
+        }
       }
-    }
 
-    const merged = Array.from(existingMap.values())
-    writeFileSync(filePath, JSON.stringify(merged, null, 2) + '\n', 'utf-8')
+      const next = Array.from(existingMap.values())
+      writeFileSync(filePath, JSON.stringify(next, null, 2) + '\n', 'utf-8')
+      return next
+    })
 
     return c.json({ synced: body.annotations.length, total: merged.length })
   } catch (e) {
@@ -94,7 +100,7 @@ annotationsRouter.post('/:bookId', async (c) => {
 })
 
 // ─── DELETE /:bookId/:annotationId → Remove one annotation ──────
-annotationsRouter.delete('/:bookId/:annotationId', (c) => {
+annotationsRouter.delete('/:bookId/:annotationId', async (c) => {
   const filePath = getAnnotationsPath(c.req.param('bookId'))
   if (!filePath) return c.json({ error: 'invalid bookId' }, 400)
 
@@ -102,15 +108,23 @@ annotationsRouter.delete('/:bookId/:annotationId', (c) => {
   if (!annotationId) return c.json({ error: 'missing annotationId' }, 400)
 
   try {
-    const existing = readAnnotations(filePath)
-    const filtered = existing.filter((a: any) => a.id !== annotationId)
+    // Read-filter-write inside a per-file lock to avoid racing a concurrent sync.
+    const result = await withFileLock(filePath, async () => {
+      const existing = readAnnotations(filePath)
+      const filtered = existing.filter((a: any) => a.id !== annotationId)
 
-    if (filtered.length === existing.length) {
+      if (filtered.length === existing.length) {
+        return { removed: false }
+      }
+
+      ensureDir(filePath)
+      writeFileSync(filePath, JSON.stringify(filtered, null, 2) + '\n', 'utf-8')
+      return { removed: true }
+    })
+
+    if (!result.removed) {
       return c.json({ error: 'not found' }, 404)
     }
-
-    ensureDir(filePath)
-    writeFileSync(filePath, JSON.stringify(filtered, null, 2) + '\n', 'utf-8')
 
     return c.json({ removed: 1 })
   } catch (e) {
