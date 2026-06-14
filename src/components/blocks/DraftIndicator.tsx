@@ -119,6 +119,7 @@ export default function DraftIndicator({
           }}
         >
           <button
+            type="button"
             onClick={handleApprove}
             disabled={loading}
             title="Approve this block"
@@ -145,6 +146,7 @@ export default function DraftIndicator({
             </svg>
           </button>
           <button
+            type="button"
             onClick={handleDismiss}
             disabled={loading}
             title="Dismiss this block"

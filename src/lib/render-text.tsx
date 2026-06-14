@@ -79,13 +79,13 @@ function parseMarkdownInline(text: string): React.ReactNode {
       case 'bold':
         return (
           <strong key={i}>
-            {token.value}
+            {parseMarkdownInline(token.value)}
           </strong>
         )
       case 'italic':
         return (
           <em key={i} className="italic">
-            {token.value}
+            {parseMarkdownInline(token.value)}
           </em>
         )
       case 'code':

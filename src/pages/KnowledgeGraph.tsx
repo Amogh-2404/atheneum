@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { useConcepts } from '@/hooks/useConcepts'
 import { useBook } from '@/hooks/useBook'
 import type { ConceptIndex } from '@/lib/concept-extractor'
+import { SkeletonGraph, ShimmerStyle } from '@/components/shared/Skeleton'
 
 // ─── Physics types ────────────────────────────────────────────────
 
@@ -73,17 +74,16 @@ function buildGraph(
 
   if (nodes.length === 0) return { nodes, edges }
 
-  // Edges: same-chapter connections
+  // Edges: same-chapter connections — CHAIN only (A→B→C), not full mesh (A↔B, A↔C, B↔C)
+  // Full mesh creates O(n²) edges per chapter, collapsing the graph into a ball
   const chapterGroups = new Map<string, string[]>()
   for (const node of nodes) {
     if (!chapterGroups.has(node.chapterId)) chapterGroups.set(node.chapterId, [])
     chapterGroups.get(node.chapterId)!.push(node.id)
   }
   chapterGroups.forEach((group) => {
-    for (let i = 0; i < group.length; i++) {
-      for (let j = i + 1; j < group.length; j++) {
-        edges.push({ source: group[i], target: group[j], type: 'same-chapter' })
-      }
+    for (let i = 0; i < group.length - 1; i++) {
+      edges.push({ source: group[i], target: group[i + 1], type: 'same-chapter' })
     }
   })
 
@@ -117,9 +117,11 @@ function buildGraph(
     if (t) t.connections++
   }
 
-  // Set radius based on connections
+  // Set radius: base 30, scale with connections, cap at 55
+  const maxConnections = Math.max(1, ...nodes.map(n => n.connections))
   for (const node of nodes) {
-    node.radius = Math.max(24, 16 + node.connections * 4)
+    const normalized = node.connections / maxConnections
+    node.radius = Math.max(30, Math.min(55, 28 + normalized * 27))
   }
 
   return { nodes, edges }
@@ -128,16 +130,35 @@ function buildGraph(
 // ─── Force simulation ─────────────────────────────────────────────
 
 function initializePositions(nodes: Node[], width: number, height: number) {
+  // Group by chapter, lay out chapter clusters in a large circle,
+  // then scatter nodes within each cluster
   const cx = width / 2
   const cy = height / 2
-  const spread = Math.min(width, height) * 0.35
-  for (let i = 0; i < nodes.length; i++) {
-    const angle = (2 * Math.PI * i) / nodes.length
-    nodes[i].x = cx + spread * Math.cos(angle) + (Math.random() - 0.5) * 40
-    nodes[i].y = cy + spread * Math.sin(angle) + (Math.random() - 0.5) * 40
-    nodes[i].vx = 0
-    nodes[i].vy = 0
+
+  const chapterGroups = new Map<string, Node[]>()
+  for (const node of nodes) {
+    if (!chapterGroups.has(node.chapterId)) chapterGroups.set(node.chapterId, [])
+    chapterGroups.get(node.chapterId)!.push(node)
   }
+
+  const chapters = Array.from(chapterGroups.keys())
+  const outerRadius = Math.min(width, height) * 0.35
+
+  chapters.forEach((chId, ci) => {
+    const chAngle = (2 * Math.PI * ci) / chapters.length
+    const clusterCx = cx + outerRadius * Math.cos(chAngle)
+    const clusterCy = cy + outerRadius * Math.sin(chAngle)
+    const group = chapterGroups.get(chId)!
+    const innerRadius = 30 + group.length * 12
+
+    group.forEach((node, ni) => {
+      const nodeAngle = (2 * Math.PI * ni) / group.length
+      node.x = clusterCx + innerRadius * Math.cos(nodeAngle) + (Math.random() - 0.5) * 20
+      node.y = clusterCy + innerRadius * Math.sin(nodeAngle) + (Math.random() - 0.5) * 20
+      node.vx = 0
+      node.vy = 0
+    })
+  })
 }
 
 function simulate(
@@ -146,11 +167,11 @@ function simulate(
   width: number,
   height: number
 ) {
-  const damping = 0.85
-  const repulsion = 3000
-  const springLength = 120
-  const springStrength = 0.008
-  const centerPull = 0.002
+  const damping = 0.82
+  const repulsion = 5000
+  const springLength = 100
+  const springStrength = 0.005
+  const centerPull = 0.001
 
   // Repulsion between all nodes (Coulomb)
   for (let i = 0; i < nodes.length; i++) {
@@ -251,7 +272,7 @@ export default function KnowledgeGraph() {
   // Animation loop
   useEffect(() => {
     let frame = 0
-    const maxFrames = 300 // Stop after settling
+    const maxFrames = 500 // More frames for dense graphs to settle
 
     function tick() {
       if (frame >= maxFrames) return
@@ -323,26 +344,9 @@ export default function KnowledgeGraph() {
 
   if (loading) {
     return (
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'var(--chrome-bg)',
-        }}
-      >
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            border: '2px solid var(--chrome-border)',
-            borderTopColor: 'var(--chrome-accent)',
-            borderRadius: '50%',
-            animation: 'spin 0.8s linear infinite',
-          }}
-        />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div style={{ minHeight: '100vh', background: 'var(--chrome-bg)' }}>
+        <ShimmerStyle />
+        <SkeletonGraph />
       </div>
     )
   }
@@ -386,7 +390,7 @@ export default function KnowledgeGraph() {
               textDecoration: 'none',
               transition: 'color 200ms ease',
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = '#f1f5f9' }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--chrome-hover-text, #f1f5f9)' }}
             onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--chrome-text)' }}
           >
             &larr; Back to reader
@@ -543,10 +547,10 @@ export default function KnowledgeGraph() {
                 isHighlighted
                   ? 'var(--chrome-accent)'
                   : edge.type === 'reference'
-                    ? 'rgba(82, 254, 254, 0.15)'
-                    : 'rgba(148, 163, 184, 0.08)'
+                    ? 'rgba(82, 254, 254, 0.3)'
+                    : 'rgba(148, 163, 184, 0.2)'
               }
-              strokeWidth={isHighlighted ? 2 : 1}
+              strokeWidth={isHighlighted ? 2.5 : 1.2}
               strokeDasharray={edge.type === 'reference' ? '6,3' : 'none'}
               style={{ transition: 'stroke 200ms, stroke-width 200ms' }}
             />
@@ -598,7 +602,7 @@ export default function KnowledgeGraph() {
                 dominantBaseline="central"
                 style={{
                   fontFamily: 'var(--font-heading)',
-                  fontSize: Math.min(12, node.radius * 0.55) + 'px',
+                  fontSize: Math.min(11, node.radius * 0.4) + 'px',
                   fontWeight: 700,
                   fill: isHovered ? 'var(--chrome-bg)' : color,
                   pointerEvents: 'none',
@@ -606,9 +610,7 @@ export default function KnowledgeGraph() {
                   userSelect: 'none',
                 }}
               >
-                {node.label.length > 14
-                  ? node.label.slice(0, 12) + '...'
-                  : node.label}
+                {node.label}
               </text>
             </g>
           )

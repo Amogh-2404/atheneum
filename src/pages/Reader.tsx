@@ -53,6 +53,7 @@ function ThemeToggle() {
     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
       {THEMES.map((t) => (
         <button
+          type="button"
           key={t.key}
           onClick={() => setActive(t.key)}
           title={t.label}
@@ -72,32 +73,10 @@ function ThemeToggle() {
   )
 }
 
-/* ─── Spinner ──────────────────────────────────────────────────────── */
-function Spinner() {
-  return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'var(--chrome-bg)',
-      }}
-    >
-      <div
-        style={{
-          width: 32,
-          height: 32,
-          border: '2px solid var(--chrome-border)',
-          borderTopColor: 'var(--chrome-accent)',
-          borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite',
-        }}
-      />
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
-  )
-}
+/* ─── Skeleton Loading State ───────────────────────────────────────── */
+import { SkeletonChapterList, SkeletonChapterContent, ShimmerStyle } from '@/components/shared/Skeleton'
+import ErrorState from '@/components/shared/ErrorState'
+import ShortcutOverlay from '@/components/shared/ShortcutOverlay'
 
 /* ─── Mobile Detection Hook ───────────────────────────────────────── */
 function useIsMobile(breakpoint = 768) {
@@ -127,6 +106,11 @@ export default function Reader() {
   const [preferencesOpen, setPreferencesOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [historyData, setHistoryData] = useState<Commit[]>([])
+  const [shortcutOverlayOpen, setShortcutOverlayOpen] = useState(false)
+  const [readChapters, setReadChapters] = useState<Record<string, string>>(() => {
+    try { return JSON.parse(localStorage.getItem(`atheneum-progress-${bookId}`) || '{}') }
+    catch { return {} }
+  })
 
   // Focus mode
   const { focusModeActive, focusedBlockId, toggleFocusMode } = useFocusMode(contentAreaRef)
@@ -164,18 +148,19 @@ export default function Reader() {
   } | null>(null)
 
   const handleHighlightClick = useCallback((id: string) => {
-    // Find the <mark> element and position toolbar above it
+    // Find the <mark> element and position toolbar above it, relative to container
     const mark = document.querySelector(`mark[data-highlight-id="${id}"]`)
     if (!mark) return
+    const container = contentAreaRef.current
+    if (!container) return
     const rect = mark.getBoundingClientRect()
-    const scrollY = window.scrollY
-    const scrollX = window.scrollX
+    const containerRect = container.getBoundingClientRect()
     const hl = highlights.find(h => h.id === id)
     setHighlightAction({
       id,
       color: hl?.color ?? 'yellow',
-      x: rect.left + scrollX + rect.width / 2,
-      y: rect.top + scrollY - 8,
+      x: rect.left - containerRect.left + rect.width / 2,
+      y: rect.top - containerRect.top - 8,
     })
   }, [highlights])
 
@@ -239,6 +224,9 @@ export default function Reader() {
         case 'h':
           if (!historyOpen) openHistory()
           else setHistoryOpen(false)
+          break
+        case '?':
+          setShortcutOverlayOpen(v => !v)
           break
       }
     }
@@ -305,6 +293,20 @@ export default function Reader() {
           timestamp: new Date().toISOString(),
         }
         localStorage.setItem('atheneum-last-read', JSON.stringify(position))
+
+        // Track chapter visits for reading progress
+        // A chapter is "read" when user scrolls past 80%
+        if (scrollPercent > 0.8 && activeChapterId) {
+          try {
+            const key = `atheneum-progress-${bookId}`
+            const existing = JSON.parse(localStorage.getItem(key) || '{}')
+            if (!existing[activeChapterId]) {
+              existing[activeChapterId] = new Date().toISOString()
+              localStorage.setItem(key, JSON.stringify(existing))
+              setReadChapters(prev => ({ ...prev, [activeChapterId]: existing[activeChapterId] }))
+            }
+          } catch { /* ignore */ }
+        }
 
         // Background sync to server (fire-and-forget)
         fetch('/api/reading-position', {
@@ -411,21 +413,25 @@ export default function Reader() {
   }, [book?.title, chapter?.title])
 
   // --- Loading ---
-  if (bookLoading) return <Spinner />
+  if (bookLoading) return (
+    <div style={{ minHeight: '100vh', display: 'flex', background: 'var(--chrome-bg)' }}>
+      <ShimmerStyle />
+      <div style={{ width: 260, borderRight: '1px solid var(--chrome-border)', padding: '1rem 0' }}>
+        <SkeletonChapterList count={10} />
+      </div>
+      <SkeletonChapterContent />
+    </div>
+  )
 
   // --- Error ---
   if (bookError || chapterError) {
     return (
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'var(--chrome-bg)',
-        }}
-      >
-        <p style={{ color: '#f87171' }}>{bookError ?? chapterError}</p>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--chrome-bg)' }}>
+        <ErrorState
+          message={bookError ?? chapterError ?? 'Something went wrong loading this book.'}
+          icon="error"
+          onRetry={() => window.location.reload()}
+        />
       </div>
     )
   }
@@ -558,7 +564,7 @@ export default function Reader() {
                 transition: 'color 200ms ease',
                 letterSpacing: '0.02em',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = '#f1f5f9' }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--chrome-hover-text, #f1f5f9)' }}
               onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--chrome-text)' }}
             >
               &larr; Back to library
@@ -615,7 +621,7 @@ export default function Reader() {
                       letterSpacing: '0.01em',
                     }}
                     onMouseEnter={(e) => {
-                      if (!isActive) e.currentTarget.style.color = '#f1f5f9'
+                      if (!isActive) e.currentTarget.style.color = 'var(--chrome-hover-text, #f1f5f9)'
                     }}
                     onMouseLeave={(e) => {
                       if (!isActive) e.currentTarget.style.color = 'var(--chrome-text)'
@@ -624,7 +630,10 @@ export default function Reader() {
                     <span style={{ fontSize: '0.75rem', opacity: 0.5, minWidth: 18 }}>
                       {ch.number}.
                     </span>
-                    {ch.title}
+                    <span style={{ flex: 1 }}>{ch.title}</span>
+                    {readChapters[ch.id] && (
+                      <span style={{ color: 'var(--color-success, #16a34a)', fontSize: '0.7rem', opacity: 0.6, flexShrink: 0 }}>{'\u2713'}</span>
+                    )}
                   </Link>
                 )
               })}
@@ -707,6 +716,7 @@ export default function Reader() {
                 Knowledge Map
               </Link>
               <button
+                type="button"
                 onClick={() => setGlossaryOpen(true)}
                 style={{
                   fontFamily: 'var(--font-ui)',
@@ -754,6 +764,53 @@ export default function Reader() {
                   </span>
                 )}
               </button>
+              <Link
+                to={`/book/${book.id}/study`}
+                style={{
+                  fontFamily: 'var(--font-ui)',
+                  fontSize: '0.8rem',
+                  color: 'var(--chrome-text)',
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '0.4rem 0.5rem',
+                  borderRadius: 4,
+                  transition: 'color 200ms',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--chrome-hover-text, #f1f5f9)' }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--chrome-text)' }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                  <line x1="8" y1="21" x2="16" y2="21" />
+                  <line x1="12" y1="17" x2="12" y2="21" />
+                </svg>
+                Study
+              </Link>
+              <Link
+                to={`/book/${book.id}/notebook`}
+                style={{
+                  fontFamily: 'var(--font-ui)',
+                  fontSize: '0.8rem',
+                  color: 'var(--chrome-text)',
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '0.4rem 0.5rem',
+                  borderRadius: 4,
+                  transition: 'color 200ms',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--chrome-hover-text, #f1f5f9)' }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--chrome-text)' }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                  <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                </svg>
+                Notebook
+              </Link>
             </div>
 
             {/* Bottom: export, theme toggle + progress */}
@@ -780,6 +837,7 @@ export default function Reader() {
               {/* History button */}
               {bookId && activeChapterId && (
                 <button
+                  type="button"
                   onClick={openHistory}
                   style={{
                     fontFamily: 'var(--font-ui)',
@@ -883,6 +941,7 @@ export default function Reader() {
 
               {/* Preferences gear button */}
               <button
+                type="button"
                 onClick={() => setPreferencesOpen(true)}
                 style={{
                   fontFamily: 'var(--font-ui)',
@@ -947,6 +1006,7 @@ export default function Reader() {
 
       {/* ─── Sidebar toggle (always visible) ─── */}
       <button
+        type="button"
         onClick={() => setSidebarOpen((v) => !v)}
         title={sidebarOpen ? 'Hide sidebar (s)' : 'Show sidebar (s)'}
         aria-label={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
@@ -1110,7 +1170,7 @@ export default function Reader() {
 
               {/* Chapter-end flourish */}
               {chapter.blocks.length > 0 && (
-                <div style={{
+                <div className="chapter-end-flourish" style={{
                   textAlign: 'center',
                   padding: '3rem 0 2rem',
                   color: 'var(--ink-faint)',
@@ -1200,8 +1260,7 @@ export default function Reader() {
           </p>
         )}
 
-        {/* Keyframe for inline spinner */}
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <ShimmerStyle />
       </main>
 
       {/* ─── Concept hover tooltips (event delegation) ─── */}
@@ -1243,6 +1302,9 @@ export default function Reader() {
           />
         )}
       </AnimatePresence>
+
+      {/* ─── Keyboard shortcut overlay ─── */}
+      <ShortcutOverlay open={shortcutOverlayOpen} onClose={() => setShortcutOverlayOpen(false)} />
     </div>
   )
 }

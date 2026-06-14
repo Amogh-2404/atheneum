@@ -1,20 +1,18 @@
 import type { SummaryBlock as SummaryBlockType } from '@/types'
 import { renderText } from '@/lib/render-text'
-import RoughBox from '@/components/shared/RoughBox'
 
 export default function SummaryBlock({ points }: SummaryBlockType) {
   if (!points || points.length === 0) return null
 
   return (
-    <div style={{ margin: '1.5rem 0' }}>
-      <RoughBox
-        seed={99}
-        stroke="var(--ink-primary)"
-        strokeWidth={1.5}
-        fill="rgba(254, 243, 199, 0.15)"
-        fillStyle="hachure"
-        roughness={1.0}
-        padding="1.25rem 1.5rem"
+    <div className="summary-block" style={{ margin: '1.5rem 0' }}>
+      <div
+        style={{
+          border: '1.5px solid var(--ink-primary)',
+          borderRadius: '8px',
+          padding: '1.25rem 1.5rem',
+          background: 'rgba(254, 243, 199, 0.08)',
+        }}
       >
         <div
           style={{
@@ -48,7 +46,7 @@ export default function SummaryBlock({ points }: SummaryBlockType) {
             </li>
           ))}
         </ul>
-      </RoughBox>
+      </div>
     </div>
   )
 }

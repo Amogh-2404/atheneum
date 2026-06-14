@@ -21,14 +21,16 @@
   .glossary-panel,
   .search-panel,
   .draft-action-bar,
+  .code-copy-btn,
   [data-draft-bar],
   [data-print-hide],
+  [aria-label="Notifications"],
   nav {
     display: none !important;
   }
 
-  /* Hide UI buttons BUT keep quiz option buttons visible */
-  button:not(.quiz-option) {
+  /* Hide UI buttons BUT keep quiz option buttons and flashcard print cards visible */
+  button:not(.quiz-option):not(.flashcard-print-card) {
     display: none !important;
   }
   .quiz-option {
@@ -60,13 +62,15 @@
   }
 
   /* ─── Page setup ─── */
+  /* Use minimal margins so Chrome's default headers/footers have no room.
+     In the print dialog, users should uncheck "Headers and footers" for cleanest output. */
   @page {
-    margin: 0.7in 0.75in 0.85in 0.75in;
+    margin: 0.6in 0.7in 0.6in 0.7in;
     size: A4;
   }
 
   @page :first {
-    margin-top: 1in;
+    margin-top: 0.5in;
   }
 
   /* ─── Body reset ─── */
@@ -79,6 +83,15 @@
   /* ─── Force single column layout ─── */
   body > div > div {
     display: block !important;
+  }
+
+  /* ─── Eliminate all 100vh heights that create blank pages ─── */
+  [style*="height: 100vh"],
+  [style*="height:100vh"],
+  [style*="min-height: 100vh"],
+  [style*="min-height:100vh"] {
+    height: auto !important;
+    min-height: auto !important;
   }
 
   /* ─── Page container ─── */
@@ -346,15 +359,47 @@
   /* Hide quiz results (show questions only in print) */
   .quiz-result { display: none !important; }
 
-  /* ─── FLASHCARDS — show both sides, avoid break per card ─── */
-  .flashcard-card {
-    break-inside: avoid;
-    margin: 0.3rem 0 !important;
+  /* ─── FLASHCARDS — hide carousel, show Q/A list ─── */
+  /* Hide the interactive carousel (doesn't work in print) */
+  [role="region"][aria-label*="Flashcard"] {
+    display: none !important;
+  }
+
+  /* Hide carousel navigation */
+  .flashcard-hint,
+  [aria-label*="Go to card"] {
+    display: none !important;
+  }
+
+  /* Show the print-only Q/A list */
+  .flashcard-print-all {
+    display: block !important;
+  }
+
+  .flashcard-print-card {
+    break-inside: avoid !important;
+    border: 1px solid #ccc !important;
+    border-radius: 6px !important;
+    padding: 0.75rem 1rem !important;
+    margin-bottom: 0.5rem !important;
+    background: #fafafa !important;
+  }
+
+  .flashcard-category {
+    font-size: 0.65rem !important;
+    color: #888 !important;
+  }
+
+  .flashcard-label {
+    font-family: 'Rajdhani', system-ui, sans-serif !important;
+    font-size: 0.7rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+    color: #888 !important;
   }
 
   /* ─── SUMMARY — avoid break ─── */
-  .summary-block,
-  [class*="summary"] {
+  .summary-block {
     break-inside: avoid;
   }
 
@@ -411,15 +456,14 @@
     background: none !important;
   }
 
-  /* ─── CHAPTER-END FLOURISH — keep tight, no page break before ─── */
+  /* ─── CHAPTER-END FLOURISH + CHAPTER NAV — hide in print ─── */
   .chapter-end-flourish {
-    break-before: avoid;
-    break-inside: avoid;
-    margin-top: 1.5rem !important;
-    margin-bottom: 0 !important;
-    padding-bottom: 0 !important;
-    text-align: center !important;
-    color: #aaa !important;
+    display: none !important;
+  }
+
+  /* Chapter prev/next nav — useless on paper */
+  nav[style*="border-top"] {
+    display: none !important;
   }
 
   /* Kill any trailing empty space after the last block */
@@ -492,5 +536,41 @@
   @page :first {
     @top-center { content: none; }
     @bottom-center { content: none; }
+  }
+
+  /* ─── EXPORT COVER PAGE ─── */
+  .export-cover-page {
+    page-break-after: always !important;
+    break-after: page !important;
+    min-height: 90vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    background: #fefdfb !important;
+  }
+
+  /* Injected cover for single-chapter export */
+  [data-print-cover] {
+    display: block !important;
+  }
+
+  [data-print-cover] .export-cover-page {
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  /* ─── MULTI-CHAPTER EXPORT CONTAINER ─── */
+  [data-print-export] {
+    display: block !important;
+  }
+
+  /* When export container exists, hide the normal reader content */
+  body:has([data-print-export]) .page-container {
+    display: none !important;
+  }
+  body:has([data-print-export]) .reader-sidebar {
+    display: none !important;
   }
 }

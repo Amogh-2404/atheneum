@@ -26,7 +26,7 @@ export function extractConcepts(bookId: string, chapters: any[]): ConceptIndex {
     for (const block of chapter.blocks) {
       // Extract definitions from definition callouts
       if (block.type === 'callout' && block.variant === 'definition') {
-        const name = (block.title || '').toLowerCase().trim()
+        const name = (block.title || '').toLowerCase().trim().replace(/[-_]/g, ' ')
         if (name) {
           concepts.set(name, {
             name: block.title,
@@ -43,10 +43,14 @@ export function extractConcepts(bookId: string, chapters: any[]): ConceptIndex {
       const refs = text.match(/\[\[([^\]]+)\]\]/g)
       if (refs) {
         for (const ref of refs) {
-          const conceptName = ref.slice(2, -2).toLowerCase().trim()
-          if (!references.has(conceptName)) references.set(conceptName, [])
-          const arr = references.get(conceptName)!
-          if (!arr.includes(chapter.id)) arr.push(chapter.id)
+          const raw = ref.slice(2, -2).toLowerCase().trim()
+          // Normalize: hyphens/underscores → spaces so [[discriminated-union]] matches "Discriminated Union"
+          const normalized = raw.replace(/[-_]/g, ' ')
+          for (const name of new Set([raw, normalized])) {
+            if (!references.has(name)) references.set(name, [])
+            const arr = references.get(name)!
+            if (!arr.includes(chapter.id)) arr.push(chapter.id)
+          }
         }
       }
     }
@@ -59,9 +63,11 @@ export function extractConcepts(bookId: string, chapters: any[]): ConceptIndex {
 
 function extractPlainText(content: TextContent | undefined): string {
   if (content == null) return ''
-  if (typeof content === 'string') return content
-  if (Array.isArray(content)) return content.map((s: any) => s.text || '').join('')
-  return ''
+  let text = ''
+  if (typeof content === 'string') text = content
+  else if (Array.isArray(content)) text = content.map((s: any) => s.text || '').join('')
+  // Strip [[concept]] markers — show as plain text in definitions/tooltips
+  return text.replace(/\[\[([^\]]+)\]\]/g, '$1')
 }
 
 function getBlockText(block: any): string {

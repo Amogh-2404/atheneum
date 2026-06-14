@@ -257,7 +257,7 @@ export function validateChapter(data: unknown): ValidationResult<any> {
   if (result.success) {
     return { success: true, data: result.data }
   }
-  const errors = result.error.errors.map(e =>
+  const errors = result.error.issues.map(e =>
     `${e.path.join('.')}: ${e.message}`
   )
   console.warn(`[validator] Chapter validation failed:`, errors.slice(0, 5))
@@ -269,7 +269,7 @@ export function validateBook(data: unknown): ValidationResult<any> {
   if (result.success) {
     return { success: true, data: result.data }
   }
-  const errors = result.error.errors.map(e =>
+  const errors = result.error.issues.map(e =>
     `${e.path.join('.')}: ${e.message}`
   )
   console.warn(`[validator] Book validation failed:`, errors.slice(0, 5))
@@ -281,7 +281,7 @@ export function validateOutline(data: unknown): ValidationResult<any> {
   if (result.success) {
     return { success: true, data: result.data }
   }
-  const errors = result.error.errors.map(e =>
+  const errors = result.error.issues.map(e =>
     `${e.path.join('.')}: ${e.message}`
   )
   console.warn(`[validator] Outline validation failed:`, errors.slice(0, 5))
@@ -293,9 +293,13 @@ export function validateOutline(data: unknown): ValidationResult<any> {
  * This allows graceful degradation — serve what we can, log warnings.
  */
 export function validateChapterGraceful(raw: any): any {
-  const result = validateChapter(raw)
-  if (!result.success) {
-    console.warn(`[validator] Serving chapter despite validation errors (graceful mode)`)
+  try {
+    const result = validateChapter(raw)
+    if (!result.success) {
+      console.warn(`[validator] Serving chapter despite validation errors (graceful mode)`)
+    }
+  } catch (e) {
+    console.warn(`[validator] Validation crashed (graceful mode, serving anyway):`, (e as Error).message)
   }
   // Always return the raw data — validation is advisory, not blocking
   return raw

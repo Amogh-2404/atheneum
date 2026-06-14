@@ -147,6 +147,7 @@ export default function OnboardingOverlay() {
             >
               {/* Skip */}
               <button
+                type="button"
                 onClick={dismiss}
                 style={{
                   background: 'none',
@@ -161,7 +162,7 @@ export default function OnboardingOverlay() {
                   letterSpacing: '0.02em',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#f1f5f9'
+                  e.currentTarget.style.color = 'var(--chrome-hover-text, #f1f5f9)'
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.color = 'var(--chrome-text, #94a3b8)'
@@ -174,6 +175,7 @@ export default function OnboardingOverlay() {
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
                   <button
+                    type="button"
                     key={i}
                     onClick={() => setStep(i)}
                     style={{
@@ -196,6 +198,7 @@ export default function OnboardingOverlay() {
 
               {/* Next / Done */}
               <button
+                type="button"
                 onClick={next}
                 style={{
                   background: 'rgba(82, 254, 254, 0.1)',
@@ -261,7 +264,7 @@ function StepWelcome() {
           fontFamily: "'Caveat', cursive",
           fontSize: '2.4rem',
           fontWeight: 700,
-          color: '#f1f5f9',
+          color: 'var(--chrome-hover-text, #f1f5f9)',
           margin: '0 0 1rem 0',
           lineHeight: 1.2,
         }}
@@ -307,7 +310,7 @@ function StepHowItWorks() {
           fontFamily: "'Caveat', cursive",
           fontSize: '2rem',
           fontWeight: 700,
-          color: '#f1f5f9',
+          color: 'var(--chrome-hover-text, #f1f5f9)',
           margin: '0 0 2rem 0',
           lineHeight: 1.2,
         }}
@@ -420,7 +423,7 @@ function StepShortcuts() {
           fontFamily: "'Caveat', cursive",
           fontSize: '2rem',
           fontWeight: 700,
-          color: '#f1f5f9',
+          color: 'var(--chrome-hover-text, #f1f5f9)',
           margin: '0 0 1.5rem 0',
           lineHeight: 1.2,
         }}

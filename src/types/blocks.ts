@@ -72,13 +72,15 @@ export interface CodeBlock extends BlockBase {
   tiltSeed?: number
 }
 
-export interface DiagramBlock extends BlockBase {
-  type: 'diagram'
-  diagramFile?: string
-  inlineData?: unknown
-  caption?: TextContent
-  width?: 'narrow' | 'medium' | 'full'
-}
+// DiagramBlock has moved to ./diagrams.ts as the canonical typed IR
+// (8 engines, 15 cookbook categories, 3 brand styles, animation grammar,
+// pedagogy + layout quality metadata). The old shape is the strict subset
+// kept for backward compat — every existing chapter still validates.
+import type { DiagramBlock as DiagramBlockIR } from './diagrams'
+// Local alias for the Block union below. The canonical DiagramBlock is re-exported
+// from ./diagrams via types/index.ts; re-exporting it here too created a duplicate-
+// export collision, so this alias is intentionally not exported.
+type DiagramBlock = DiagramBlockIR
 
 export interface FigureBlock extends BlockBase {
   type: 'figure'

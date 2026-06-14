@@ -72,7 +72,7 @@ function syncAnnotationsToServer(bookId: string, annotations: Annotation[]) {
   fetch(`/api/annotations/${bookId}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(bookAnnotations),
+    body: JSON.stringify({ annotations: bookAnnotations }),
   }).catch(() => {
     // Fire-and-forget — server sync is best-effort
   })
@@ -99,8 +99,9 @@ export function useAnnotations(bookId?: string, chapterId?: string) {
 
     fetch(`/api/annotations/${bookId}`)
       .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
-      .then((serverAnnotations: Annotation[]) => {
-        if (!Array.isArray(serverAnnotations) || serverAnnotations.length === 0) return
+      .then((data: { annotations: Annotation[] }) => {
+        const serverAnnotations = Array.isArray(data.annotations) ? data.annotations : []
+        if (serverAnnotations.length === 0) return
 
         setAll((prev) => {
           // Build a map of server annotations by ID (server wins)

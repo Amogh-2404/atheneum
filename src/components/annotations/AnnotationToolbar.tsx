@@ -107,19 +107,18 @@ export default function AnnotationToolbar({
       const startOff = textOffsetInBlock(blockEl, range.startContainer, range.startOffset)
       const endOff = textOffsetInBlock(blockEl, range.endContainer, range.endOffset)
 
-      // Position toolbar above selection with viewport bounds checking
+      // Position toolbar above selection, relative to the content container
       const rect = range.getBoundingClientRect()
-      const scrollY = window.scrollY
-      const scrollX = window.scrollX
+      const containerRect = container.getBoundingClientRect()
 
-      // Clamp horizontal position so toolbar stays within viewport
-      const rawX = rect.left + scrollX + rect.width / 2
-      const clampedX = Math.max(20, Math.min(rawX, window.innerWidth - 20))
+      // Coordinates relative to the position:relative container
+      const rawX = rect.left - containerRect.left + rect.width / 2
+      const clampedX = Math.max(20, Math.min(rawX, containerRect.width - 20))
 
       // If toolbar would appear above the viewport, flip it below the selection
-      const aboveY = rect.top + scrollY - 8
-      const belowY = rect.bottom + scrollY + 8
-      const flippedBelow = rect.top < 0
+      const aboveY = rect.top - containerRect.top - 8
+      const belowY = rect.bottom - containerRect.top + 8
+      const flippedBelow = rect.top < 60
       const finalY = flippedBelow ? belowY : aboveY
 
       setState({
@@ -146,7 +145,8 @@ export default function AnnotationToolbar({
     function onMouseDown(e: MouseEvent) {
       if (
         toolbarRef.current &&
-        !toolbarRef.current.contains(e.target as Node)
+        e.target instanceof Node &&
+        !toolbarRef.current.contains(e.target)
       ) {
         // Don't hide immediately — let mouseup fire first for new selections
         setTimeout(() => {
@@ -270,6 +270,7 @@ export default function AnnotationToolbar({
             {/* Colour circles */}
             {COLORS.map((c) => (
               <button
+                type="button"
                 key={c.key}
                 title={`Highlight ${c.key}`}
                 onClick={() => handleHighlight(c.key)}
@@ -329,6 +330,7 @@ export default function AnnotationToolbar({
 
             {/* Bookmark */}
             <button
+              type="button"
               title="Bookmark"
               onClick={handleBookmark}
               style={{
@@ -356,6 +358,7 @@ export default function AnnotationToolbar({
 
             {/* Note */}
             <button
+              type="button"
               title="Add margin note"
               onClick={() => setShowNoteInput(true)}
               style={{
@@ -390,6 +393,7 @@ export default function AnnotationToolbar({
 
             {/* Confused? */}
             <button
+              type="button"
               title="Mark as confusing"
               onClick={handleConfusion}
               style={{
@@ -458,6 +462,7 @@ export default function AnnotationToolbar({
                 }}
               />
               <button
+                type="button"
                 onClick={handleNoteSubmit}
                 disabled={!noteText.trim()}
                 style={{

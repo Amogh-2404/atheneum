@@ -1,0 +1,55 @@
+/* ─── Accessibility ────────────────────────────────────────────────────
+   - prefers-reduced-motion: disables animations for sensitive users
+   - focus-visible: keyboard-only focus indicators
+   - skip-to-content link for screen reader users
+   ────────────────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Visible focus ring for keyboard navigation */
+*:focus-visible {
+  outline: 2px solid var(--chrome-accent, #52FEFE);
+  outline-offset: 2px;
+}
+
+/* Remove focus ring for mouse clicks */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Skip to content link — visible only on focus */
+.skip-link {
+  position: absolute;
+  top: -60px;
+  left: 8px;
+  z-index: 100000;
+  padding: 8px 16px;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--chrome-bg, #0a0e17);
+  background: var(--chrome-accent, #52FEFE);
+  border-radius: 0 0 6px 6px;
+  text-decoration: none;
+  transition: top 150ms ease;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* Toast container: hide in print */
+@media print {
+  [aria-label="Notifications"] {
+    display: none !important;
+  }
+}

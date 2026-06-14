@@ -40,13 +40,20 @@ export function useSearch() {
         const books = (data.books || []) as Record<string, unknown>[]
         for (const book of books) {
           if (cancelled) return
-          // Fetch full book to get chapter list
-          const fullBook = await fetchJSON<Record<string, unknown>>(`/books/${book.id}`)
-          const chapters = (fullBook.chapters || []) as Record<string, unknown>[]
-          for (const ch of chapters) {
-            if (cancelled) return
-            const chapter = await fetchJSON<Record<string, unknown>>(`/books/${book.id}/chapters/${ch.id}`)
-            indexChapter(book.id as string, book.title as string, chapter)
+          try {
+            const fullBook = await fetchJSON<Record<string, unknown>>(`/books/${book.id}`)
+            const chapters = (fullBook.chapters || []) as Record<string, unknown>[]
+            for (const ch of chapters) {
+              if (cancelled) return
+              try {
+                const chapter = await fetchJSON<Record<string, unknown>>(`/books/${book.id}/chapters/${ch.id}`)
+                indexChapter(book.id as string, book.title as string, chapter)
+              } catch {
+                // Skip chapters that fail to load — don't break the whole index
+              }
+            }
+          } catch {
+            // Skip books that fail to load
           }
         }
         if (!cancelled) setIndexed(true)

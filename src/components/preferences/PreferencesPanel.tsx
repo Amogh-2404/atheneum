@@ -255,6 +255,7 @@ export default function PreferencesPanel({ onClose }: Props) {
             Preferences
           </h2>
           <button
+            type="button"
             onClick={onClose}
             style={{
               background: isMobile ? 'rgba(82, 254, 254, 0.08)' : 'none',
@@ -273,7 +274,7 @@ export default function PreferencesPanel({ onClose }: Props) {
               transition: 'color 200ms ease, border-color 200ms ease',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#f1f5f9'
+              e.currentTarget.style.color = 'var(--chrome-hover-text, #f1f5f9)'
               e.currentTarget.style.borderColor = 'var(--chrome-accent)'
             }}
             onMouseLeave={(e) => {
@@ -385,6 +386,7 @@ export default function PreferencesPanel({ onClose }: Props) {
             <div style={{ display: 'flex', gap: 16, padding: '0.25rem 0' }}>
               {THEMES.map((t) => (
                 <button
+                  type="button"
                   key={t.key}
                   onClick={() => update('theme', t.key)}
                   style={{
@@ -441,6 +443,7 @@ export default function PreferencesPanel({ onClose }: Props) {
             <h3 style={sectionHeaderStyle}>Data</h3>
 
             <button
+              type="button"
               onClick={handleExport}
               style={{
                 width: '100%',
@@ -470,6 +473,7 @@ export default function PreferencesPanel({ onClose }: Props) {
 
             {!confirmingClear ? (
               <button
+                type="button"
                 onClick={() => setConfirmingClear(true)}
                 style={{
                   width: '100%',
@@ -516,6 +520,7 @@ export default function PreferencesPanel({ onClose }: Props) {
                 </p>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
+                    type="button"
                     onClick={handleClearAll}
                     style={{
                       flex: 1,
@@ -533,6 +538,7 @@ export default function PreferencesPanel({ onClose }: Props) {
                     Yes, clear everything
                   </button>
                   <button
+                    type="button"
                     onClick={() => setConfirmingClear(false)}
                     style={{
                       flex: 1,

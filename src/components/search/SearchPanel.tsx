@@ -163,7 +163,7 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
                   background: 'transparent',
                   border: 'none',
                   borderBottom: '1px solid var(--chrome-border)',
-                  color: '#f1f5f9',
+                  color: 'var(--chrome-hover-text, #f1f5f9)',
                   outline: 'none',
                   letterSpacing: '0.01em',
                   boxSizing: 'border-box',
@@ -259,6 +259,7 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
                 const isSelected = i === selectedIndex
                 return (
                   <button
+                    type="button"
                     key={result.id}
                     onClick={() => handleSelect(result)}
                     onMouseEnter={() => setSelectedIndex(i)}
@@ -317,7 +318,7 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
                       <span
                         style={{
                           fontSize: '0.78rem',
-                          color: isSelected ? '#f1f5f9' : 'var(--chrome-text)',
+                          color: isSelected ? 'var(--chrome-hover-text, #f1f5f9)' : 'var(--chrome-text)',
                           fontWeight: 500,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',

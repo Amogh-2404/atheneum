@@ -166,6 +166,7 @@ export default function VersionTimeline({
             Version History
           </h2>
           <button
+            type="button"
             onClick={onClose}
             style={{
               background: isMobile ? 'rgba(82, 254, 254, 0.08)' : 'none',
@@ -184,7 +185,7 @@ export default function VersionTimeline({
               transition: 'color 200ms ease, border-color 200ms ease',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#f1f5f9'
+              e.currentTarget.style.color = 'var(--chrome-hover-text, #f1f5f9)'
               e.currentTarget.style.borderColor = 'var(--chrome-accent)'
             }}
             onMouseLeave={(e) => {
@@ -246,6 +247,7 @@ export default function VersionTimeline({
                   const isFirst = i === 0
                   return (
                     <button
+                      type="button"
                       key={commit.hash}
                       onClick={() => setSelectedHash(isSelected ? null : commit.hash)}
                       style={{
@@ -402,6 +404,7 @@ export default function VersionTimeline({
 
                       {/* Revert button */}
                       <button
+                        type="button"
                         onClick={handleRevert}
                         disabled={reverting}
                         style={{

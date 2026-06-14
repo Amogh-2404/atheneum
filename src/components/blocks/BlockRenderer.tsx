@@ -22,7 +22,7 @@ import EmbedBlock from './EmbedBlock'
 import MarginAnnotationBlock from './MarginAnnotationBlock'
 import UnknownBlock from './UnknownBlock'
 
-function renderBlock(block: Block, isFirstTextBlock?: boolean) {
+function renderBlock(block: Block, isFirstTextBlock?: boolean, bookId?: string, chapterId?: string) {
   switch (block.type) {
     case 'heading':
       return <HeadingBlock {...block} />
@@ -51,9 +51,9 @@ function renderBlock(block: Block, isFirstTextBlock?: boolean) {
     case 'timeline':
       return <TimelineBlock {...block} />
     case 'quiz':
-      return <QuizBlock {...block} />
+      return <QuizBlock {...block} bookId={bookId} chapterId={chapterId} />
     case 'flashcard':
-      return <FlashcardBlock {...block} />
+      return <FlashcardBlock {...block} bookId={bookId} chapterId={chapterId} />
     case 'summary':
       return <SummaryBlock {...block} />
     case 'embed':
@@ -95,7 +95,7 @@ export default function BlockRenderer({
           onApprove={onBlockApproved}
           onDismiss={onBlockDismissed}
         >
-          {renderBlock(block, isFirstTextBlock)}
+          {renderBlock(block, isFirstTextBlock, bookId, chapterId)}
         </DraftIndicator>
       </ErrorBoundary>
     </div>

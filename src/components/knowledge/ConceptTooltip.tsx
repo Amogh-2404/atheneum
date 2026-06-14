@@ -173,6 +173,7 @@ export default function ConceptTooltip({
 
           {/* Go to definition link */}
           <button
+            type="button"
             onClick={goToDefinition}
             style={{
               fontFamily: 'var(--font-ui)',

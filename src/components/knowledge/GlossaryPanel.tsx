@@ -140,6 +140,7 @@ export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }
             Glossary
           </h2>
           <button
+            type="button"
             onClick={onClose}
             style={{
               background: isMobile ? 'rgba(82, 254, 254, 0.08)' : 'none',
@@ -158,7 +159,7 @@ export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }
               transition: 'color 200ms ease, border-color 200ms ease',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#f1f5f9'
+              e.currentTarget.style.color = 'var(--chrome-hover-text, #f1f5f9)'
               e.currentTarget.style.borderColor = 'var(--chrome-accent)'
             }}
             onMouseLeave={(e) => {
@@ -254,6 +255,7 @@ export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }
 
               {concepts.map((concept) => (
                 <button
+                  type="button"
                   key={concept.name}
                   onClick={() => goToDefinition(concept)}
                   style={{

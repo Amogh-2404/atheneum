@@ -110,6 +110,7 @@ export default function DraftActionBar({
 
         {/* Approve All */}
         <button
+          type="button"
           onClick={handleApproveAll}
           disabled={loading !== null}
           style={{
@@ -140,6 +141,7 @@ export default function DraftActionBar({
 
         {/* Dismiss All */}
         <button
+          type="button"
           onClick={handleDismissAll}
           disabled={loading !== null}
           style={{

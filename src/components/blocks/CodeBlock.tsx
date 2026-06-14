@@ -1,5 +1,6 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useCallback } from 'react'
 import type { CodeBlock as CodeBlockType } from '@/types'
+import { useToast } from '@/hooks/useToast'
 
 // ─── Shiki Highlighter Singleton ─────────────────────────────────────
 
@@ -24,6 +25,9 @@ const PRELOADED_LANGS = [
   'yaml',
   'markdown',
   'shell',
+  'llvm',
+  'asm',
+  'diff',
 ]
 
 async function getHighlighter() {
@@ -69,6 +73,14 @@ async function highlightCode(
       yml: 'yaml',
       md: 'markdown',
       'c++': 'cpp',
+      // Compiler / LLVM dialects — fall back to closest grammar
+      mir: 'llvm',
+      mlir: 'llvm',
+      hexagon: 'asm',
+      tablegen: 'text',
+      td: 'text',
+      ldscript: 'text',
+      idl: 'text',
     }
     const lang = langMap[language.toLowerCase()] ?? language.toLowerCase()
 
@@ -144,6 +156,19 @@ export default function CodeBlock({
 }: CodeBlockType) {
   const rawLines = (code ?? '').split('\n')
   const [highlightedLines, setHighlightedLines] = useState<string[] | null>(null)
+  const [copied, setCopied] = useState(false)
+  const { toast } = useToast()
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(code ?? '')
+      setCopied(true)
+      toast('Copied to clipboard', 'success')
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      toast('Failed to copy', 'error')
+    }
+  }, [code, toast])
 
   // Deterministic tilt from seed, range [-1.2, 1.2] degrees
   const tilt = useMemo(() => {
@@ -201,6 +226,32 @@ export default function CodeBlock({
             {language}
           </span>
         )}
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="code-copy-btn"
+          style={{
+            marginLeft: 'auto',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: copied ? '#16a34a' : 'rgba(255,255,255,0.4)',
+            fontFamily: 'var(--font-ui)',
+            fontSize: '0.6875rem',
+            fontWeight: 600,
+            letterSpacing: '0.04em',
+            padding: '2px 6px',
+            borderRadius: 4,
+            transition: 'color 200ms, background 150ms',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+          }}
+          onMouseEnter={(e) => { if (!copied) e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
+          onMouseLeave={(e) => { if (!copied) e.currentTarget.style.color = 'rgba(255,255,255,0.4)' }}
+        >
+          {copied ? '\u2713 Copied' : 'Copy'}
+        </button>
       </div>
 
       {/* Code body */}

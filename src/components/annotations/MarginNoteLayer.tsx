@@ -45,6 +45,7 @@ function StickyNote({
     >
       {/* Close button */}
       <button
+        type="button"
         onClick={onRemove}
         title="Remove note"
         style={{

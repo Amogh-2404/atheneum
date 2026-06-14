@@ -40,18 +40,17 @@ export default function HighlightActionToolbar({
 }: HighlightActionToolbarProps) {
   const toolbarRef = useRef<HTMLDivElement>(null)
 
-  // Viewport bounds checking
-  const clampedX = Math.max(20, Math.min(x, typeof window !== 'undefined' ? window.innerWidth - 20 : x))
-  // If toolbar would appear above viewport, flip it below the selection
-  const scrollY = typeof window !== 'undefined' ? window.scrollY : 0
-  const flippedBelow = (y - scrollY) < 0
-  const finalY = flippedBelow ? y + 40 : y
+  // Coordinates are container-relative (from parent's position:relative)
+  const clampedX = Math.max(20, x)
+  // y is already positioned above the highlight; if it's negative (above container top), flip below
+  const flippedBelow = y < 0
+  const finalY = flippedBelow ? y + 48 : y
 
   // Close on click outside
   useEffect(() => {
     if (!highlightId) return
     function handleMouseDown(e: MouseEvent) {
-      if (toolbarRef.current && !toolbarRef.current.contains(e.target as Node)) {
+      if (toolbarRef.current && e.target instanceof Node && !toolbarRef.current.contains(e.target)) {
         onClose()
       }
     }
@@ -106,6 +105,7 @@ export default function HighlightActionToolbar({
           {/* Colour circles — click to change color */}
           {COLORS.map((c) => (
             <button
+              type="button"
               key={c.key}
               title={`Change to ${c.key}`}
               onClick={() => {
@@ -171,6 +171,7 @@ export default function HighlightActionToolbar({
 
           {/* Remove button */}
           <button
+            type="button"
             title="Remove highlight"
             onClick={() => {
               onRemove(highlightId)

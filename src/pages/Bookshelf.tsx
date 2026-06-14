@@ -260,6 +260,23 @@ function ContinueReadingCard({
   const ps = getPageThemeStyle(theme)
 
   const percent = Math.round(lastRead.scrollPercent * 100)
+  // BookSummary doesn't include chapters — format the ID nicely
+  // IDs are like "03-block-types" → "Block Types"
+  const formatChapterId = (id: string) => {
+    const slug = id.replace(/^\d+-/, '')  // strip "03-" prefix
+    return slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  }
+  const chapterLabel = formatChapterId(lastRead.chapterId)
+
+  // Time ago helper
+  const timeAgo = (date: string) => {
+    const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000)
+    if (seconds < 60) return 'just now'
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
+    const days = Math.floor(seconds / 86400)
+    return days === 1 ? 'yesterday' : `${days}d ago`
+  }
 
   return (
     <motion.div
@@ -329,7 +346,12 @@ function ContinueReadingCard({
               margin: '0 0 0.75rem 0',
             }}
           >
-            Chapter: {lastRead.chapterId}
+            {chapterLabel}
+            {lastRead.timestamp && (
+              <span style={{ marginLeft: 8, fontSize: '0.7rem', opacity: 0.6 }}>
+                {timeAgo(lastRead.timestamp)}
+              </span>
+            )}
           </p>
 
           {/* Progress bar */}
@@ -1069,6 +1091,7 @@ function BookCard({
       {/* Context menu button */}
       {(onArchive || onDelete) && (
         <button
+          type="button"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpen(!menuOpen); setConfirmDelete(false) }}
           style={{
             position: 'absolute',
@@ -1117,10 +1140,11 @@ function BookCard({
             <>
               {onArchive && (
                 <button
+                  type="button"
                   onClick={(e) => { e.stopPropagation(); onArchive(book.id); setMenuOpen(false) }}
                   style={{
                     display: 'block', width: '100%', padding: '8px 16px', border: 'none',
-                    background: 'none', color: '#d4d4d4', cursor: 'pointer', textAlign: 'left',
+                    background: 'none', color: 'var(--chrome-text)', cursor: 'pointer', textAlign: 'left',
                     fontFamily: 'var(--font-ui)', fontSize: '0.82rem',
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
@@ -1131,10 +1155,11 @@ function BookCard({
               )}
               {onDelete && (
                 <button
+                  type="button"
                   onClick={(e) => { e.stopPropagation(); setConfirmDelete(true) }}
                   style={{
                     display: 'block', width: '100%', padding: '8px 16px', border: 'none',
-                    background: 'none', color: '#f87171', cursor: 'pointer', textAlign: 'left',
+                    background: 'none', color: 'var(--color-error, #f87171)', cursor: 'pointer', textAlign: 'left',
                     fontFamily: 'var(--font-ui)', fontSize: '0.82rem',
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(248,113,113,0.08)' }}
@@ -1146,11 +1171,12 @@ function BookCard({
             </>
           ) : (
             <div style={{ padding: '8px 12px' }}>
-              <p style={{ fontSize: '0.78rem', color: '#fca5a5', margin: '0 0 8px 0', lineHeight: 1.4, fontFamily: 'var(--font-ui)' }}>
+              <p style={{ fontSize: '0.78rem', color: 'var(--color-error, #fca5a5)', margin: '0 0 8px 0', lineHeight: 1.4, fontFamily: 'var(--font-ui)' }}>
                 Delete "{book.title}"? This cannot be undone.
               </p>
               <div style={{ display: 'flex', gap: 6 }}>
                 <button
+                  type="button"
                   onClick={(e) => { e.stopPropagation(); onDelete!(book.id); setMenuOpen(false); setConfirmDelete(false) }}
                   style={{
                     flex: 1, padding: '6px', border: 'none', borderRadius: 4,
@@ -1161,10 +1187,11 @@ function BookCard({
                   Delete
                 </button>
                 <button
+                  type="button"
                   onClick={(e) => { e.stopPropagation(); setConfirmDelete(false) }}
                   style={{
                     flex: 1, padding: '6px', border: '1px solid var(--chrome-border)',
-                    borderRadius: 4, background: 'none', color: '#d4d4d4', cursor: 'pointer',
+                    borderRadius: 4, background: 'none', color: 'var(--chrome-text)', cursor: 'pointer',
                     fontFamily: 'var(--font-ui)', fontSize: '0.75rem',
                   }}
                 >
@@ -1260,9 +1287,48 @@ function BookCard({
                   letterSpacing: '0.03em',
                 }}
               >
-                {book.chapterCount}{' '}
-                {book.chapterCount === 1 ? 'chapter' : 'chapters'}
+                {(() => {
+                  // Read progress from localStorage
+                  let readCount = 0
+                  try {
+                    const progress = JSON.parse(localStorage.getItem(`atheneum-progress-${book.id}`) || '{}')
+                    readCount = Object.keys(progress).length
+                  } catch { /* ignore */ }
+                  const total = book.chapterCount || 0
+                  return readCount > 0
+                    ? `${readCount}/${total} chapters read`
+                    : `${total} ${total === 1 ? 'chapter' : 'chapters'}`
+                })()}
               </p>
+              {/* Reading progress bar */}
+              {(() => {
+                let readCount = 0
+                try {
+                  const progress = JSON.parse(localStorage.getItem(`atheneum-progress-${book.id}`) || '{}')
+                  readCount = Object.keys(progress).length
+                } catch { /* ignore */ }
+                const total = book.chapterCount || 1
+                const pct = Math.round((readCount / total) * 100)
+                if (readCount === 0) return null
+                return (
+                  <div style={{
+                    width: '100%',
+                    height: 3,
+                    borderRadius: 2,
+                    background: 'rgba(128,128,128,0.15)',
+                    marginTop: 6,
+                    overflow: 'hidden',
+                  }}>
+                    <div style={{
+                      width: `${pct}%`,
+                      height: '100%',
+                      borderRadius: 2,
+                      background: pct === 100 ? '#16a34a' : 'var(--chrome-accent, #52FEFE)',
+                      transition: 'width 300ms ease',
+                    }} />
+                  </div>
+                )
+              })()}
             </div>
           </div>
         </RoughBox>
@@ -1282,6 +1348,7 @@ function ArchivedSection({ books, theme }: { books: BookSummary[]; theme: AppThe
   return (
     <div style={{ marginTop: '3rem' }}>
       <button
+        type="button"
         onClick={() => setExpanded(!expanded)}
         style={{
           display: 'flex',
@@ -1320,6 +1387,7 @@ function ArchivedSection({ books, theme }: { books: BookSummary[]; theme: AppThe
             <div key={book.id} style={{ position: 'relative' }}>
               {/* Unarchive button */}
               <button
+                type="button"
                 onClick={async () => {
                   try {
                     await fetch(`/api/books/${book.id}/unarchive`, { method: 'POST' })
@@ -1368,29 +1436,20 @@ function ArchivedSection({ books, theme }: { books: BookSummary[]; theme: AppThe
   )
 }
 
-/* ─── Spinner ─────────────────────────────────────────────────────── */
+/* ─── Skeleton Loading State ──────────────────────────────────────── */
 
-function Spinner() {
+import { SkeletonBookCard, ShimmerStyle } from '@/components/shared/Skeleton'
+import ErrorState from '@/components/shared/ErrorState'
+
+function BookshelfSkeleton() {
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'var(--chrome-bg)',
-      }}
-    >
-      <div
-        style={{
-          width: 32,
-          height: 32,
-          border: '2px solid var(--chrome-border)',
-          borderTopColor: 'var(--chrome-accent)',
-          borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite',
-        }}
-      />
+    <div style={{ minHeight: '100vh', background: 'var(--chrome-bg)', padding: '3rem 2rem' }}>
+      <ShimmerStyle />
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24, marginTop: 48 }}>
+          {Array.from({ length: 6 }, (_, i) => <SkeletonBookCard key={i} />)}
+        </div>
+      </div>
     </div>
   )
 }
@@ -1466,20 +1525,12 @@ export default function Bookshelf() {
     )
   )
 
-  if (loading) return <Spinner />
+  if (loading) return <BookshelfSkeleton />
 
   if (error) {
     return (
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'var(--chrome-bg)',
-        }}
-      >
-        <p style={{ color: '#f87171' }}>{error}</p>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--chrome-bg)' }}>
+        <ErrorState message={error} icon="error" onRetry={() => window.location.reload()} />
       </div>
     )
   }
@@ -1581,6 +1632,7 @@ export default function Bookshelf() {
                     : '0 1px 6px rgba(0,0,0,0.10)'
                 return (
                   <button
+                    type="button"
                     key={key}
                     onClick={() => {
                       localStorage.setItem('atheneum-theme', key)
@@ -1671,12 +1723,8 @@ export default function Bookshelf() {
         )}
       </div>
 
-      {/* Keyframe for spinner + book card menu hover */}
+      {/* Show menu button on card hover */}
       <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        /* Show menu button on card hover */
         [style*="position: relative"]:hover .book-card-menu-btn {
           opacity: 1 !important;
         }

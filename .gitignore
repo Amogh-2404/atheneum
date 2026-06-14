@@ -36,3 +36,6 @@ scripts/capture-screenshots.mjs
 
 # Puppeteer cache
 .cache/puppeteer/
+
+# Generated audit / build artifacts (regenerable from scripts/atheneum)
+build/

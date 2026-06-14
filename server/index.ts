@@ -8,6 +8,7 @@ import { booksRouter } from './routes/books.js'
 import { chaptersRouter } from './routes/chapters.js'
 import { annotationsRouter } from './routes/annotations.js'
 import { readingPositionRouter } from './routes/reading-position.js'
+import { learningProgressRouter } from './routes/learning-progress.js'
 import { historyRouter } from './routes/history.js'
 import { ConnectionManager } from './ws.js'
 import { startWatcher } from './watcher.js'
@@ -36,6 +37,9 @@ app.route('/api/annotations', annotationsRouter)
 
 // Reading position sync (cross-device)
 app.route('/api/reading-position', readingPositionRouter)
+
+// Learning progress (quiz scores, flashcard SRS)
+app.route('/api/learning-progress', learningProgressRouter)
 
 // Version history (git-backed)
 app.route('/api/books/:bookId/chapters/:chapterId/history', historyRouter)

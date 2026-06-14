@@ -64,6 +64,7 @@ export default function TableOfContents({ blocks, activeHeadingId }: TOCProps) {
         const isActive = activeHeadingId === h.anchor
         return (
           <button
+            type="button"
             key={h.id}
             onClick={() => scrollTo(h.anchor)}
             style={{
@@ -89,7 +90,7 @@ export default function TableOfContents({ blocks, activeHeadingId }: TOCProps) {
               transition: 'color 200ms ease, border-color 200ms ease',
             }}
             onMouseEnter={(e) => {
-              if (!isActive) e.currentTarget.style.color = '#f1f5f9'
+              if (!isActive) e.currentTarget.style.color = 'var(--chrome-hover-text, #f1f5f9)'
             }}
             onMouseLeave={(e) => {
               if (!isActive)

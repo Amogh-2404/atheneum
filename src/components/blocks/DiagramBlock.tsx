@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { DiagramBlock as DiagramBlockType } from '@/types'
 import { renderText } from '@/lib/render-text'
+import { postJSON } from '@/lib/api'
+import { useToast } from '@/hooks/useToast'
 import ErrorBoundary from './ErrorBoundary'
 import '@excalidraw/excalidraw/index.css'
 
@@ -145,19 +147,76 @@ function StaticDiagramPreview({
 
 function DiagramModal({
   data,
+  blockId,
+  bookId,
+  chapterId,
   onClose,
+  onSaved,
 }: {
   data: Record<string, unknown>
+  blockId: string
+  bookId: string
+  chapterId: string
+  diagramFile?: string
   onClose: () => void
+  onSaved: (newData: Record<string, unknown>) => void
 }) {
+  const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const { toast } = useToast()
+
+  // Track whether user has interacted with the canvas at all
+  // Skip the initial onChange fire from Excalidraw mount
+  const hasInteractedRef = useRef(false)
+  const mountTimeRef = useRef(Date.now())
+
+  const handleClose = useCallback(async () => {
+    if (!excalidrawAPI) { onClose(); return }
+
+    const elements = excalidrawAPI.getSceneElements()
+    const appState = excalidrawAPI.getAppState()
+    const files = excalidrawAPI.getFiles()
+
+    // Simple change detection: compare element count + check if user interacted
+    const origElements = (data.elements || []) as any[]
+    const elementsChanged = elements.length !== origElements.length || hasInteractedRef.current
+
+    if (!elementsChanged) { onClose(); return }
+
+    setSaving(true)
+    setSaveError(null)
+
+    try {
+      await postJSON(
+        `/books/${bookId}/chapters/${chapterId}/blocks/${blockId}/diagram`,
+        {
+          elements: elements.map((el: any) => ({ ...el })),
+          appState: {
+            viewBackgroundColor: appState.viewBackgroundColor,
+            theme: appState.theme,
+          },
+          files,
+        }
+      )
+      onSaved({ ...data, elements, appState, files })
+      toast('Diagram saved', 'success')
+      onClose()
+    } catch (err) {
+      console.error('[DiagramBlock] Save failed:', err)
+      setSaveError('Save failed — try again')
+      setSaving(false)
+    }
+  }, [excalidrawAPI, data, bookId, chapterId, blockId, onClose, onSaved, toast])
+
   // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') handleClose()
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [onClose])
+  }, [handleClose])
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -181,7 +240,7 @@ function DiagramModal({
     >
       {/* Backdrop */}
       <div
-        onClick={onClose}
+        onClick={handleClose}
         style={{
           position: 'absolute',
           inset: 0,
@@ -203,53 +262,70 @@ function DiagramModal({
           borderBottom: '1px solid var(--chrome-border, #1e293b)',
         }}
       >
-        <span
-          style={{
-            fontFamily: 'var(--font-ui)',
-            fontSize: '0.85rem',
-            color: 'var(--chrome-accent, #52FEFE)',
-            letterSpacing: '0.04em',
-            fontWeight: 600,
-          }}
-        >
-          Interactive Diagram
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span
+            style={{
+              fontFamily: 'var(--font-ui)',
+              fontSize: '0.85rem',
+              color: 'var(--chrome-accent, #52FEFE)',
+              letterSpacing: '0.04em',
+              fontWeight: 600,
+            }}
+          >
+            Interactive Diagram
+          </span>
+          {saveError && (
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', color: 'var(--color-error, #ef4444)' }}>
+              {saveError}
+            </span>
+          )}
+        </div>
         <button
-          onClick={onClose}
+          type="button"
+          onClick={handleClose}
+          disabled={saving}
           style={{
             background: 'rgba(255,255,255,0.08)',
             border: '1px solid var(--chrome-border, #1e293b)',
             borderRadius: 6,
-            color: 'var(--chrome-text, #94a3b8)',
+            color: saving ? 'var(--chrome-accent, #52FEFE)' : 'var(--chrome-text, #94a3b8)',
             fontFamily: 'var(--font-ui)',
             fontSize: '0.8rem',
             fontWeight: 600,
             padding: '5px 14px',
-            cursor: 'pointer',
+            cursor: saving ? 'wait' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: 6,
             transition: 'background 150ms ease, color 150ms ease',
+            opacity: saving ? 0.7 : 1,
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.15)'
-            e.currentTarget.style.color = '#f1f5f9'
+            if (!saving) {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.15)'
+              e.currentTarget.style.color = 'var(--chrome-hover-text, #f1f5f9)'
+            }
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.08)'
-            e.currentTarget.style.color = 'var(--chrome-text, #94a3b8)'
+            if (!saving) {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.08)'
+              e.currentTarget.style.color = 'var(--chrome-text, #94a3b8)'
+            }
           }}
         >
-          <kbd style={{ opacity: 0.6, fontSize: '0.7rem' }}>ESC</kbd>
-          Close
+          {saving ? (
+            <>Saving...</>
+          ) : (
+            <>
+              <kbd style={{ opacity: 0.6, fontSize: '0.7rem' }}>ESC</kbd>
+              Close
+            </>
+          )}
         </button>
       </div>
 
-      {/* Excalidraw editor */}
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.2, delay: 0.05 }}
+      {/* Excalidraw editor — NO scale transform, it breaks mouse coordinates */}
+      <div
         style={{
           position: 'relative',
           zIndex: 1,
@@ -263,6 +339,13 @@ function DiagramModal({
           <Suspense fallback={<DiagramSkeleton />}>
             <ExcalidrawComponent
               initialData={data}
+              excalidrawAPI={(api: any) => setExcalidrawAPI(api)}
+              onChange={() => {
+                // Skip onChange fires within first 2 seconds (initial render triggers)
+                if (Date.now() - mountTimeRef.current > 2000) {
+                  hasInteractedRef.current = true
+                }
+              }}
               viewModeEnabled={false}
               zenModeEnabled={false}
               UIOptions={{
@@ -275,7 +358,7 @@ function DiagramModal({
             />
           </Suspense>
         </ErrorBoundary>
-      </motion.div>
+      </div>
     </motion.div>
   )
 }
@@ -349,12 +432,13 @@ function DiagramFallback({
 // ─── Main DiagramBlock Component ─────────────────────────────────────
 
 export default function DiagramBlock({
+  id: blockId,
   diagramFile,
   inlineData,
   caption,
   width,
 }: DiagramBlockType) {
-  const { bookId } = useParams()
+  const { bookId, chapterId } = useParams()
   const [diagramData, setDiagramData] = useState<Record<string, unknown> | null>(
     inlineData ? (inlineData as Record<string, unknown>) : null
   )
@@ -404,6 +488,9 @@ export default function DiagramBlock({
 
   const openModal = useCallback(() => setModalOpen(true), [])
   const closeModal = useCallback(() => setModalOpen(false), [])
+  const handleSaved = useCallback((newData: Record<string, unknown>) => {
+    setDiagramData(newData)
+  }, [])
 
   return (
     <figure className={`my-6 mx-auto ${widthClass}`} style={{ position: 'relative' }}>
@@ -444,14 +531,25 @@ export default function DiagramBlock({
             fontStyle: 'italic',
           }}
         >
-          {renderText(caption)}
+          {/* IR caption is `string | RichText | null` — narrow before render. */}
+          {typeof caption === 'string' || Array.isArray(caption)
+            ? renderText(caption as string | import('@/types').RichText)
+            : null}
         </figcaption>
       )}
 
       {/* Interactive modal */}
       <AnimatePresence>
-        {modalOpen && diagramData && (
-          <DiagramModal data={diagramData} onClose={closeModal} />
+        {modalOpen && diagramData && bookId && chapterId && blockId && (
+          <DiagramModal
+            data={diagramData}
+            blockId={blockId}
+            bookId={bookId}
+            chapterId={chapterId}
+            diagramFile={diagramFile}
+            onClose={closeModal}
+            onSaved={handleSaved}
+          />
         )}
       </AnimatePresence>
     </figure>

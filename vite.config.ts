@@ -54,11 +54,18 @@ export default defineConfig({
   },
   server: {
     port: 5200,
+    host: '0.0.0.0',
     allowedHosts: true,
     proxy: {
       '/api': 'http://localhost:3100',
       '/ws': { target: 'http://localhost:3100', ws: true },
       '/content': 'http://localhost:3100',
+    },
+    watch: {
+      // Don't let Vite watch content/ or server/ — those are backend concerns.
+      // Without this, git commits (which modify .git/) and content JSON writes
+      // trigger Vite full-page reloads during development.
+      ignored: ['**/content/**', '**/server/**', '**/.git/**', '**/mcp/**'],
     },
   },
 })
