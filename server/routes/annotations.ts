@@ -1,9 +1,10 @@
 import { Hono } from 'hono'
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
+import { readFileSync, existsSync, mkdirSync } from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { sanitizeId, safePath } from '../utils.js'
 import { withFileLock } from '../git.js'
+import { atomicWriteJSON } from '../lib/write-gate.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -88,7 +89,9 @@ annotationsRouter.post('/:bookId', async (c) => {
       }
 
       const next = Array.from(existingMap.values())
-      writeFileSync(filePath, JSON.stringify(next, null, 2) + '\n', 'utf-8')
+      // Atomic temp+rename even for this sidecar — a torn annotations.json would
+      // fail JSON.parse and silently drop every annotation for the book on next read.
+      atomicWriteJSON(filePath, next)
       return next
     })
 
@@ -118,7 +121,7 @@ annotationsRouter.delete('/:bookId/:annotationId', async (c) => {
       }
 
       ensureDir(filePath)
-      writeFileSync(filePath, JSON.stringify(filtered, null, 2) + '\n', 'utf-8')
+      atomicWriteJSON(filePath, filtered)
       return { removed: true }
     })
 

@@ -1,9 +1,10 @@
 import { Hono } from 'hono'
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
+import { readFileSync, existsSync, mkdirSync } from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { sanitizeId, safePath } from '../utils.js'
 import { withFileLock } from '../git.js'
+import { atomicWriteJSON } from '../lib/write-gate.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -77,7 +78,7 @@ learningProgressRouter.post('/:bookId', async (c) => {
         } catch { /* overwrite if corrupt */ }
       }
 
-      writeFileSync(filePath, JSON.stringify(body, null, 2) + '\n', 'utf-8')
+      atomicWriteJSON(filePath, body)
       return true
     })
 

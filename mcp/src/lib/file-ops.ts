@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync, mkdirSync, unlinkSync } from 'fs'
+import { existsSync, readFileSync, writeFileSync, mkdirSync, unlinkSync, renameSync, openSync, fsyncSync, closeSync } from 'fs'
 import path from 'path'
 import lockfile from 'proper-lockfile'
 
@@ -6,6 +6,30 @@ const LOCK_OPTIONS = {
   retries: { retries: 5, factor: 2, minTimeout: 100, maxTimeout: 2000 },
   stale: 10000, // auto-release after 10s
   realpath: false,
+}
+
+/**
+ * Atomically write `contents` to `filePath` via a sibling temp file + fsync +
+ * rename (atomic on the same filesystem). Mirrors server/lib/write-gate.ts and
+ * server/backends/codex.ts. MUST be called while holding the file's lock.
+ * A plain in-place writeFileSync truncates then rewrites, so a crash mid-write
+ * leaves a torn / zero-length file that then fails JSON.parse on read.
+ */
+function atomicWrite(filePath: string, contents: string): void {
+  const tmp = `${filePath}.tmp.${process.pid}.${Date.now()}`
+  try {
+    const fd = openSync(tmp, 'w')
+    try {
+      writeFileSync(fd, contents, 'utf-8')
+      fsyncSync(fd)
+    } finally {
+      closeSync(fd)
+    }
+    renameSync(tmp, filePath)
+  } catch (err) {
+    try { if (existsSync(tmp)) unlinkSync(tmp) } catch { /* best effort */ }
+    throw err
+  }
 }
 
 /**
@@ -50,7 +74,7 @@ export async function safeWriteJSON(
   try {
     const current = JSON.parse(readFileSync(filePath, 'utf-8'))
     const updated = mutateFn(current)
-    writeFileSync(filePath, JSON.stringify(updated, null, 2) + '\n', 'utf-8')
+    atomicWrite(filePath, JSON.stringify(updated, null, 2) + '\n')
     return updated
   } finally {
     await release()
@@ -74,7 +98,7 @@ export async function safeWriteJSONDirect(
 
   const release = await lockfile.lock(filePath, LOCK_OPTIONS)
   try {
-    writeFileSync(filePath, JSON.stringify(data, null, 2) + '\n', 'utf-8')
+    atomicWrite(filePath, JSON.stringify(data, null, 2) + '\n')
   } finally {
     await release()
   }

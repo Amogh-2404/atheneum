@@ -4,7 +4,7 @@ import path from 'path'
 import { existsSync, readdirSync, mkdirSync } from 'fs'
 import { sanitizeId, safePath } from '../../../server/utils.js'
 import { validatedWrite } from '../../../server/lib/write-gate.js'
-import { safeReadJSON, safeWriteJSON, safeWriteJSONDirect, safeDeleteFile } from '../lib/file-ops.js'
+import { safeReadJSON, safeWriteJSON, safeDeleteFile } from '../lib/file-ops.js'
 import { generateBlockId, ensureBlockIds, calcReadTime } from '../lib/block-utils.js'
 
 export function registerWritingTools(server: McpServer, contentDir: string) {
@@ -60,7 +60,11 @@ export function registerWritingTools(server: McpServer, contentDir: string) {
           blocks,
         }
 
-        await safeWriteJSON(chapterPath, () => chapterData)
+        // write_chapter is the full create/rewrite path and the most likely tool
+        // to introduce a malformed block — it MUST go through the gate. As a
+        // brand-new/replacement chapter the baseline is whatever is on disk now,
+        // so the no-new-errors gate behaves as a strict gate for a fresh write.
+        await validatedWrite(chapterPath, () => chapterData)
 
         return {
           content: [{
@@ -116,7 +120,10 @@ export function registerWritingTools(server: McpServer, contentDir: string) {
           block.metadata.updatedAt = now
         }
 
-        const result = await safeWriteJSON(chapterPath, (current) => {
+        // Routed through the gate: inserting a malformed block (e.g. a quiz
+        // missing correctIndex) is rejected before it ever reaches disk.
+        const result = await validatedWrite(chapterPath, (current) => {
+          if (!current) throw new Error('chapter not found')
           const blocks = current?.blocks ?? []
 
           let insertIdx: number
@@ -252,7 +259,10 @@ export function registerWritingTools(server: McpServer, contentDir: string) {
 
         const idsToRemove = new Set(blockIds)
 
-        const result = await safeWriteJSON(chapterPath, (current) => {
+        // Routed through the gate. Removing blocks can only shrink the error
+        // set, so this never trips the no-new-errors check — but it now also
+        // writes atomically and stays on the single validated path.
+        const result = await validatedWrite(chapterPath, (current) => {
           if (!current?.blocks) throw new Error('Chapter has no blocks')
           const before = current.blocks.length
           current.blocks = current.blocks.filter((b: any) => !idsToRemove.has(b.id))
@@ -297,7 +307,10 @@ export function registerWritingTools(server: McpServer, contentDir: string) {
 
         const idsToMove = new Set(blockIds)
 
-        await safeWriteJSON(chapterPath, (current) => {
+        // Routed through the gate. Reordering preserves the block set so it
+        // cannot introduce new errors — but it stays on the single validated,
+        // atomic write path like every other chapter mutation.
+        await validatedWrite(chapterPath, (current) => {
           if (!current?.blocks) throw new Error('Chapter has no blocks')
 
           // Extract blocks to move
@@ -474,7 +487,10 @@ export function registerWritingTools(server: McpServer, contentDir: string) {
           blockCount: newBlocks.length,
         }
 
-        await safeWriteJSONDirect(targetPath, newChapter)
+        // Duplication is a full-replacement write of a brand-new chapter file.
+        // Route it through the gate so a copy can never persist a chapter the
+        // strict schema would reject (the target is new, so baseline is empty).
+        await validatedWrite(targetPath, () => newChapter)
 
         return {
           content: [{
@@ -523,10 +539,12 @@ export function registerWritingTools(server: McpServer, contentDir: string) {
         const chapter = await safeReadJSON(srcPath)
         if (!chapter) return { content: [{ type: 'text' as const, text: `move_chapter failed: could not read chapter` }], isError: true }
 
-        // Write to target
+        // Write to target through the gate — moving a chapter between books is
+        // still a chapter write and must not be able to land a malformed file
+        // at the destination.
         const dstPath = path.join(dstDir, `${cleanChapter}.json`)
         if (!existsSync(dstDir)) mkdirSync(dstDir, { recursive: true })
-        await safeWriteJSONDirect(dstPath, chapter)
+        await validatedWrite(dstPath, () => chapter)
 
         // Migrate annotations
         let annotationsMigrated = 0
@@ -750,7 +768,9 @@ export function registerWritingTools(server: McpServer, contentDir: string) {
           blocks,
         }
 
-        await safeWriteJSONDirect(chapterPath, chapterData)
+        // import_markdown is a full-creation path — route it through the gate
+        // so a malformed parse result can never be persisted.
+        await validatedWrite(chapterPath, () => chapterData)
 
         return {
           content: [{

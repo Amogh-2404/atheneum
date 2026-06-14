@@ -1,10 +1,11 @@
 import { Hono } from 'hono'
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
+import { readFileSync, existsSync, mkdirSync } from 'fs'
 import { fileURLToPath } from 'url'
 import path from 'path'
 import { scheduleCommit, withFileLock } from '../git.js'
 import { sanitizeId, safePath } from '../utils.js'
 import { validateChapterGraceful } from '../validator.js'
+import { assertNoNewErrors, atomicWriteJSON } from '../lib/write-gate.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -56,21 +57,31 @@ chaptersRouter.post('/:chapterId/approve', async (c) => {
 
   return withFileLock(chapterPath, async () => {
     try {
-      const chapter = JSON.parse(readFileSync(chapterPath, 'utf-8'))
-      if (!Array.isArray(chapter.blocks)) {
+      // `current` is the pristine on-disk chapter (baseline for the gate).
+      const current = JSON.parse(readFileSync(chapterPath, 'utf-8'))
+      if (!Array.isArray(current.blocks)) {
         return c.json({ error: 'chapter has no blocks array' }, 500)
       }
 
+      // Build `next` by flipping the targeted blocks to published.
       const targetIds = new Set(body.blockIds)
       let approved = 0
-      for (const block of chapter.blocks) {
-        if (targetIds.has(block.id)) {
-          block.status = 'published'
-          approved++
-        }
+      const next = {
+        ...current,
+        blocks: current.blocks.map((block: any) => {
+          if (targetIds.has(block.id)) {
+            approved++
+            return { ...block, status: 'published' }
+          }
+          return block
+        }),
       }
 
-      writeFileSync(chapterPath, JSON.stringify(chapter, null, 2) + '\n', 'utf-8')
+      // Same validated choke point as the MCP path: refuse if this HTTP write
+      // would introduce any strict-schema error the chapter didn't already have,
+      // and persist atomically (temp + rename) so a crash can't leave a torn file.
+      assertNoNewErrors(current, next, chapterPath)
+      atomicWriteJSON(chapterPath, next)
 
       const bookId = sanitizeId(c.req.param('bookId'))
       const chapterId = sanitizeId(c.req.param('chapterId'))
@@ -103,21 +114,27 @@ chaptersRouter.post('/:chapterId/dismiss', async (c) => {
 
   return withFileLock(chapterPath, async () => {
     try {
-      const chapter = JSON.parse(readFileSync(chapterPath, 'utf-8'))
-      if (!Array.isArray(chapter.blocks)) {
+      const current = JSON.parse(readFileSync(chapterPath, 'utf-8'))
+      if (!Array.isArray(current.blocks)) {
         return c.json({ error: 'chapter has no blocks array' }, 500)
       }
 
       const targetIds = new Set(body.blockIds)
-      const before = chapter.blocks.length
-      chapter.blocks = chapter.blocks.filter((block: any) => !targetIds.has(block.id))
-      const removed = before - chapter.blocks.length
+      const before = current.blocks.length
+      const nextBlocks = current.blocks.filter((block: any) => !targetIds.has(block.id))
+      const removed = before - nextBlocks.length
 
-      if ('blockCount' in chapter) {
-        chapter.blockCount = chapter.blocks.length
+      const next: any = { ...current, blocks: nextBlocks }
+      if ('blockCount' in current) {
+        next.blockCount = nextBlocks.length
       }
 
-      writeFileSync(chapterPath, JSON.stringify(chapter, null, 2) + '\n', 'utf-8')
+      // Validated, atomic write — the dismiss route rewrites the blocks array, so
+      // it was the largest server-side validation hole; it now goes through the
+      // same gate as the MCP author. (Removing blocks can only shrink the error
+      // set, so this never spuriously rejects, but it stays on the one path.)
+      assertNoNewErrors(current, next, chapterPath)
+      atomicWriteJSON(chapterPath, next)
 
       const bookId = sanitizeId(c.req.param('bookId'))
       const chapterId = sanitizeId(c.req.param('chapterId'))
@@ -167,26 +184,38 @@ chaptersRouter.post('/:chapterId/blocks/:blockId/diagram', async (c) => {
 
   return withFileLock(chapterPath, async () => {
     try {
-      const chapter = JSON.parse(readFileSync(chapterPath, 'utf-8'))
-      if (!Array.isArray(chapter.blocks)) {
+      const current = JSON.parse(readFileSync(chapterPath, 'utf-8'))
+      if (!Array.isArray(current.blocks)) {
         return c.json({ error: 'chapter has no blocks array' }, 500)
       }
 
-      const block = chapter.blocks.find((b: any) => b.id === blockId)
+      const block = current.blocks.find((b: any) => b.id === blockId)
       if (!block) return c.json({ error: 'block not found' }, 404)
       if (block.type !== 'diagram') return c.json({ error: 'block is not a diagram' }, 400)
 
+      const diagramData = { type: 'excalidraw', version: 2, source: 'atheneum', elements: body.elements, appState: cleanAppState, files: body.files || {} }
+
       if (block.diagramFile) {
+        // Excalidraw sidecar file — not a chapter, so no ChapterSchema gate, but
+        // still write it atomically (temp + rename) to avoid torn diagram files.
         const diagramPath = safePath(CONTENT_DIR, bookId, 'diagrams', block.diagramFile)
         if (!diagramPath) return c.json({ error: 'invalid diagram file path' }, 400)
         const diagramDir = path.dirname(diagramPath)
         if (!existsSync(diagramDir)) mkdirSync(diagramDir, { recursive: true })
-        const diagramData = { type: 'excalidraw', version: 2, source: 'atheneum', elements: body.elements, appState: cleanAppState, files: body.files || {} }
-        writeFileSync(diagramPath, JSON.stringify(diagramData, null, 2) + '\n', 'utf-8')
+        atomicWriteJSON(diagramPath, diagramData)
         scheduleCommit(CONTENT_DIR, diagramPath, `Update diagram ${block.diagramFile} in ${bookId}`)
       } else {
-        block.inlineData = { type: 'excalidraw', version: 2, source: 'atheneum', elements: body.elements, appState: cleanAppState, files: body.files || {} }
-        writeFileSync(chapterPath, JSON.stringify(chapter, null, 2) + '\n', 'utf-8')
+        // Inline-data path mutates the CHAPTER (the endpoint shoves client-supplied
+        // elements into block.inlineData), so it must pass the chapter gate before
+        // hitting disk — same validated, atomic choke point as every other writer.
+        const next = {
+          ...current,
+          blocks: current.blocks.map((b: any) =>
+            b.id === blockId ? { ...b, inlineData: diagramData } : b,
+          ),
+        }
+        assertNoNewErrors(current, next, chapterPath)
+        atomicWriteJSON(chapterPath, next)
         scheduleCommit(CONTENT_DIR, chapterPath, `Update diagram in ${bookId}/${chapterId}`)
       }
 
