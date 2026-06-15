@@ -86,8 +86,11 @@ export default function AnnotationToolbar({
   const toolbarRef = useRef<HTMLDivElement>(null)
   const noteInputRef = useRef<HTMLTextAreaElement>(null)
 
-  /* ── Show toolbar on text selection ── */
-  const handleMouseUp = useCallback(() => {
+  /* ── Show toolbar on text selection ──
+     Shared by the mouse path (mouseup) and the touch path (touchend /
+     debounced selectionchange). It reads window.getSelection() directly,
+     so it is gesture-agnostic — no event object is required. */
+  const captureSelection = useCallback(() => {
     // Small delay so the selection is finalised
     requestAnimationFrame(() => {
       const sel = window.getSelection()
@@ -149,13 +152,16 @@ export default function AnnotationToolbar({
   }, [])
 
   useEffect(() => {
-    function onMouseDown(e: MouseEvent) {
+    // Dismiss on a press-away — for both mouse (mousedown) and touch
+    // (touchstart) so the toolbar closes when a finger taps outside it.
+    function onPointerDown(e: MouseEvent | TouchEvent) {
       if (
         toolbarRef.current &&
         e.target instanceof Node &&
         !toolbarRef.current.contains(e.target)
       ) {
-        // Don't hide immediately — let mouseup fire first for new selections
+        // Don't hide immediately — let mouseup/touchend fire first for new
+        // selections, then only hide if nothing got selected.
         setTimeout(() => {
           const sel = window.getSelection()
           if (!sel || sel.isCollapsed) hide()
@@ -167,22 +173,84 @@ export default function AnnotationToolbar({
       if (e.key === 'Escape') hide()
     }
 
-    document.addEventListener('mousedown', onMouseDown)
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('touchstart', onPointerDown)
     document.addEventListener('keydown', onKeyDown)
     return () => {
-      document.removeEventListener('mousedown', onMouseDown)
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('touchstart', onPointerDown)
       document.removeEventListener('keydown', onKeyDown)
     }
   }, [hide])
 
-  /* ── Listen for mouseup on content area ── */
+  /* ── Listen for mouseup on content area (mouse path) ── */
   useEffect(() => {
     const el = contentRef.current
     if (!el) return
 
-    el.addEventListener('mouseup', handleMouseUp)
-    return () => el.removeEventListener('mouseup', handleMouseUp)
-  }, [contentRef, handleMouseUp])
+    el.addEventListener('mouseup', captureSelection)
+    return () => el.removeEventListener('mouseup', captureSelection)
+  }, [contentRef, captureSelection])
+
+  /* ── Touch path — alongside the mouse path, not a replacement ──
+     On touch, 'mouseup' is unreliable, so we listen for 'touchend' and for a
+     debounced 'selectionchange' (which fires as the long-press selection
+     grows). Both funnel into the same captureSelection body. We also
+     preventDefault the long-press once a selection lands inside our content so
+     iOS suppresses its native Copy / Look-Up callout and lets our toolbar own
+     the gesture. */
+  useEffect(() => {
+    const el = contentRef.current
+    if (!el) return
+
+    // iOS suppresses programmatic/long-press selection unless the element
+    // opts in to text selection; -webkit-touch-callout:none stops the native
+    // Copy/Look-Up bubble from racing our toolbar. Stash and restore prior
+    // values so we don't clobber styles owned elsewhere.
+    const style = el.style as CSSStyleDeclaration & { webkitTouchCallout?: string }
+    const prevUserSelect = style.webkitUserSelect
+    const prevCallout = style.webkitTouchCallout ?? ''
+    style.webkitUserSelect = 'text'
+    if ('webkitTouchCallout' in style) style.webkitTouchCallout = 'none'
+
+    let debounce: ReturnType<typeof setTimeout> | null = null
+
+    const onTouchEnd = () => captureSelection()
+
+    const onSelectionChange = () => {
+      const sel = window.getSelection()
+      if (!sel || sel.isCollapsed || !sel.rangeCount) return
+      // Only react to selections inside our content area.
+      if (!el.contains(sel.getRangeAt(0).commonAncestorContainer)) return
+      if (debounce) clearTimeout(debounce)
+      debounce = setTimeout(() => captureSelection(), 250)
+    }
+
+    // Suppress the native callout only when the long-press selection is ours.
+    const onContextMenu = (e: Event) => {
+      const sel = window.getSelection()
+      if (
+        sel &&
+        !sel.isCollapsed &&
+        sel.rangeCount &&
+        el.contains(sel.getRangeAt(0).commonAncestorContainer)
+      ) {
+        e.preventDefault()
+      }
+    }
+
+    el.addEventListener('touchend', onTouchEnd)
+    el.addEventListener('contextmenu', onContextMenu)
+    document.addEventListener('selectionchange', onSelectionChange)
+    return () => {
+      if (debounce) clearTimeout(debounce)
+      el.removeEventListener('touchend', onTouchEnd)
+      el.removeEventListener('contextmenu', onContextMenu)
+      document.removeEventListener('selectionchange', onSelectionChange)
+      style.webkitUserSelect = prevUserSelect
+      if ('webkitTouchCallout' in style) style.webkitTouchCallout = prevCallout
+    }
+  }, [contentRef, captureSelection])
 
   /* ── Focus note input when opened ── */
   useEffect(() => {

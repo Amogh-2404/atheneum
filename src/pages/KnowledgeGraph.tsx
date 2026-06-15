@@ -374,50 +374,74 @@ export default function KnowledgeGraph() {
           zIndex: 10,
           padding: '1rem 2rem',
           display: 'flex',
-          alignItems: 'center',
+          alignItems: 'flex-end',
           justifyContent: 'space-between',
           background: 'linear-gradient(180deg, var(--chrome-bg) 60%, transparent)',
+          borderBottom: '1px solid var(--chrome-border)',
           pointerEvents: 'none',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, pointerEvents: 'auto' }}>
+        <div style={{ pointerEvents: 'auto' }}>
           <Link
             to={bookId ? `/book/${bookId}` : '/'}
             style={{
+              display: 'block',
               fontFamily: 'var(--font-ui)',
-              fontSize: '0.85rem',
-              color: 'var(--chrome-text)',
+              fontSize: '0.7rem',
+              color: 'var(--chrome-muted, var(--ink-faint))',
               textDecoration: 'none',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
               transition: 'color 200ms ease',
             }}
             onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--chrome-hover-text, #f1f5f9)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--chrome-text)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--chrome-muted, var(--ink-faint))' }}
           >
             &larr; Back to reader
           </Link>
           <h1
             style={{
               fontFamily: 'var(--font-heading)',
-              fontSize: '1.6rem',
+              fontSize: '2.3rem',
               fontWeight: 700,
               color: 'var(--chrome-accent)',
-              margin: 0,
+              margin: '4px 0 0',
+              lineHeight: 1.1,
             }}
           >
             Knowledge Map
           </h1>
         </div>
 
-        <div
-          style={{
-            fontFamily: 'var(--font-ui)',
-            fontSize: '0.75rem',
-            color: 'var(--chrome-text)',
-            letterSpacing: '0.04em',
-            pointerEvents: 'auto',
-          }}
-        >
-          {nodes.length} concepts &middot; {edges.length} connections
+        <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
+          <div
+            style={{
+              fontFamily: 'var(--font-ui)',
+              fontSize: '0.72rem',
+              color: 'var(--chrome-text)',
+              letterSpacing: '0.03em',
+              background: 'var(--chrome-surface)',
+              border: '1px solid var(--chrome-border)',
+              borderRadius: 6,
+              padding: '4px 10px',
+            }}
+          >
+            {nodes.length} concepts
+          </div>
+          <div
+            style={{
+              fontFamily: 'var(--font-ui)',
+              fontSize: '0.72rem',
+              color: 'var(--chrome-text)',
+              letterSpacing: '0.03em',
+              background: 'var(--chrome-surface)',
+              border: '1px solid var(--chrome-border)',
+              borderRadius: 6,
+              padding: '4px 10px',
+            }}
+          >
+            {edges.length} connections
+          </div>
         </div>
       </motion.div>
 
@@ -601,10 +625,10 @@ export default function KnowledgeGraph() {
                 textAnchor="middle"
                 dominantBaseline="central"
                 style={{
-                  fontFamily: 'var(--font-heading)',
-                  fontSize: Math.min(11, node.radius * 0.4) + 'px',
+                  fontFamily: 'var(--font-ui)',
+                  fontSize: Math.max(11.5, Math.min(13, node.radius * 0.42)) + 'px',
                   fontWeight: 700,
-                  fill: isHovered ? 'var(--chrome-bg)' : color,
+                  fill: isHovered ? 'var(--chrome-bg)' : '#e8edf5',
                   pointerEvents: 'none',
                   transition: 'fill 200ms',
                   userSelect: 'none',

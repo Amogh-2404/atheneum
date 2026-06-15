@@ -424,6 +424,36 @@ function seededRandom(seed: number): () => number {
   }
 }
 
+/**
+ * Identity hue for a cover, spread across the wheel.
+ *
+ * The stored `coverColor` carries each book's intended hue, but the seeded
+ * data set can cluster (several blue-grays). To guarantee covers are
+ * distinguishable BY COLOUR — not just the icon — we derive a stable hue
+ * per title (golden-ratio spaced so neighbours land far apart on the wheel)
+ * and mix the stored colour toward it. The result is a saturated, distinct
+ * hue family per book that is still deterministic across renders.
+ */
+function coverIdentityHue(seed: number): number {
+  // 0.618… is the golden conjugate — successive multiples scatter evenly.
+  return Math.round(((seed * 0.61803398875) % 1) * 360)
+}
+
+/** A vivid HSL anchor for this book, used to differentiate every cover. */
+function identityColor(seed: number, lightness: number, saturation = 72): string {
+  return `hsl(${coverIdentityHue(seed)}, ${saturation}%, ${lightness}%)`
+}
+
+/**
+ * Build a circuit/pattern SVG tinted with `stroke` so the texture itself
+ * carries the book's identity instead of a hardcoded cyan. Colour is passed
+ * through encodeURIComponent so any hsl()/hex value survives the data URI.
+ */
+function tintedCircuitPattern(stroke: string): string {
+  const c = encodeURIComponent(stroke)
+  return `url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 20 L10 20 L10 10 L30 10 L30 20 L40 20' fill='none' stroke='${c}' stroke-opacity='0.32' stroke-width='0.9'/%3E%3Cpath d='M20 0 L20 10' fill='none' stroke='${c}' stroke-opacity='0.26' stroke-width='0.7'/%3E%3Cpath d='M20 30 L20 40' fill='none' stroke='${c}' stroke-opacity='0.26' stroke-width='0.7'/%3E%3Ccircle cx='10' cy='10' r='2' fill='${c}' fill-opacity='0.36'/%3E%3Ccircle cx='30' cy='10' r='2' fill='${c}' fill-opacity='0.36'/%3E%3Ccircle cx='30' cy='20' r='1.4' fill='${c}' fill-opacity='0.28'/%3E%3Ccircle cx='20' cy='30' r='1.2' fill='${c}' fill-opacity='0.24'/%3E%3C/svg%3E")`
+}
+
 function BookCover({
   title,
   coverColor,
@@ -449,6 +479,17 @@ function BookCover({
   const dotOffsetX = Math.round(rand() * 40)
   const dotOffsetY = Math.round(rand() * 40)
 
+  // ── Per-book identity colour ──
+  // Mix the stored coverColor toward a golden-ratio-spread hue so every
+  // cover lands in a distinct hue family (Atheneum cyan / Lock-Free amber /
+  // IMC green …) even when the stored palette clusters into blue-grays.
+  const identityMid = identityColor(seed, 50)       // vivid mid-tone
+  const identityDeep = identityColor(seed, 34)      // shadowed focal hue
+  const hueColor = `color-mix(in srgb, ${coverColor} 55%, ${identityMid})`
+  const hueColorDeep = `color-mix(in srgb, ${coverColor} 45%, ${identityDeep})`
+  // Pattern/texture stroke inherits the book's hue, not a hardcoded #52FEFE.
+  const patternStroke = identityColor(seed, 62, 80)
+
   // ── Theme-specific background ──
   // Each theme gets a FUNDAMENTALLY different base
 
@@ -458,19 +499,20 @@ function BookCover({
     // LIGHT base — cream/white with coverColor as subtle accent band
     coverBackground = '#f5f2ec'
   } else if (theme === 'dark') {
-    // Dark gradient — keep working dark approach, blend coverColor into darkness
-    const dark1 = `color-mix(in srgb, ${coverColor} 40%, #0a0e17)`
-    const dark2 = `color-mix(in srgb, ${coverColor} 15%, #050810)`
+    // Dark gradient — the focal band carries a STRONG hue (≈60%) for identity,
+    // with the dark vignette held to the EDGES so titles stay legible.
+    const edge1 = `color-mix(in srgb, ${hueColorDeep} 30%, #0a0e17)`
+    const edge2 = `color-mix(in srgb, ${hueColorDeep} 14%, #050810)`
     const angle = Math.round(130 + rand() * 40)
-    coverBackground = `linear-gradient(${angle}deg, ${dark2} 0%, ${coverColor} 45%, ${dark1} 100%)`
+    coverBackground = `linear-gradient(${angle}deg, ${edge2} 0%, ${hueColor} 45%, ${edge1} 100%)`
   } else {
     // Sepia — rich warm brown tones, NOT coverColor-based
     coverBackground = `linear-gradient(165deg, #3a2a1a 0%, #2e1f12 40%, #2a1a0e 100%)`
   }
 
-  // ── Dark theme patterns ──
-  const circuitPattern = `url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 20 L10 20 L10 10 L30 10 L30 20 L40 20' fill='none' stroke='%2352FEFE' stroke-opacity='0.35' stroke-width='0.9'/%3E%3Cpath d='M20 0 L20 10' fill='none' stroke='%2352FEFE' stroke-opacity='0.30' stroke-width='0.7'/%3E%3Cpath d='M20 30 L20 40' fill='none' stroke='%2352FEFE' stroke-opacity='0.30' stroke-width='0.7'/%3E%3Ccircle cx='10' cy='10' r='2' fill='%2352FEFE' fill-opacity='0.40'/%3E%3Ccircle cx='30' cy='10' r='2' fill='%2352FEFE' fill-opacity='0.40'/%3E%3Ccircle cx='30' cy='20' r='1.4' fill='%2352FEFE' fill-opacity='0.30'/%3E%3Ccircle cx='20' cy='30' r='1.2' fill='%2352FEFE' fill-opacity='0.25'/%3E%3C/svg%3E")`
-  const gridPattern = `url("data:image/svg+xml,%3Csvg width='24' height='24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M24 0 L24 24 M0 24 L24 24' fill='none' stroke='%2352FEFE' stroke-opacity='0.10' stroke-width='0.5'/%3E%3C/svg%3E")`
+  // ── Dark theme patterns — tinted with the book's identity hue ──
+  const circuitPattern = tintedCircuitPattern(patternStroke)
+  const gridPattern = `url("data:image/svg+xml,%3Csvg width='24' height='24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M24 0 L24 24 M0 24 L24 24' fill='none' stroke='${encodeURIComponent(patternStroke)}' stroke-opacity='0.10' stroke-width='0.5'/%3E%3C/svg%3E")`
 
   // ── Sepia theme patterns ──
   const damaskPattern = `url("data:image/svg+xml,%3Csvg width='32' height='32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M16 2 Q24 10 16 18 Q8 10 16 2 Z' fill='none' stroke='%23d4a850' stroke-opacity='0.20' stroke-width='0.9'/%3E%3Cpath d='M16 14 Q24 22 16 30 Q8 22 16 14 Z' fill='none' stroke='%23d4a850' stroke-opacity='0.17' stroke-width='0.8'/%3E%3Cpath d='M0 16 Q8 10 0 2' fill='none' stroke='%23d4a850' stroke-opacity='0.14' stroke-width='0.7'/%3E%3Cpath d='M32 16 Q24 10 32 2' fill='none' stroke='%23d4a850' stroke-opacity='0.14' stroke-width='0.7'/%3E%3Ccircle cx='16' cy='10' r='1.2' fill='%23d4a850' fill-opacity='0.18'/%3E%3C/svg%3E")`
@@ -499,7 +541,9 @@ function BookCover({
           ═══════════════════════════════════════════════════════ */}
       {theme === 'light' && (
         <>
-          {/* Wide horizontal color band at top — coverColor at 60% opacity */}
+          {/* Wide horizontal color band at top — the book's identity hue (stored
+              coverColor mixed toward the golden-spread hue) so light covers are
+              distinguishable by colour, not just the icon. */}
           <div
             style={{
               position: 'absolute',
@@ -507,8 +551,8 @@ function BookCover({
               left: 0,
               right: 0,
               height: '25%',
-              background: coverColor,
-              opacity: 0.55,
+              background: `color-mix(in srgb, ${coverColor} 50%, ${identityColor(seed, 56, 64)})`,
+              opacity: 0.6,
               pointerEvents: 'none',
               zIndex: 1,
             }}
@@ -612,21 +656,23 @@ function BookCover({
               zIndex: 2,
             }}
           />
-          {/* NEON STRIPE — prominent glowing horizontal line at ~25% from top */}
+          {/* Hue stripe — a restrained accent line at ~25%, in the book's own
+              hue. Lower opacity + softer glow so it reads as poise, not shout. */}
           <div
             style={{
               position: 'absolute',
               top: '25%',
               left: 0,
               right: 0,
-              height: 2,
-              background: 'linear-gradient(90deg, transparent 5%, rgba(82,254,254,0.7) 20%, rgba(82,254,254,0.9) 50%, rgba(82,254,254,0.7) 80%, transparent 95%)',
-              boxShadow: '0 0 16px rgba(82,254,254,0.5), 0 0 32px rgba(82,254,254,0.2), 0 0 4px rgba(82,254,254,0.8)',
+              height: 1,
+              background: `linear-gradient(90deg, transparent 8%, ${identityColor(seed, 66, 78)} 50%, transparent 92%)`,
+              opacity: 0.5,
+              boxShadow: `0 0 8px ${identityColor(seed, 60, 70)}`,
               pointerEvents: 'none',
               zIndex: 3,
             }}
           />
-          {/* CRT scan-line effect */}
+          {/* CRT scan-line effect — neutralised and faint, texture not statement */}
           <div
             style={{
               position: 'absolute',
@@ -635,8 +681,8 @@ function BookCover({
                 0deg,
                 transparent,
                 transparent 3px,
-                rgba(82, 254, 254, 0.035) 3px,
-                rgba(82, 254, 254, 0.035) 4px
+                rgba(255, 255, 255, 0.018) 3px,
+                rgba(255, 255, 255, 0.018) 4px
               )`,
               pointerEvents: 'none',
               zIndex: 2,
@@ -1078,6 +1124,7 @@ function BookCard({
 
   return (
     <motion.div
+      className="book-card"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{
@@ -1092,6 +1139,7 @@ function BookCard({
       {(onArchive || onDelete) && (
         <button
           type="button"
+          aria-label="Book options"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpen(!menuOpen); setConfirmDelete(false) }}
           style={{
             position: 'absolute',
@@ -1723,9 +1771,15 @@ export default function Bookshelf() {
         )}
       </div>
 
-      {/* Show menu button on card hover */}
+      {/* Reveal the overflow menu button on card hover, on keyboard focus
+          within the card, and when the button itself is tab-focused — so the
+          destructive Delete action is reachable without a mouse. */}
       <style>{`
-        [style*="position: relative"]:hover .book-card-menu-btn {
+        .book-card:hover .book-card-menu-btn,
+        .book-card:focus-within .book-card-menu-btn {
+          opacity: 1 !important;
+        }
+        .book-card-menu-btn:focus-visible {
           opacity: 1 !important;
         }
       `}</style>

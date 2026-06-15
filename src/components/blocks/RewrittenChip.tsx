@@ -3,6 +3,12 @@ import { motion } from 'framer-motion'
 interface RewrittenChipProps {
   /** Open the old-vs-new review diff for this block. */
   onReview: () => void
+  /**
+   * True when this block also carries a confusion marker (which lives at the same
+   * left:-28 top:0 gutter slot). When set, the chip drops below it so the two
+   * never overlap — the confusion dot (the cause) stays on top.
+   */
+  confusionPresent?: boolean
 }
 
 /**
@@ -10,19 +16,20 @@ interface RewrittenChipProps {
  * status:'draft' replacement exists for it (linked via metadata.insertedAfter).
  * Clicking it opens the VersionTimeline diff in draft-review mode. Styled to sit
  * in the same left gutter as ConfusionIndicator, but reads as an actionable label.
+ * When a confusion marker shares the gutter, it stacks below it (top:26).
  */
-export default function RewrittenChip({ onReview }: RewrittenChipProps) {
+export default function RewrittenChip({ onReview, confusionPresent = false }: RewrittenChipProps) {
   return (
     <motion.button
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.8 }}
-      transition={{ duration: 0.15 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.12 }}
       onClick={onReview}
-      title="An AI rewrite is waiting — click to review"
+      title="rewritten from your confusion — review"
       style={{
         position: 'absolute',
-        top: 0,
+        top: confusionPresent ? 26 : 0,
         left: -28,
         display: 'flex',
         alignItems: 'center',

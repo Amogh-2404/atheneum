@@ -213,6 +213,7 @@ export default function PreferencesPanel({ onClose }: Props) {
 
       {/* Panel */}
       <motion.aside
+        className="preferences-panel"
         initial={{ x: '100%' }}
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
@@ -561,16 +562,16 @@ export default function PreferencesPanel({ onClose }: Props) {
         </div>
       </motion.aside>
 
-      {/* Slider thumb styling */}
+      {/* Slider thumb styling — scoped to the panel so it never leaks to reactive-math sliders */}
       <style>{`
-        input[type="range"] {
+        .preferences-panel input[type="range"] {
           -webkit-appearance: none;
           appearance: none;
           background: var(--chrome-border);
           border-radius: 2px;
           outline: none;
         }
-        input[type="range"]::-webkit-slider-thumb {
+        .preferences-panel input[type="range"]::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
           width: 16px;
@@ -581,7 +582,7 @@ export default function PreferencesPanel({ onClose }: Props) {
           border: 2px solid var(--chrome-surface);
           box-shadow: 0 1px 4px rgba(0,0,0,0.3);
         }
-        input[type="range"]::-moz-range-thumb {
+        .preferences-panel input[type="range"]::-moz-range-thumb {
           width: 16px;
           height: 16px;
           border-radius: 50%;

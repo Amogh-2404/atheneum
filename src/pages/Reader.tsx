@@ -1252,7 +1252,10 @@ export default function Reader() {
                       ))}
                       {/* Forge: a pending AI rewrite exists for this published block — review chip */}
                       {block.status !== 'draft' && draftReplacements.has(block.id) && (
-                        <RewrittenChip onReview={() => openDraftReview(block.id)} />
+                        <RewrittenChip
+                          onReview={() => openDraftReview(block.id)}
+                          confusionPresent={blockConfusion.length > 0}
+                        />
                       )}
                       {/* Provenance: hairline margin mark for AI-authored / human-approved blocks */}
                       {block.metadata?.origin && <ProvenanceMark origin={block.metadata.origin} />}

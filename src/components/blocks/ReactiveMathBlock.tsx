@@ -71,6 +71,21 @@ export default function ReactiveMathBlock({
         overflow: 'hidden',
       }}
     >
+      {/* Eyebrow — same grammar as the Predict block */}
+      <div
+        style={{
+          padding: '0.7rem 1.5rem 0',
+          fontFamily: 'var(--font-ui)',
+          fontSize: '0.62rem',
+          fontWeight: 600,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          color: 'var(--chrome-accent, #52FEFE)',
+        }}
+      >
+        Interactive · drag to explore
+      </div>
+
       {/* Live formula */}
       <div
         style={{
@@ -96,37 +111,56 @@ export default function ReactiveMathBlock({
             <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <label
                 htmlFor={`rm-${p.name}`}
+                title={p.label ?? p.name}
                 style={{
                   fontFamily: 'var(--font-ui)',
                   fontSize: '0.78rem',
                   fontWeight: 600,
                   letterSpacing: '0.02em',
                   color: 'var(--ink-secondary)',
-                  minWidth: 92,
+                  maxWidth: 92,
                   flexShrink: 0,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {p.label ?? p.name}
               </label>
-              <input
-                id={`rm-${p.name}`}
-                type="range"
-                min={p.min}
-                max={p.max}
-                step={step}
-                value={v}
-                onChange={(e) => setParam(p.name, parseFloat(e.target.value))}
-                style={{
-                  flex: 1,
-                  accentColor: 'var(--chrome-accent, #52FEFE)',
-                  height: 4,
-                  cursor: 'pointer',
-                  background: `linear-gradient(to right, var(--chrome-accent, #52FEFE) ${pct}%, var(--ruled-line-color, rgba(140,160,200,0.3)) ${pct}%)`,
-                  borderRadius: 2,
-                  appearance: 'none',
-                  WebkitAppearance: 'none',
-                }}
-              />
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <input
+                  id={`rm-${p.name}`}
+                  type="range"
+                  min={p.min}
+                  max={p.max}
+                  step={step}
+                  value={v}
+                  onChange={(e) => setParam(p.name, parseFloat(e.target.value))}
+                  style={{
+                    width: '100%',
+                    accentColor: 'var(--chrome-accent, #52FEFE)',
+                    height: 4,
+                    cursor: 'pointer',
+                    background: `linear-gradient(to right, var(--chrome-accent, #52FEFE) ${pct}%, var(--ruled-line-color, rgba(140,160,200,0.3)) ${pct}%)`,
+                    borderRadius: 2,
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                  }}
+                />
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontFamily: 'var(--font-code)',
+                    fontSize: '0.68rem',
+                    color: 'var(--ink-faint)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  <span>{formatNumber(p.min, precision)}</span>
+                  <span>{formatNumber(p.max, precision)}</span>
+                </div>
+              </div>
               <span
                 style={{
                   fontFamily: 'var(--font-code)',

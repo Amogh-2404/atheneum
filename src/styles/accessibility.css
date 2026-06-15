@@ -15,9 +15,10 @@
   }
 }
 
-/* Visible focus ring for keyboard navigation */
+/* Visible focus ring for keyboard navigation — theme-aware via --focus-ring
+   (cyan on dark, warm on paper/sepia) so it never clashes with the page. */
 *:focus-visible {
-  outline: 2px solid var(--chrome-accent, #52FEFE);
+  outline: 2px solid var(--focus-ring, var(--chrome-accent, #52FEFE));
   outline-offset: 2px;
 }
 

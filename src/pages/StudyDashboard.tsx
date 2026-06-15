@@ -180,19 +180,19 @@ export default function StudyDashboard() {
     <div style={{ minHeight: '100vh', background: 'var(--chrome-bg)', padding: '2rem' }}>
       <div style={{ maxWidth: 700, margin: '0 auto' }}>
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 32, paddingBottom: 16, borderBottom: '1px solid var(--chrome-border)' }}>
           <div>
-            <Link to={`/book/${bookId}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', color: 'var(--chrome-text)', textDecoration: 'none', opacity: 0.6 }}>
+            <Link to={`/book/${bookId}`} style={{ display: 'block', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', color: 'var(--chrome-muted, var(--ink-faint))', textDecoration: 'none', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               &larr; {book.title}
             </Link>
-            <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--chrome-accent)', margin: '4px 0 0' }}>
+            <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.3rem', fontWeight: 700, color: 'var(--chrome-accent)', margin: '4px 0 0', lineHeight: 1.1 }}>
               Study Dashboard
             </h1>
           </div>
           {overallScore !== null && (
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', color: 'var(--chrome-text)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Comprehension</div>
-              <div style={{ fontFamily: 'var(--font-heading)', fontSize: '1.8rem', fontWeight: 700, color: overallScore >= 80 ? '#16a34a' : overallScore >= 50 ? '#ea580c' : '#dc2626' }}>
+              <div style={{ fontFamily: 'var(--font-code)', fontFeatureSettings: '"tnum" 1', fontSize: '1.8rem', fontWeight: 700, color: overallScore >= 80 ? '#16a34a' : overallScore >= 50 ? '#ea580c' : '#dc2626' }}>
                 {overallScore}%
               </div>
             </div>
@@ -205,7 +205,7 @@ export default function StudyDashboard() {
             <h2 style={{ fontFamily: 'var(--font-ui)', fontSize: '0.85rem', fontWeight: 700, color: 'var(--chrome-accent)', margin: 0, letterSpacing: '0.04em' }}>
               Flashcards Due
             </h2>
-            <span style={{ fontFamily: 'var(--font-heading)', fontSize: '1.3rem', fontWeight: 700, color: dueCards.length > 0 ? 'var(--chrome-accent)' : 'var(--chrome-text)' }}>
+            <span style={{ fontFamily: 'var(--font-code)', fontFeatureSettings: '"tnum" 1', fontSize: '1.3rem', fontWeight: 700, color: dueCards.length > 0 ? 'var(--chrome-accent)' : 'var(--chrome-text)' }}>
               {dueCards.length}
             </span>
           </div>
@@ -237,7 +237,7 @@ export default function StudyDashboard() {
                     {q.chapterId.replace(/^\d+-/, '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
                   </span>
                   <span style={{
-                    fontFamily: 'var(--font-ui)', fontSize: '0.85rem', fontWeight: 700,
+                    fontFamily: 'var(--font-code)', fontFeatureSettings: '"tnum" 1', fontSize: '0.85rem', fontWeight: 700,
                     color: q.correct === q.total ? '#16a34a' : q.correct / q.total >= 0.5 ? '#ea580c' : '#dc2626',
                   }}>
                     {q.correct}/{q.total}

@@ -34,17 +34,37 @@ export default function AnnotationNotebook() {
   const [filter, setFilter] = useState<FilterType>('all')
   const [sortBy, setSortBy] = useState<SortBy>('chapter')
 
-  // Get all annotations for this book (not chapter-filtered)
-  const allBookAnnotations = useMemo(() => {
+  // Get all annotations for this book (not chapter-filtered, not type-filtered) —
+  // the single source the filtered view and the per-type counts both derive from.
+  const bookAnnotations = useMemo(() => {
     try {
       const raw = localStorage.getItem('atheneum-annotations')
       if (!raw) return []
       const all: Annotation[] = JSON.parse(raw)
-      let filtered = all.filter(a => a.bookId === bookId)
-      if (filter !== 'all') filtered = filtered.filter(a => a.type === filter)
-      return filtered
+      return all.filter(a => a.bookId === bookId)
     } catch { return [] }
-  }, [bookId, filter])
+  }, [bookId])
+
+  // Per-type counts for the filter pills (count is independent of the active filter)
+  const typeCounts = useMemo(() => {
+    const counts: Record<FilterType, number> = {
+      all: bookAnnotations.length,
+      highlight: 0,
+      bookmark: 0,
+      'margin-note': 0,
+      confusion: 0,
+    }
+    for (const a of bookAnnotations) {
+      if (a.type in counts) counts[a.type as FilterType]++
+    }
+    return counts
+  }, [bookAnnotations])
+
+  // Active-filter view
+  const allBookAnnotations = useMemo(() => {
+    if (filter === 'all') return bookAnnotations
+    return bookAnnotations.filter(a => a.type === filter)
+  }, [bookAnnotations, filter])
 
   // Sort
   const sorted = useMemo(() => {
@@ -128,7 +148,15 @@ export default function AnnotationNotebook() {
         {/* Content */}
         {a.type === 'highlight' && (
           <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--chrome-text)', lineHeight: 1.5 }}>
-            &ldquo;{(a as Highlight).selectedText}&rdquo;
+            <div style={{
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              overflowWrap: 'anywhere',
+            }}>
+              &ldquo;{(a as Highlight).selectedText}&rdquo;
+            </div>
             {(a as Highlight).note && (
               <div style={{ marginTop: 4, fontSize: '0.8rem', color: 'var(--ink-faint)', fontStyle: 'italic' }}>
                 {(a as Highlight).note}
@@ -159,36 +187,64 @@ export default function AnnotationNotebook() {
     <div style={{ minHeight: '100vh', background: 'var(--chrome-bg)', padding: '2rem' }}>
       <div style={{ maxWidth: 700, margin: '0 auto' }}>
         {/* Header */}
-        <Link to={`/book/${bookId}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', color: 'var(--chrome-text)', textDecoration: 'none', opacity: 0.6 }}>
-          &larr; {book.title}
-        </Link>
-        <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--chrome-accent)', margin: '4px 0 24px' }}>
-          Annotation Notebook
-        </h1>
+        <div style={{ marginBottom: 24, paddingBottom: 16, borderBottom: '1px solid var(--chrome-border)' }}>
+          <Link to={`/book/${bookId}`} style={{ display: 'block', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', color: 'var(--chrome-muted, var(--ink-faint))', textDecoration: 'none', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            &larr; {book.title}
+          </Link>
+          <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.3rem', fontWeight: 700, color: 'var(--chrome-accent)', margin: '4px 0 0', lineHeight: 1.1 }}>
+            Annotation Notebook
+          </h1>
+        </div>
 
         {/* Filters + Sort */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-          {FILTER_OPTIONS.map(f => (
-            <button
-              key={f.key}
-              type="button"
-              onClick={() => setFilter(f.key)}
-              style={{
-                fontFamily: 'var(--font-ui)',
-                fontSize: '0.75rem',
-                fontWeight: filter === f.key ? 700 : 400,
-                color: filter === f.key ? 'var(--chrome-accent)' : 'var(--chrome-text)',
-                background: filter === f.key ? 'rgba(82,254,254,0.08)' : 'transparent',
-                border: `1px solid ${filter === f.key ? 'var(--chrome-accent)' : 'var(--chrome-border)'}`,
-                borderRadius: 4,
-                padding: '4px 10px',
-                cursor: 'pointer',
-                transition: 'all 150ms',
-              }}
-            >
-              {f.label}
-            </button>
-          ))}
+          {FILTER_OPTIONS.map(f => {
+            const count = typeCounts[f.key]
+            const isActive = filter === f.key
+            // A non-"all" filter with zero matches leads to an identical empty state — disable it.
+            const isEmpty = f.key !== 'all' && count === 0
+            return (
+              <button
+                key={f.key}
+                type="button"
+                disabled={isEmpty}
+                onClick={() => { if (!isEmpty) setFilter(f.key) }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontFamily: 'var(--font-ui)',
+                  fontSize: '0.75rem',
+                  fontWeight: isActive ? 700 : 400,
+                  color: isActive ? 'var(--chrome-accent)' : 'var(--chrome-text)',
+                  background: isActive ? 'rgba(82,254,254,0.08)' : 'transparent',
+                  border: `1px solid ${isActive ? 'var(--chrome-accent)' : 'var(--chrome-border)'}`,
+                  borderRadius: 4,
+                  padding: '4px 10px',
+                  cursor: isEmpty ? 'not-allowed' : 'pointer',
+                  opacity: isEmpty ? 0.35 : 1,
+                  transition: 'all 150ms',
+                }}
+                onMouseEnter={(e) => {
+                  if (isActive || isEmpty) return
+                  e.currentTarget.style.borderColor = 'rgba(82,254,254,0.4)'
+                  e.currentTarget.style.background = 'rgba(82,254,254,0.04)'
+                }}
+                onMouseLeave={(e) => {
+                  if (isActive || isEmpty) return
+                  e.currentTarget.style.borderColor = 'var(--chrome-border)'
+                  e.currentTarget.style.background = 'transparent'
+                }}
+                onMouseDown={(e) => { if (!isEmpty) e.currentTarget.style.transform = 'translateY(1px)' }}
+                onMouseUp={(e) => { e.currentTarget.style.transform = 'translateY(0)' }}
+              >
+                {f.label}
+                <span style={{ fontFamily: 'var(--font-code)', fontFeatureSettings: '"tnum" 1', fontSize: '0.7rem', opacity: 0.7 }}>
+                  {count}
+                </span>
+              </button>
+            )
+          })}
           <div style={{ marginLeft: 'auto' }}>
             <select
               value={sortBy}
@@ -210,7 +266,7 @@ export default function AnnotationNotebook() {
         </div>
 
         {/* Count */}
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', color: 'var(--ink-faint)', marginBottom: 16 }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', color: 'var(--chrome-text)', marginBottom: 16 }}>
           {allBookAnnotations.length} annotation{allBookAnnotations.length !== 1 ? 's' : ''}
         </div>
 
