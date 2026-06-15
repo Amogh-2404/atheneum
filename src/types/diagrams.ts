@@ -368,6 +368,9 @@ export const DiagramBlockSchema = z.object({
     updatedAt: z.string().optional(),
     insertedAfter: z.string().optional(),
     movedFrom: z.string().optional(),
+    origin: z.enum(['original', 'ai-manual', 'ai-improve-loop', 'human-approved']).optional(),
+    sourceSignal: z.string().optional(),
+    revisionOf: z.string().optional(),
   }).optional(),
 
   // ─── Pedagogy envelope (cookbook universal rules) ──

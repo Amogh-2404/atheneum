@@ -26,6 +26,7 @@ import ExportMenu from '@/components/export/ExportMenu'
 import VersionTimeline from '@/components/history/VersionTimeline'
 import type { Commit, DraftReview } from '@/components/history/VersionTimeline'
 import RewrittenChip from '@/components/blocks/RewrittenChip'
+import ProvenanceMark from '@/components/blocks/ProvenanceMark'
 
 /* ─── Theme Toggle ─────────────────────────────────────────────────── */
 type Theme = 'light' | 'dark' | 'sepia'
@@ -1176,6 +1177,31 @@ export default function Reader() {
                   ~{chapter.estimatedReadMinutes} min read
                 </p>
               )}
+              {/* Provenance: how many blocks the AI authored that no human has vetted. */}
+              {(() => {
+                const n = chapter.blocks.filter(
+                  (b) => b.metadata?.origin === 'ai-manual' || b.metadata?.origin === 'ai-improve-loop'
+                ).length
+                if (n === 0) return null
+                return (
+                  <p
+                    title="These blocks were written by the AI and have not been verified. The amber marks in the margin show which."
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      marginTop: '0.5rem',
+                      fontFamily: 'var(--font-ui)',
+                      fontSize: '0.72rem',
+                      letterSpacing: '0.02em',
+                      color: 'var(--color-warning, #f59e0b)',
+                    }}
+                  >
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }} />
+                    {n} AI-authored {n === 1 ? 'block' : 'blocks'}, unverified
+                  </p>
+                )
+              })()}
             </header>
 
             {/* Blocks + Annotations */}
@@ -1228,6 +1254,8 @@ export default function Reader() {
                       {block.status !== 'draft' && draftReplacements.has(block.id) && (
                         <RewrittenChip onReview={() => openDraftReview(block.id)} />
                       )}
+                      {/* Provenance: hairline margin mark for AI-authored / human-approved blocks */}
+                      {block.metadata?.origin && <ProvenanceMark origin={block.metadata.origin} />}
                     </motion.div>
                   )
                 })})()}

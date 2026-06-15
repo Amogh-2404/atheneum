@@ -42,11 +42,13 @@ export function registerWritingTools(server: McpServer, contentDir: string) {
         // Ensure block IDs and uniqueness
         const { blocks, warnings } = ensureBlockIds(chapter.blocks)
 
-        // Set metadata.updatedAt on all blocks
+        // Set metadata.updatedAt + provenance on all blocks
         const now = new Date().toISOString()
         for (const block of blocks) {
           if (!block.metadata) block.metadata = {}
           block.metadata.updatedAt = now
+          // Provenance: the AI authored this. Don't downgrade an already human-approved block.
+          if (!block.metadata.origin) block.metadata.origin = 'ai-manual'
         }
 
         const chapterData = {
@@ -118,6 +120,7 @@ export function registerWritingTools(server: McpServer, contentDir: string) {
           block.metadata.insertedAfter = afterBlockId
           block.metadata.createdAt = now
           block.metadata.updatedAt = now
+          if (!block.metadata.origin) block.metadata.origin = 'ai-manual'
         }
 
         // Routed through the gate: inserting a malformed block (e.g. a quiz
@@ -218,6 +221,8 @@ export function registerWritingTools(server: McpServer, contentDir: string) {
 
             if (!block.metadata) block.metadata = {}
             block.metadata.updatedAt = now
+            // The AI just edited this block — mark its provenance accordingly.
+            block.metadata.origin = 'ai-manual'
             updated++
           }
 

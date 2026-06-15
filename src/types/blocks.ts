@@ -36,6 +36,12 @@ export interface BlockBase {
     updatedAt?: string
     insertedAfter?: string
     movedFrom?: string
+    /** Who last authored this block. Absent/`original` = legacy, untracked. */
+    origin?: 'original' | 'ai-manual' | 'ai-improve-loop' | 'human-approved'
+    /** What prompted an AI rewrite (e.g. a confusion marker id). */
+    sourceSignal?: string
+    /** The block id this one was rewritten from. */
+    revisionOf?: string
   }
 }
 

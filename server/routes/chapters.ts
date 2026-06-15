@@ -71,7 +71,12 @@ chaptersRouter.post('/:chapterId/approve', async (c) => {
         blocks: current.blocks.map((block: any) => {
           if (targetIds.has(block.id)) {
             approved++
-            return { ...block, status: 'published' }
+            // Provenance: a human reviewed this AI draft and kept it.
+            return {
+              ...block,
+              status: 'published',
+              metadata: { ...block.metadata, origin: 'human-approved' },
+            }
           }
           return block
         }),
