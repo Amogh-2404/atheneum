@@ -119,6 +119,24 @@ const MathBlockSchema = BlockBaseSchema.extend({
   display: z.boolean().optional(),
 })
 
+const ReactiveMathBlockSchema = BlockBaseSchema.extend({
+  type: z.literal('reactive-math'),
+  params: z.array(
+    z.object({
+      name: z.string(),
+      min: z.number(),
+      max: z.number(),
+      step: z.number().optional(),
+      default: z.number(),
+      label: z.string().optional(),
+    })
+  ),
+  derived: z.array(z.object({ name: z.string(), expr: z.string() })).optional(),
+  template: z.string(),
+  caption: TextContentSchema.optional(),
+  precision: z.number().optional(),
+})
+
 const TableBlockSchema = BlockBaseSchema.extend({
   type: z.literal('table'),
   headers: z.array(TextContentSchema),
@@ -198,6 +216,7 @@ const BlockSchema = z.discriminatedUnion('type', [
   ListBlockSchema,
   DividerBlockSchema,
   MathBlockSchema,
+  ReactiveMathBlockSchema,
   TableBlockSchema,
   ToggleBlockSchema,
   TimelineBlockSchema,

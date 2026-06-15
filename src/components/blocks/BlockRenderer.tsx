@@ -12,6 +12,7 @@ import QuoteBlock from './QuoteBlock'
 import ListBlock from './ListBlock'
 import DividerBlock from './DividerBlock'
 import MathBlock from './MathBlock'
+import ReactiveMathBlock from './ReactiveMathBlock'
 import TableBlock from './TableBlock'
 import ToggleBlock from './ToggleBlock'
 import TimelineBlock from './TimelineBlock'
@@ -44,6 +45,8 @@ function renderBlock(block: Block, isFirstTextBlock?: boolean, bookId?: string, 
       return <DividerBlock {...block} />
     case 'math':
       return <MathBlock {...block} />
+    case 'reactive-math':
+      return <ReactiveMathBlock {...block} />
     case 'table':
       return <TableBlock {...block} />
     case 'toggle':

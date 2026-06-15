@@ -119,6 +119,28 @@ export interface MathBlock extends BlockBase {
   display?: boolean
 }
 
+export interface ReactiveMathParam {
+  name: string
+  min: number
+  max: number
+  step?: number
+  default: number
+  label?: string
+}
+
+export interface ReactiveMathBlock extends BlockBase {
+  type: 'reactive-math'
+  /** Sliders the reader drags. Each name becomes a variable in scope. */
+  params: ReactiveMathParam[]
+  /** Intermediate values computed from params (and earlier derived), evaluated in order. */
+  derived?: Array<{ name: string; expr: string }>
+  /** LaTeX with \val{name} (live value) and \calc{expr} (inline computed) placeholders. */
+  template: string
+  caption?: TextContent
+  /** Decimal places for displayed numbers (default 4). */
+  precision?: number
+}
+
 export interface TableBlock extends BlockBase {
   type: 'table'
   headers: TextContent[]
@@ -192,6 +214,7 @@ export type Block =
   | ListBlock
   | DividerBlock
   | MathBlock
+  | ReactiveMathBlock
   | TableBlock
   | ToggleBlock
   | TimelineBlock
