@@ -8,6 +8,24 @@ export interface Commit {
   date: string
 }
 
+/**
+ * Draft-review mode for the Forge loop. When supplied, the panel does NOT show
+ * the git commit timeline — instead it shows a single old-vs-new diff for one
+ * block and wires Keep/Revert to the approve/dismiss chapter routes (NOT git).
+ *  - `draftBlockId`   — the inserted status:'draft' replacement block id.
+ *  - `originalBlockId` — the published block it was a rewrite of (insertedAfter).
+ *  - `before` / `after` — synthesized chapter pair fed straight to DiffViewer.
+ *    `before` is the chapter without the draft (the published version);
+ *    `after` is the chapter with the original block's content swapped for the
+ *    draft, so the diff reads as a clean single-block modification.
+ */
+export interface DraftReview {
+  draftBlockId: string
+  originalBlockId: string
+  before: any
+  after: any
+}
+
 interface Props {
   bookId: string
   chapterId: string
@@ -15,6 +33,8 @@ interface Props {
   currentChapter: any
   onClose: () => void
   onReverted: () => void
+  /** When present, the panel runs in single-block draft-review mode. */
+  draftReview?: DraftReview
 }
 
 function useIsMobile(breakpoint = 768) {
@@ -54,12 +74,82 @@ export default function VersionTimeline({
   currentChapter,
   onClose,
   onReverted,
+  draftReview,
 }: Props) {
   const isMobile = useIsMobile()
   const [selectedHash, setSelectedHash] = useState<string | null>(null)
   const [historicalChapter, setHistoricalChapter] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [reverting, setReverting] = useState(false)
+  // Draft-review (Forge) action lifecycle, separate from git revert.
+  const [draftBusy, setDraftBusy] = useState<null | 'keep' | 'revert'>(null)
+  const [draftError, setDraftError] = useState<string | null>(null)
+
+  /**
+   * Keep = publish the draft replacement AND drop the now-superseded original.
+   * This needs TWO writes (approve the draft, then dismiss the original) because
+   * the approve route only flips status and never deletes the old block.
+   */
+  const handleKeep = async () => {
+    if (!draftReview || draftBusy) return
+    setDraftBusy('keep')
+    setDraftError(null)
+    try {
+      const approveRes = await fetch(
+        `/api/books/${bookId}/chapters/${chapterId}/approve`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ blockIds: [draftReview.draftBlockId] }),
+        }
+      )
+      if (!approveRes.ok) throw new Error(`approve failed: HTTP ${approveRes.status}`)
+
+      // Best-effort: remove the original block now that the rewrite is published.
+      // If this second call fails the chapter still has both blocks, but the new
+      // one is published — so we surface the error rather than silently leaving a dupe.
+      const dismissRes = await fetch(
+        `/api/books/${bookId}/chapters/${chapterId}/dismiss`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ blockIds: [draftReview.originalBlockId] }),
+        }
+      )
+      if (!dismissRes.ok) throw new Error(`removing the old block failed: HTTP ${dismissRes.status}`)
+
+      onReverted()
+      onClose()
+    } catch (e) {
+      setDraftError((e as Error).message)
+    } finally {
+      setDraftBusy(null)
+    }
+  }
+
+  /** Revert = dismiss the draft replacement, leaving the original untouched. */
+  const handleDraftRevert = async () => {
+    if (!draftReview || draftBusy) return
+    setDraftBusy('revert')
+    setDraftError(null)
+    try {
+      const res = await fetch(
+        `/api/books/${bookId}/chapters/${chapterId}/dismiss`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ blockIds: [draftReview.draftBlockId] }),
+        }
+      )
+      if (!res.ok) throw new Error(`revert failed: HTTP ${res.status}`)
+      onReverted()
+      onClose()
+    } catch (e) {
+      setDraftError((e as Error).message)
+    } finally {
+      setDraftBusy(null)
+    }
+  }
 
   // Load historical version when a commit is selected
   useEffect(() => {
@@ -163,7 +253,7 @@ export default function VersionTimeline({
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
-            Version History
+            {draftReview ? 'Review Rewrite' : 'Version History'}
           </h2>
           <button
             type="button"
@@ -197,7 +287,7 @@ export default function VersionTimeline({
           </button>
         </div>
 
-        {/* Commit count */}
+        {/* Subtitle */}
         <div
           style={{
             padding: '0.5rem 1.5rem',
@@ -208,10 +298,113 @@ export default function VersionTimeline({
             textTransform: 'uppercase',
           }}
         >
-          {commits.length} version{commits.length !== 1 ? 's' : ''} tracked
+          {draftReview
+            ? 'AI rewrote a confusing block — keep it or revert'
+            : `${commits.length} version${commits.length !== 1 ? 's' : ''} tracked`}
         </div>
 
-        {/* Timeline + Diff area */}
+        {/* ── Draft-review (Forge) mode — single block diff + Keep/Revert ── */}
+        {draftReview ? (
+          <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem 1.5rem 1.5rem' }}>
+            <DiffViewer
+              currentChapter={draftReview.after}
+              historicalChapter={draftReview.before}
+            />
+
+            {draftError && (
+              <div
+                style={{
+                  marginTop: '0.75rem',
+                  fontFamily: 'var(--font-ui)',
+                  fontSize: '0.78rem',
+                  color: 'var(--color-error, #f87171)',
+                  textAlign: 'center',
+                  lineHeight: 1.4,
+                }}
+              >
+                {draftError}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 10, marginTop: '0.9rem' }}>
+              {/* Keep — publish the rewrite (approve route) + drop the old block */}
+              <button
+                type="button"
+                onClick={handleKeep}
+                disabled={draftBusy !== null}
+                style={{
+                  flex: 1,
+                  padding: '0.65rem 1rem',
+                  fontFamily: 'var(--font-ui)',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.02em',
+                  color: draftBusy ? 'var(--chrome-text)' : '#0a0e17',
+                  background: draftBusy ? 'var(--chrome-surface)' : 'var(--chrome-accent)',
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: draftBusy ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  opacity: draftBusy && draftBusy !== 'keep' ? 0.5 : 1,
+                  transition: 'opacity 200ms ease',
+                }}
+                onMouseEnter={(e) => {
+                  if (!draftBusy) e.currentTarget.style.opacity = '0.85'
+                }}
+                onMouseLeave={(e) => {
+                  if (!draftBusy) e.currentTarget.style.opacity = '1'
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                {draftBusy === 'keep' ? 'Keeping…' : 'Keep new'}
+              </button>
+
+              {/* Revert — dismiss the draft (dismiss route), original untouched */}
+              <button
+                type="button"
+                onClick={handleDraftRevert}
+                disabled={draftBusy !== null}
+                style={{
+                  flex: 1,
+                  padding: '0.65rem 1rem',
+                  fontFamily: 'var(--font-ui)',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.02em',
+                  color: 'var(--color-error, #f87171)',
+                  background: 'rgba(248, 113, 113, 0.1)',
+                  border: '1px solid rgba(248, 113, 113, 0.3)',
+                  borderRadius: 6,
+                  cursor: draftBusy ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  opacity: draftBusy && draftBusy !== 'revert' ? 0.5 : 1,
+                  transition: 'background 150ms ease, opacity 200ms ease',
+                }}
+                onMouseEnter={(e) => {
+                  if (!draftBusy) e.currentTarget.style.background = 'rgba(248, 113, 113, 0.2)'
+                }}
+                onMouseLeave={(e) => {
+                  if (!draftBusy) e.currentTarget.style.background = 'rgba(248, 113, 113, 0.1)'
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="1 4 1 10 7 10" />
+                  <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                </svg>
+                {draftBusy === 'revert' ? 'Reverting…' : 'Revert'}
+              </button>
+            </div>
+          </div>
+        ) : (
+        /* ── Git history mode (timeline + diff area) ── */
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 1.5rem 1.5rem' }}>
           {commits.length === 0 ? (
             <div
@@ -461,6 +654,7 @@ export default function VersionTimeline({
             </>
           )}
         </div>
+        )}
 
         {/* Spinner keyframe */}
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

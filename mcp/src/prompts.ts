@@ -94,17 +94,71 @@ Write the complete chapter JSON and use write_chapter to save it.`,
   // ─── improve_chapter ─────────────────────────────────────────────
   server.prompt(
     'improve_chapter',
-    'Review and improve an existing chapter based on confusion markers and quality standards.',
+    'Review and improve an existing chapter based on confusion markers and quality standards. Pass targetBlockId to surgically rewrite ONE flagged block instead of the whole chapter.',
     {
       bookId: z.string(),
       chapterId: z.string(),
       focusAreas: z.string().optional().describe('Specific areas: clarity, examples, interactivity, flow'),
+      targetBlockId: z.string().optional().describe('Restrict the rewrite to this single block id — emits ONE draft replacement instead of touching the whole chapter'),
     },
-    async ({ bookId, chapterId, focusAreas }) => {
+    async ({ bookId, chapterId, focusAreas, targetBlockId }) => {
       const chapter = await safeReadJSON(path.join(contentDir, bookId, 'chapters', `${chapterId}.json`))
       const annoData = await safeReadJSON(path.join(contentDir, bookId, '.annotations', 'annotations.json'))
-      const confusionMarkers = (annoData?.annotations ?? []).filter((a: any) => a.type === 'confusion')
+      let confusionMarkers = (annoData?.annotations ?? []).filter((a: any) => a.type === 'confusion')
 
+      // ── Surgical (single-block) mode ────────────────────────────────
+      if (targetBlockId) {
+        const targetBlock = chapter?.blocks?.find((b: any) => b.id === targetBlockId)
+        // Narrow the confusion context to markers on THIS block only.
+        confusionMarkers = confusionMarkers.filter((a: any) => a.blockId === targetBlockId)
+
+        const targetContext = targetBlock
+          ? JSON.stringify(targetBlock, null, 2)
+          : `Block "${targetBlockId}" not found in this chapter — re-check the blockId.`
+
+        const confusionContext = confusionMarkers.length > 0
+          ? `\n\n## Reader Confusion on this block (${confusionMarkers.length})\n${JSON.stringify(confusionMarkers, null, 2)}`
+          : '\n\nNo confusion marker is recorded specifically for this block — improve it for clarity anyway.'
+
+        return {
+          messages: [
+            {
+              role: 'user' as const,
+              content: {
+                type: 'text' as const,
+                text: `Surgically improve ONE block of this Atheneum chapter. Do NOT rewrite or touch any other block.
+
+## Scope
+- Book: ${bookId}
+- Chapter: ${chapterId}
+- Target block id: **${targetBlockId}**
+
+## Why
+A reader flagged this specific block as confusing. First, confirm the signal by calling the \`get_confusion_markers\` tool for this book and reading the markers whose \`blockId\` is "${targetBlockId}". Then produce a single, clearer replacement for ONLY that block.
+
+## How to emit the rewrite (REQUIRED)
+1. Call \`insert_blocks\` with \`afterBlockId: "${targetBlockId}"\` and a single new block in the \`blocks\` array.
+2. Leave \`status\` at its default ("draft") — the new block MUST be a draft so the reader can review it.
+3. Keep the SAME block \`type\` as the original (a confusing text block stays a text block, etc.) unless the confusion is clearly that the wrong block type was used.
+4. The new block is inserted directly after the original; the reader UI links them via \`metadata.insertedAfter\` and shows an old-vs-new diff with Keep / Revert. Do NOT delete or edit the original block — the reviewer decides its fate.
+
+## Quality bar for the replacement
+- Fix the specific confusion: simpler wording, a concrete example before any abstraction, a worked step, or a missing definition.
+- One idea, max 4-5 sentences if it's a text block.
+- Proper LaTeX for math, language + meaningful annotations for code, [[concept]] links intact.
+
+${focusAreas ? `## Focus Areas: ${focusAreas}` : ''}
+${confusionContext}
+
+## The block to replace
+${targetContext}`,
+              },
+            },
+          ],
+        }
+      }
+
+      // ── Whole-chapter mode (unchanged behaviour) ────────────────────
       const chapterContext = chapter
         ? JSON.stringify(chapter, null, 2)
         : 'Chapter not found — check the bookId and chapterId.'
@@ -119,7 +173,7 @@ Write the complete chapter JSON and use write_chapter to save it.`,
             role: 'user' as const,
             content: {
               type: 'text' as const,
-              text: `Review and improve this Atheneum chapter. Use \`update_blocks\` for surgical edits — don't rewrite the entire chapter unless necessary.
+              text: `Review and improve this Atheneum chapter. First call the \`get_confusion_markers\` tool for this book to see exactly what the reader flagged. Use \`update_blocks\` for surgical edits — don't rewrite the entire chapter unless necessary.
 
 ## Quality Checklist
 - [ ] Every concept has both text AND visual (dual coding)

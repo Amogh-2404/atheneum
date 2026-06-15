@@ -18,6 +18,8 @@ interface AnnotationToolbarProps {
   bookId: string
   chapterId: string
   addAnnotation: (annotation: any) => string
+  /** Awaited variant — used for confusion markers so a failed server write surfaces. */
+  addAnnotationSynced: (annotation: any) => Promise<string>
   contentRef: React.RefObject<HTMLElement | null>
 }
 
@@ -62,6 +64,7 @@ export default function AnnotationToolbar({
   bookId,
   chapterId,
   addAnnotation,
+  addAnnotationSynced,
   contentRef,
 }: AnnotationToolbarProps) {
   const [state, setState] = useState<ToolbarState>({
@@ -77,6 +80,9 @@ export default function AnnotationToolbar({
 
   const [showNoteInput, setShowNoteInput] = useState(false)
   const [noteText, setNoteText] = useState('')
+  // Confusion-marker write lifecycle: idle while not saving, 'saving' during the
+  // awaited server write, 'error' if it failed (so the reader sees the failure).
+  const [confusionState, setConfusionState] = useState<'idle' | 'saving' | 'error'>('idle')
   const toolbarRef = useRef<HTMLDivElement>(null)
   const noteInputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -139,6 +145,7 @@ export default function AnnotationToolbar({
     setState((s) => ({ ...s, visible: false }))
     setShowNoteInput(false)
     setNoteText('')
+    setConfusionState('idle')
   }, [])
 
   useEffect(() => {
@@ -200,15 +207,24 @@ export default function AnnotationToolbar({
     hide()
   }
 
-  const handleConfusion = () => {
-    addAnnotation({
-      type: 'confusion',
-      bookId,
-      chapterId,
-      blockId: state.blockId,
-    })
-    window.getSelection()?.removeAllRanges()
-    hide()
+  const handleConfusion = async () => {
+    if (confusionState === 'saving') return
+    setConfusionState('saving')
+    try {
+      // Awaited server write — the optimistic marker rolls back inside the hook
+      // if this rejects, so we just surface the failure here.
+      await addAnnotationSynced({
+        type: 'confusion',
+        bookId,
+        chapterId,
+        blockId: state.blockId,
+      })
+      window.getSelection()?.removeAllRanges()
+      hide()
+    } catch {
+      // Keep the toolbar open and show the failure so the reader can retry.
+      setConfusionState('error')
+    }
   }
 
   const handleNoteSubmit = () => {
@@ -394,24 +410,38 @@ export default function AnnotationToolbar({
             {/* Confused? */}
             <button
               type="button"
-              title="Mark as confusing"
+              title={
+                confusionState === 'saving'
+                  ? 'Saving…'
+                  : confusionState === 'error'
+                  ? 'Save failed — click to retry'
+                  : 'Mark as confusing'
+              }
               onClick={handleConfusion}
+              disabled={confusionState === 'saving'}
               style={{
                 background: 'none',
                 border: 'none',
-                cursor: 'pointer',
+                cursor: confusionState === 'saving' ? 'wait' : 'pointer',
                 padding: 10,
                 margin: -8,
                 display: 'flex',
                 alignItems: 'center',
-                color: 'var(--chrome-text, #94a3b8)',
+                color:
+                  confusionState === 'error'
+                    ? 'var(--color-error, #f87171)'
+                    : confusionState === 'saving'
+                    ? '#f59e0b'
+                    : 'var(--chrome-text, #94a3b8)',
+                opacity: confusionState === 'saving' ? 0.7 : 1,
                 transition: 'color 150ms ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#f59e0b'
+                if (confusionState === 'idle') e.currentTarget.style.color = '#f59e0b'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'var(--chrome-text, #94a3b8)'
+                if (confusionState === 'idle')
+                  e.currentTarget.style.color = 'var(--chrome-text, #94a3b8)'
               }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -421,6 +451,22 @@ export default function AnnotationToolbar({
               </svg>
             </button>
           </div>
+
+          {/* ── Confusion-write error row ── */}
+          {confusionState === 'error' && (
+            <div
+              style={{
+                fontFamily: 'var(--font-ui)',
+                fontSize: '0.72rem',
+                color: 'var(--color-error, #f87171)',
+                textAlign: 'center',
+                lineHeight: 1.3,
+                maxWidth: 220,
+              }}
+            >
+              Couldn’t save — check the connection and tap “?” to retry.
+            </div>
+          )}
 
           {/* ── Note input row ── */}
           {showNoteInput && (

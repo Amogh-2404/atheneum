@@ -67,14 +67,31 @@ function saveAnnotations(annotations: Annotation[]) {
 
 /* ─── Server Sync Helpers ─────────────────────────────────────────── */
 
-function syncAnnotationsToServer(bookId: string, annotations: Annotation[]) {
+/**
+ * Push the book's annotations to the server. Returns the fetch promise so the
+ * caller can `await` it and react to failure. The server route merges-by-id
+ * under a file lock, so sending the full filtered array is safe; a resolved
+ * promise means the merge ran, a rejection means the marker is NOT persisted.
+ */
+function syncAnnotationsToServer(
+  bookId: string,
+  annotations: Annotation[]
+): Promise<{ synced: number; total: number }> {
   const bookAnnotations = annotations.filter((a) => a.bookId === bookId)
-  fetch(`/api/annotations/${bookId}`, {
+  return fetch(`/api/annotations/${bookId}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ annotations: bookAnnotations }),
-  }).catch(() => {
-    // Fire-and-forget — server sync is best-effort
+  }).then((r) => {
+    if (!r.ok) throw new Error(`annotation sync failed: HTTP ${r.status}`)
+    return r.json()
+  })
+}
+
+/** Fire-and-forget wrapper for callers that don't care about the result. */
+function syncAnnotationsToServerBestEffort(bookId: string, annotations: Annotation[]) {
+  syncAnnotationsToServer(bookId, annotations).catch(() => {
+    // best-effort — the optimistic local state + localStorage is the fallback
   })
 }
 
@@ -157,11 +174,46 @@ export function useAnnotations(bookId?: string, chapterId?: string) {
       } as Annotation
       setAll((prev) => {
         const next = [...prev, newA]
-        // Background sync to server
-        if (bookId) syncAnnotationsToServer(bookId, next)
+        // Background sync to server (best-effort)
+        if (bookId) syncAnnotationsToServerBestEffort(bookId, next)
         return next
       })
       return newA.id
+    },
+    [bookId]
+  )
+
+  /**
+   * Add an annotation with an AWAITED server write. Optimistically updates local
+   * state + localStorage immediately, then awaits the server sync. On failure it
+   * ROLLS BACK the optimistic marker and rethrows so the caller can surface the
+   * error to the reader. Returns the new annotation's id on success.
+   */
+  const addAnnotationSynced = useCallback(
+    async (annotation: Omit<Annotation, 'id' | 'createdAt'>): Promise<string> => {
+      const newA = {
+        ...annotation,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+      } as Annotation
+
+      // Optimistic: render immediately. We compute `next` from the latest state.
+      let snapshot: Annotation[] = []
+      setAll((prev) => {
+        snapshot = [...prev, newA]
+        return snapshot
+      })
+
+      if (!bookId) return newA.id
+
+      try {
+        await syncAnnotationsToServer(bookId, snapshot)
+        return newA.id
+      } catch (err) {
+        // Roll back the optimistic marker — the server never persisted it.
+        setAll((prev) => prev.filter((a) => a.id !== newA.id))
+        throw err
+      }
     },
     [bookId]
   )
@@ -172,7 +224,7 @@ export function useAnnotations(bookId?: string, chapterId?: string) {
       // Background sync: delete from server + push updated array
       if (bookId) {
         deleteAnnotationFromServer(bookId, id)
-        syncAnnotationsToServer(bookId, next)
+        syncAnnotationsToServerBestEffort(bookId, next)
       }
       return next
     })
@@ -182,8 +234,8 @@ export function useAnnotations(bookId?: string, chapterId?: string) {
     (id: string, updates: Partial<Omit<Annotation, 'id' | 'type' | 'createdAt'>>) => {
       setAll((prev) => {
         const next = prev.map((a) => (a.id === id ? { ...a, ...updates } : a))
-        // Background sync to server
-        if (bookId) syncAnnotationsToServer(bookId, next)
+        // Background sync to server (best-effort)
+        if (bookId) syncAnnotationsToServerBestEffort(bookId, next)
         return next
       })
     },
@@ -197,6 +249,7 @@ export function useAnnotations(bookId?: string, chapterId?: string) {
     confusionMarkers,
     allBookmarks,
     addAnnotation,
+    addAnnotationSynced,
     removeAnnotation,
     updateAnnotation,
   }

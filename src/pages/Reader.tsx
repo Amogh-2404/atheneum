@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useBook } from '@/hooks/useBook'
@@ -24,7 +24,8 @@ import { useHighlightRenderer } from '@/components/annotations/HighlightRenderer
 import HighlightActionToolbar from '@/components/annotations/HighlightActionToolbar'
 import ExportMenu from '@/components/export/ExportMenu'
 import VersionTimeline from '@/components/history/VersionTimeline'
-import type { Commit } from '@/components/history/VersionTimeline'
+import type { Commit, DraftReview } from '@/components/history/VersionTimeline'
+import RewrittenChip from '@/components/blocks/RewrittenChip'
 
 /* ─── Theme Toggle ─────────────────────────────────────────────────── */
 type Theme = 'light' | 'dark' | 'sepia'
@@ -106,6 +107,8 @@ export default function Reader() {
   const [preferencesOpen, setPreferencesOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [historyData, setHistoryData] = useState<Commit[]>([])
+  // Forge: which block's AI rewrite is currently open in the review diff (or null).
+  const [draftReview, setDraftReview] = useState<DraftReview | null>(null)
   const [shortcutOverlayOpen, setShortcutOverlayOpen] = useState(false)
   const [readChapters, setReadChapters] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem(`atheneum-progress-${bookId}`) || '{}') }
@@ -139,8 +142,64 @@ export default function Reader() {
   // Annotations (persisted to localStorage)
   const {
     highlights, bookmarks, marginNotes, confusionMarkers,
-    addAnnotation, removeAnnotation, updateAnnotation,
+    addAnnotation, addAnnotationSynced, removeAnnotation, updateAnnotation,
   } = useAnnotations(bookId, activeChapterId)
+
+  // Forge: map a published block id → its pending AI draft replacement. A draft
+  // block "replaces" a published block when it has status:'draft' and its
+  // metadata.insertedAfter points at that published block (the linkage set by the
+  // surgical improve_chapter → insert_blocks afterBlockId flow).
+  const draftReplacements = useMemo(() => {
+    const map = new Map<string, NonNullable<typeof chapter>['blocks'][number]>()
+    if (!chapter) return map
+    const publishedIds = new Set(
+      chapter.blocks.filter((b) => b.status !== 'draft').map((b) => b.id)
+    )
+    for (const block of chapter.blocks) {
+      const after = block.metadata?.insertedAfter
+      if (block.status === 'draft' && after && publishedIds.has(after) && !map.has(after)) {
+        map.set(after, block)
+      }
+    }
+    return map
+  }, [chapter])
+
+  // A draft that REPLACES a published block is reviewed via the chip + diff, so it
+  // must NOT also render inline (that would double-show the rewrite). Other drafts
+  // (brand-new, not replacements) still render inline with their draft action bar.
+  const replacementDraftIds = useMemo(
+    () => new Set([...draftReplacements.values()].map((b) => b.id)),
+    [draftReplacements]
+  )
+
+  // Synthesize the before/after chapter pair and open the review diff for one block.
+  const openDraftReview = useCallback(
+    (originalBlockId: string) => {
+      if (!chapter) return
+      const draftBlock = draftReplacements.get(originalBlockId)
+      const originalBlock = chapter.blocks.find((b) => b.id === originalBlockId)
+      if (!draftBlock || !originalBlock) return
+
+      // Focused single-block review: DiffViewer should show ONLY this block —
+      // original vs the AI draft — not the whole chapter. Keep/Revert act by block
+      // id (see handleKeep/handleDraftRevert), so these synthesized one-block
+      // chapters are purely what the diff renders, nothing more.
+      const before = { ...chapter, blocks: [originalBlock] }
+      const after = {
+        ...chapter,
+        // Same id as the original so DiffViewer reads a clean MODIFICATION, not add+delete.
+        blocks: [{ ...draftBlock, id: originalBlockId, status: 'published' }],
+      }
+
+      setDraftReview({
+        draftBlockId: draftBlock.id,
+        originalBlockId,
+        before,
+        after,
+      })
+    },
+    [chapter, draftReplacements]
+  )
 
   // Highlight action toolbar state (shown when clicking an existing highlight)
   const [highlightAction, setHighlightAction] = useState<{
@@ -1129,6 +1188,8 @@ export default function Reader() {
                 {(() => {
                   const firstTextIdx = chapter.blocks.findIndex(b => b.type === 'text')
                   return chapter.blocks.map((block, i) => {
+                  // Forge: hide replacement-drafts from inline render — reviewed via chip + diff.
+                  if (replacementDraftIds.has(block.id)) return null
                   const blockBookmarks = bookmarks.filter(b => b.blockId === block.id)
                   const blockConfusion = confusionMarkers.filter(c => c.blockId === block.id)
                   return (
@@ -1163,6 +1224,10 @@ export default function Reader() {
                           onRemove={() => removeAnnotation(cm.id)}
                         />
                       ))}
+                      {/* Forge: a pending AI rewrite exists for this published block — review chip */}
+                      {block.status !== 'draft' && draftReplacements.has(block.id) && (
+                        <RewrittenChip onReview={() => openDraftReview(block.id)} />
+                      )}
                     </motion.div>
                   )
                 })})()}
@@ -1205,6 +1270,7 @@ export default function Reader() {
                   bookId={bookId}
                   chapterId={activeChapterId}
                   addAnnotation={addAnnotation}
+                  addAnnotationSynced={addAnnotationSynced}
                   contentRef={contentAreaRef}
                 />
               )}
@@ -1288,13 +1354,14 @@ export default function Reader() {
 
       {/* ─── Version history side panel ─── */}
       <AnimatePresence>
-        {historyOpen && bookId && activeChapterId && chapter && (
+        {(historyOpen || draftReview) && bookId && activeChapterId && chapter && (
           <VersionTimeline
             bookId={bookId}
             chapterId={activeChapterId}
             commits={historyData}
             currentChapter={chapter}
-            onClose={() => setHistoryOpen(false)}
+            draftReview={draftReview ?? undefined}
+            onClose={() => { setHistoryOpen(false); setDraftReview(null) }}
             onReverted={() => {
               // Force reload the chapter by navigating to the same page
               window.location.reload()

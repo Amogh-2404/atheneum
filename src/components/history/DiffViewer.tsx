@@ -103,11 +103,11 @@ export default function DiffViewer({ currentChapter, historicalChapter }: Props)
         }}
       >
         <span>
-          <strong style={{ color: '#e2e8f0' }}>{historicalBlocks.length}</strong> blocks then
+          <strong style={{ color: '#e2e8f0' }}>{historicalBlocks.length}</strong> block{historicalBlocks.length !== 1 ? 's' : ''} then
         </span>
         <span style={{ color: 'var(--chrome-accent)' }}>&#8594;</span>
         <span>
-          <strong style={{ color: '#e2e8f0' }}>{currentBlocks.length}</strong> blocks now
+          <strong style={{ color: '#e2e8f0' }}>{currentBlocks.length}</strong> block{currentBlocks.length !== 1 ? 's' : ''} now
         </span>
         <span style={{ marginLeft: 'auto', color: totalChanges > 0 ? 'var(--chrome-accent)' : '#4ade80' }}>
           {totalChanges > 0
