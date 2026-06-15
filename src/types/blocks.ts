@@ -70,6 +70,10 @@ export interface CodeBlock extends BlockBase {
   annotations?: Record<number, string>
   showLineNumbers?: boolean
   tiltSeed?: number
+  /** Predict-the-output mode: hide `expectedOutput` behind the reader's guess until reveal. */
+  predict?: boolean
+  /** Canonical program output, revealed after the reader predicts (requires `predict`). */
+  expectedOutput?: string
 }
 
 // DiagramBlock has moved to ./diagrams.ts as the canonical typed IR

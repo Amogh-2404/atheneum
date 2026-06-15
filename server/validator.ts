@@ -74,6 +74,8 @@ const CodeBlockSchema = BlockBaseSchema.extend({
   annotations: z.record(z.string(), z.string()).optional(),
   showLineNumbers: z.boolean().optional(),
   tiltSeed: z.number().optional(),
+  predict: z.boolean().optional(),
+  expectedOutput: z.string().optional(),
 })
 
 const DiagramBlockSchema = BlockBaseSchema.extend({

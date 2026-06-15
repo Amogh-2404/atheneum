@@ -31,7 +31,7 @@ function renderBlock(block: Block, isFirstTextBlock?: boolean, bookId?: string, 
     case 'callout':
       return <CalloutBlock {...block} />
     case 'code':
-      return <CodeBlock {...block} />
+      return <CodeBlock {...block} bookId={bookId} chapterId={chapterId} />
     case 'diagram':
       return <DiagramBlock {...block} />
     case 'figure':
