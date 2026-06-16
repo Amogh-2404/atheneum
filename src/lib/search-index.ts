@@ -21,7 +21,7 @@ class SearchEngine {
     // @ts-ignore — FlexSearch types are notoriously unreliable
     this.index = new FlexSearch.Index({
       tokenize: 'forward',
-      resolution: 9,
+      resolution: 234, // ~2*floor(sqrt(14k)) — res:9 flattened ranking across the corpus
     })
   }
 
@@ -34,7 +34,7 @@ class SearchEngine {
   search(query: string, limit = 20): SearchDoc[] {
     if (!query.trim()) return []
     // @ts-ignore
-    const ids = this.index.search(query, limit) as string[]
+    const ids = this.index.search(query, { limit, suggest: true }) as string[]
     return ids.map(id => this.docs.get(String(id))).filter(Boolean) as SearchDoc[]
   }
 
@@ -45,7 +45,7 @@ class SearchEngine {
   clear() {
     this.docs.clear()
     // @ts-ignore
-    this.index = new FlexSearch.Index({ tokenize: 'forward', resolution: 9 })
+    this.index = new FlexSearch.Index({ tokenize: 'forward', resolution: 234 })
   }
 }
 
