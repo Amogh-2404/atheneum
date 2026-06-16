@@ -4,6 +4,7 @@ import Reader from '@/pages/Reader'
 import KnowledgeGraph from '@/pages/KnowledgeGraph'
 import StudyDashboard from '@/pages/StudyDashboard'
 import AnnotationNotebook from '@/pages/AnnotationNotebook'
+import BookLayout from '@/components/shared/BookLayout'
 import OnboardingOverlay from '@/components/shared/OnboardingOverlay'
 import ToastContainer from '@/components/shared/Toast'
 
@@ -13,11 +14,16 @@ export default function App() {
       <OnboardingOverlay />
       <Routes>
         <Route path="/" element={<Bookshelf />} />
-        <Route path="/book/:bookId" element={<Reader />} />
-        <Route path="/book/:bookId/graph" element={<KnowledgeGraph />} />
-        <Route path="/book/:bookId/study" element={<StudyDashboard />} />
-        <Route path="/book/:bookId/notebook" element={<AnnotationNotebook />} />
-        <Route path="/book/:bookId/:chapterId" element={<Reader />} />
+        {/* Persistent book shell — the four surfaces share one frame + facet switcher.
+            Static segments (graph/study/notebook) outrank the dynamic :chapterId,
+            so every existing URL still resolves to the same surface. */}
+        <Route path="/book/:bookId" element={<BookLayout />}>
+          <Route index element={<Reader />} />
+          <Route path="graph" element={<KnowledgeGraph />} />
+          <Route path="study" element={<StudyDashboard />} />
+          <Route path="notebook" element={<AnnotationNotebook />} />
+          <Route path=":chapterId" element={<Reader />} />
+        </Route>
       </Routes>
       <ToastContainer />
     </>

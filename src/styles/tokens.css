@@ -46,6 +46,9 @@
   /* Floating-chrome material — glass is ONLY for chrome, never body text. */
   --glass-blur: saturate(140%) blur(12px);
   --glass-surface: rgba(255, 255, 255, 0.72);
+  /* The chrome zone is dark in every theme, so floating chrome (facet switcher,
+     ⌘K palette) uses one dark frosted material regardless of --theme. */
+  --chrome-glass: rgba(10, 14, 23, 0.82);
 }
 
 /* On dark, shadows barely read — lean on a brighter surface + lighter hairline,

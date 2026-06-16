@@ -1389,7 +1389,7 @@ function BookCard({
 
 /* ─── Archived Books Section ──────────────────────────────────────── */
 
-function ArchivedSection({ books, theme }: { books: BookSummary[]; theme: AppTheme }) {
+function ArchivedSection({ books, theme, onChange }: { books: BookSummary[]; theme: AppTheme; onChange: () => void | Promise<void> }) {
   const [expanded, setExpanded] = useState(false)
   const ps = getPageThemeStyle(theme)
 
@@ -1439,7 +1439,7 @@ function ArchivedSection({ books, theme }: { books: BookSummary[]; theme: AppThe
                 onClick={async () => {
                   try {
                     await fetch(`/api/books/${book.id}/unarchive`, { method: 'POST' })
-                    window.location.reload()
+                    await onChange()
                   } catch { /* ignore */ }
                 }}
                 style={{
@@ -1548,7 +1548,7 @@ function hashSeed(str: string): number {
 /* ─── Bookshelf ───────────────────────────────────────────────────── */
 
 export default function Bookshelf() {
-  const { books, loading, error } = useBooks()
+  const { books, loading, error, refetch } = useBooks()
   const navigate = useNavigate()
   const lastRead = useMemo(getLastRead, [])
   const theme = useAppTheme()
@@ -1578,7 +1578,7 @@ export default function Bookshelf() {
   if (error) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--chrome-bg)' }}>
-        <ErrorState message={error} icon="error" onRetry={() => window.location.reload()} />
+        <ErrorState message={error} icon="error" onRetry={refetch} />
       </div>
     )
   }
@@ -1752,13 +1752,13 @@ export default function Bookshelf() {
               onArchive={async (id) => {
                 try {
                   await fetch(`/api/books/${id}/archive`, { method: 'POST' })
-                  window.location.reload()
+                  await refetch()
                 } catch { /* ignore */ }
               }}
               onDelete={async (id) => {
                 try {
                   await fetch(`/api/books/${id}`, { method: 'DELETE' })
-                  window.location.reload()
+                  await refetch()
                 } catch { /* ignore */ }
               }}
             />
@@ -1767,7 +1767,7 @@ export default function Bookshelf() {
 
         {/* ── Archived Books Section ──────────────────── */}
         {books.filter(b => (b as any).archived).length > 0 && (
-          <ArchivedSection books={books.filter(b => (b as any).archived)} theme={theme} />
+          <ArchivedSection books={books.filter(b => (b as any).archived)} theme={theme} onChange={refetch} />
         )}
       </div>
 
