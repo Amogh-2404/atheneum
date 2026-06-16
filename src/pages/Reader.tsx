@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { tween } from '@/lib/motion'
 import { useBook } from '@/hooks/useBook'
 import { useChapter } from '@/hooks/useChapter'
 import { useActiveHeading } from '@/hooks/useActiveHeading'
@@ -100,7 +101,6 @@ export default function Reader() {
   const wsStatus = useWSStatus()
   const { book, loading: bookLoading, error: bookError } = useBook(bookId)
   const { conceptIndex } = useConcepts(bookId)
-  const activeHeadingId = useActiveHeading()
   const contentAreaRef = useRef<HTMLDivElement>(null)
   const isMobile = useIsMobile()
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 768)
@@ -129,6 +129,9 @@ export default function Reader() {
   // Resolve the active chapter ID (from URL or first chapter)
   const activeChapterId = chapterId ?? book?.chapters[0]?.id
   const { chapter, loading: chapterLoading, error: chapterError } = useChapter(bookId, activeChapterId)
+  // Heading-spy re-keys on the LOADED chapter id so it re-observes the new
+  // chapter's headings instead of the previous chapter's dead nodes.
+  const activeHeadingId = useActiveHeading(chapter?.id)
 
   // Fetch history when panel opens
   const openHistory = useCallback(() => {
@@ -1221,10 +1224,11 @@ export default function Reader() {
                   return (
                     <motion.div
                       key={block.id}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
+                      initial={{ opacity: 0, y: 6 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: '0px 0px -8% 0px' }}
                       exit={{ opacity: 0 }}
-                      transition={{ duration: 0.25, delay: i * 0.015 }}
+                      transition={tween.enter}
                       style={{ position: 'relative' }}
                     >
                       <BlockRenderer

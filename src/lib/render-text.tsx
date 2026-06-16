@@ -102,7 +102,7 @@ function parseMarkdownInline(text: string): React.ReactNode {
           <span
             key={i}
             className="concept-ref cursor-pointer border-b border-cyan-400 text-cyan-500 dark:text-cyan-400"
-            data-concept={token.value.toLowerCase().trim()}
+            data-concept={token.value.toLowerCase().trim().replace(/[-_]/g, ' ')}
             title={`Concept: ${token.value}`}
           >
             {token.value}

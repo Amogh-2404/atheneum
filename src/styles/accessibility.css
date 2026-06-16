@@ -54,3 +54,29 @@
     display: none !important;
   }
 }
+
+/* ─── In-app reduced-motion toggle ─────────────────────────────────────
+   PreferencesPanel sets [data-reduced-motion="true"] on <html>, but nothing
+   read it — the switch did nothing. Mirror the OS-level media query above so
+   the in-app toggle actually disables animation app-wide. */
+[data-reduced-motion="true"] *,
+[data-reduced-motion="true"] *::before,
+[data-reduced-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Animated blur is itself a reduced-motion trigger (Apple HIG) — drop glass
+   to an opaque surface when motion is reduced (either OS or in-app). */
+@media (prefers-reduced-motion: reduce) {
+  .glass {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+[data-reduced-motion="true"] .glass {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}

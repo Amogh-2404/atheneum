@@ -4,10 +4,13 @@ import { useState, useEffect } from 'react'
  * Tracks which heading element (marked with data-heading-id) is currently
  * visible near the top of the viewport using IntersectionObserver.
  */
-export function useActiveHeading(): string | null {
+export function useActiveHeading(chapterKey?: string | null): string | null {
   const [activeId, setActiveId] = useState<string | null>(null)
 
   useEffect(() => {
+    // Re-observe when the chapter changes — its headings unmount and the next
+    // chapter's mount, so a one-shot [] effect would keep watching dead nodes.
+    setActiveId(null)
     const headings = document.querySelectorAll('[data-heading-id]')
     if (headings.length === 0) return
 
@@ -27,7 +30,7 @@ export function useActiveHeading(): string | null {
 
     headings.forEach((h) => observer.observe(h))
     return () => observer.disconnect()
-  }, [])
+  }, [chapterKey])
 
   return activeId
 }

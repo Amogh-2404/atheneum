@@ -5,6 +5,7 @@
 
 @import "tailwindcss";
 @import "./styles/fonts.css";
+@import "./styles/tokens.css";
 @import "./styles/notebook.css";
 @import "./styles/terminal.css";
 @import "./styles/print.css";
