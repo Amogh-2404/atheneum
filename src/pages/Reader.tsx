@@ -16,6 +16,7 @@ import TableOfContents from '@/components/layout/TableOfContents'
 import ChapterNav from '@/components/layout/ChapterNav'
 import ReadingProgress from '@/components/layout/ReadingProgress'
 import ConceptTooltip from '@/components/knowledge/ConceptTooltip'
+import ReadingProgressRing from '@/components/reader/ReadingProgressRing'
 import GlossaryPanel from '@/components/knowledge/GlossaryPanel'
 import PreferencesPanel from '@/components/preferences/PreferencesPanel'
 import AnnotationToolbar from '@/components/annotations/AnnotationToolbar'
@@ -1368,6 +1369,7 @@ export default function Reader() {
 
       {/* ─── Concept hover tooltips (event delegation) ─── */}
       <ConceptTooltip conceptIndex={conceptIndex} />
+      <ReadingProgressRing />
 
       {/* ─── Glossary side panel ─── */}
       <AnimatePresence>

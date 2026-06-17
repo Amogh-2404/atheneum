@@ -20,7 +20,7 @@ export default function ReadingProgress() {
       style={{
         position: 'fixed',
         top: 0,
-        left: 260,
+        left: 0,
         right: 0,
         height: 3,
         zIndex: 50,

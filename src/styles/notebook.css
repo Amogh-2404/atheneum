@@ -232,6 +232,13 @@
   line-height: var(--leading);  /* Matches ruled-line spacing exactly */
   letter-spacing: 0.01em;
   color: var(--ink-primary);
+  /* Book-grade text rendering: kerning, ligatures, and OLDSTYLE numerals so
+     figures sit in the prose like a printed book, not a dashboard. Source Serif 4
+     carries proper oldstyle glyphs. Code/math reset to lining below. */
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1, "onum" 1;
+  font-variant-numeric: oldstyle-nums proportional-nums;
+  hanging-punctuation: first;
   /* No max-width here — page-container's max-width: 800px + padding
      controls the reading width uniformly for ALL block types */
 }
@@ -497,8 +504,11 @@
   font-size: 0.875em;
   background: rgba(0, 0, 0, 0.06);
   padding: 0.15em 0.4em;
-  border-radius: 3px;
+  border-radius: var(--radius-1);
   color: var(--ink-primary);
+  /* Code keeps lining + tabular figures — oldstyle numerals belong to prose only. */
+  font-feature-settings: normal;
+  font-variant-numeric: lining-nums tabular-nums;
 }
 
 [data-theme="dark"] .notebook-text code {

@@ -77,3 +77,9 @@ body {
   border-bottom-color: transparent !important;
   cursor: text !important;
 }
+
+/* The reading-progress ring lives in the right margin — hide it once the column
+   fills the viewport and there is no margin to spare. */
+@media (max-width: 980px) {
+  .reading-progress { display: none !important; }
+}
