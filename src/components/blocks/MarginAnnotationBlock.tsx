@@ -1,51 +1,45 @@
 import type { MarginAnnotationBlock as MarginAnnotationBlockType } from '@/types'
 import { renderText } from '@/lib/render-text'
-import RoughBox from '@/components/shared/RoughBox'
 
 export default function MarginAnnotationBlock({ text, author }: MarginAnnotationBlockType) {
   return (
     <aside
       style={{
         marginLeft: 'auto',
-        maxWidth: '220px',
-        transform: 'rotate(1.2deg)',
-        marginTop: '0.5rem',
-        marginBottom: '0.5rem',
+        maxWidth: '240px',
+        marginTop: 'var(--space-2)',
+        marginBottom: 'var(--space-2)',
+        // Crisp 2px accent left rule + faint tint — no rough box, no rotation
+        borderLeft: '2px solid var(--accent)',
+        backgroundColor: 'color-mix(in srgb, var(--accent) 6%, var(--paper-bg))',
+        borderRadius: '0 var(--radius-2) var(--radius-2) 0',
+        padding: 'var(--space-3) var(--space-4)',
       }}
     >
-      <RoughBox
-        seed={77}
-        stroke="var(--ink-faint)"
-        strokeWidth={1}
-        fill="rgba(254, 243, 199, 0.5)"
-        fillStyle="solid"
-        roughness={1.5}
-        padding="0.75rem 1rem"
+      <div
+        style={{
+          // Handwriting stays — this is the ONE sanctioned place for it
+          fontFamily: 'var(--font-handwritten)',
+          fontSize: '1rem',
+          lineHeight: 1.5,
+          color: 'var(--ink-secondary)',
+        }}
       >
+        {renderText(text)}
+      </div>
+      {author && (
         <div
           style={{
             fontFamily: 'var(--font-handwritten)',
-            fontSize: '0.9375rem',
-            lineHeight: 1.5,
-            color: 'var(--ink-secondary)',
+            fontSize: '0.875rem',
+            color: 'var(--ink-faint)',
+            marginTop: 'var(--space-2)',
+            fontStyle: 'italic',
           }}
         >
-          {renderText(text)}
+          &mdash; {author}
         </div>
-        {author && (
-          <div
-            style={{
-              fontFamily: 'var(--font-handwritten)',
-              fontSize: '0.8125rem',
-              color: 'var(--ink-faint)',
-              marginTop: '0.375rem',
-              fontStyle: 'italic',
-            }}
-          >
-            &mdash; {author}
-          </div>
-        )}
-      </RoughBox>
+      )}
     </aside>
   )
 }
