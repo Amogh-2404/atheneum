@@ -59,6 +59,10 @@
   --chrome-text: #94a3b8;
   --chrome-hover-text: #f1f5f9;
   --chrome-accent: #2F5C8A;
+  /* Raised paper — an elevated CARD on the warm reading page. NOT chrome.
+     Content surfaces (Study cards, Notebook pills/rows) live on paper, so they
+     must stay light; only the sidebar/rail apparatus uses the dark --chrome-*. */
+  --surface-raised: #fffdf8;
   --accent: #2F5C8A;
   --accent-hover: #274E76;
   --focus-ring: #2F5C8A;
@@ -108,6 +112,7 @@
   --chrome-text: #7a8ba3;
   --chrome-hover-text: #e2e8f0;
   --chrome-accent: #6FA0CE;
+  --surface-raised: #1e1e24;
   --accent: #6FA0CE;
   --accent-hover: #8FB6DC;
   --focus-ring: #6FA0CE;
@@ -157,6 +162,7 @@
   --chrome-text: #9a8a7a;
   --chrome-hover-text: #f4ecd8;
   --chrome-accent: #9C6B3E;
+  --surface-raised: #fbf5e6;
   --accent: #9C6B3E;
   --accent-hover: #855833;
   --focus-ring: #9C6B3E;

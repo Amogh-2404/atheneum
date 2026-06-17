@@ -167,7 +167,7 @@ export default function AnnotationNotebook() {
             borderRight: 'var(--hairline)',
             borderBottom: 'var(--hairline)',
             borderLeft: `3px solid ${railColor}`,
-            background: `color-mix(in srgb, ${railColor} 5%, var(--chrome-surface))`,
+            background: `color-mix(in srgb, ${railColor} 5%, var(--surface-raised))`,
             textDecoration: 'none',
             transition: 'box-shadow 200ms, transform 200ms',
             marginBottom: 'var(--space-2)',
@@ -303,8 +303,8 @@ export default function AnnotationNotebook() {
                   fontSize: '0.78rem',
                   fontWeight: isActive ? 600 : 500,
                   color: isActive ? 'var(--accent)' : 'var(--ink-secondary)',
-                  background: isActive ? 'color-mix(in srgb, var(--accent) 10%, var(--chrome-surface))' : 'var(--chrome-surface)',
-                  border: `1px solid ${isActive ? 'var(--accent)' : 'var(--chrome-border)'}`,
+                  background: isActive ? 'color-mix(in srgb, var(--accent) 10%, var(--surface-raised))' : 'var(--surface-raised)',
+                  border: `1px solid ${isActive ? 'var(--accent)' : 'var(--hairline-color)'}`,
                   borderRadius: 'var(--radius-1)',
                   padding: '0 var(--space-3)',
                   cursor: isEmpty ? 'not-allowed' : 'pointer',
@@ -313,13 +313,13 @@ export default function AnnotationNotebook() {
                 }}
                 onMouseEnter={(e) => {
                   if (isActive || isEmpty) return
-                  e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--accent) 40%, var(--chrome-border))'
-                  e.currentTarget.style.background = 'color-mix(in srgb, var(--accent) 5%, var(--chrome-surface))'
+                  e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--accent) 40%, var(--hairline-color))'
+                  e.currentTarget.style.background = 'color-mix(in srgb, var(--accent) 5%, var(--surface-raised))'
                 }}
                 onMouseLeave={(e) => {
                   if (isActive || isEmpty) return
-                  e.currentTarget.style.borderColor = 'var(--chrome-border)'
-                  e.currentTarget.style.background = 'var(--chrome-surface)'
+                  e.currentTarget.style.borderColor = 'var(--hairline-color)'
+                  e.currentTarget.style.background = 'var(--surface-raised)'
                 }}
               >
                 {f.label}
@@ -345,8 +345,8 @@ export default function AnnotationNotebook() {
                 fontSize: '0.78rem',
                 fontWeight: 500,
                 color: 'var(--ink-secondary)',
-                background: 'var(--chrome-surface)',
-                border: '1px solid var(--chrome-border)',
+                background: 'var(--surface-raised)',
+                border: '1px solid var(--hairline-color)',
                 borderRadius: 'var(--radius-1)',
                 padding: '0 var(--space-2)',
               }}

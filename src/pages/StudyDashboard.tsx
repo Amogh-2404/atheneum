@@ -285,7 +285,7 @@ export default function StudyDashboard() {
             key={reviewIdx} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={tween.enter}
             onClick={() => setFlipped(f => !f)} role="button" tabIndex={0}
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setFlipped(f => !f) } }}
-            style={{ cursor: 'pointer', border: `1px solid ${flipped ? 'var(--accent)' : 'var(--chrome-border)'}`, borderRadius: 'var(--radius-3)', padding: 'var(--space-6)', minHeight: 200, display: 'flex', flexDirection: 'column', justifyContent: 'center', background: flipped ? 'color-mix(in srgb, var(--accent) 4%, var(--paper-bg))' : 'var(--paper-bg)', boxShadow: 'var(--shadow-1)', transition: 'border-color 200ms, background 200ms' }}>
+            style={{ cursor: 'pointer', border: `1px solid ${flipped ? 'var(--accent)' : 'var(--hairline-color)'}`, borderRadius: 'var(--radius-3)', padding: 'var(--space-6)', minHeight: 200, display: 'flex', flexDirection: 'column', justifyContent: 'center', background: flipped ? 'color-mix(in srgb, var(--accent) 4%, var(--paper-bg))' : 'var(--paper-bg)', boxShadow: 'var(--shadow-1)', transition: 'border-color 200ms, background 200ms' }}>
             <div style={{ ...eyebrow(flipped ? 'var(--accent)' : 'var(--ink-faint)'), marginBottom: 'var(--space-3)' }}>
               {flipped ? 'Answer' : 'Question'}
             </div>
@@ -340,7 +340,7 @@ export default function StudyDashboard() {
         </header>
 
         {/* Due forecast + Start review */}
-        <section style={{ marginBottom: 'var(--space-6)', padding: 'var(--space-5)', borderRadius: 'var(--radius-3)', border: 'var(--hairline)', background: 'var(--chrome-surface, color-mix(in srgb, var(--ink-faint) 4%, var(--paper-bg)))', boxShadow: 'var(--shadow-1)' }}>
+        <section style={{ marginBottom: 'var(--space-6)', padding: 'var(--space-5)', borderRadius: 'var(--radius-3)', border: 'var(--hairline)', background: 'var(--surface-raised)', boxShadow: 'var(--shadow-1)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, ...eyebrow('var(--accent)') }}>
               <Layers size={14} strokeWidth={2} /> Due this week

@@ -38,7 +38,7 @@ export default function FacetSwitcher() {
       className="glass"
       style={{
         position: 'fixed',
-        bottom: 'var(--space-5)',
+        bottom: 'calc(var(--space-5) + env(safe-area-inset-bottom, 0px))',
         left: '50%',
         x: '-50%',
         zIndex: 60,

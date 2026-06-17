@@ -91,3 +91,8 @@ body {
 @media (hover: hover) {
   .book-card:hover { box-shadow: var(--shadow-3); }
 }
+
+/* Knowledge Map: hide the minimap on phones — it overlaps the spine + facet bar. */
+@media (max-width: 768px) {
+  .react-flow__minimap { display: none !important; }
+}

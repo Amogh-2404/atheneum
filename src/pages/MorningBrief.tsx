@@ -57,7 +57,7 @@ export default function MorningBrief() {
       style={{
         width: '100%',
         minHeight: '100vh',
-        background: 'var(--chrome-bg)',
+        background: 'var(--paper-bg)',
         padding: 'var(--space-6) var(--space-5) var(--space-8)',
         boxSizing: 'border-box',
       }}
@@ -147,7 +147,7 @@ export default function MorningBrief() {
               padding: 'var(--space-5)',
               border: 'var(--hairline)',
               borderRadius: 'var(--radius-3)',
-              background: 'var(--chrome-surface)',
+              background: 'var(--surface-raised)',
             }}
           >
             <BookOpen size={18} strokeWidth={1.75} aria-hidden style={{ color: 'var(--ink-faint)', flexShrink: 0 }} />
@@ -164,7 +164,7 @@ export default function MorningBrief() {
             style={{
               border: 'var(--hairline)',
               borderRadius: 'var(--radius-3)',
-              background: 'var(--chrome-surface)',
+              background: 'var(--surface-raised)',
               padding: 'var(--space-5)',
               marginBottom: 'var(--space-4)',
             }}
@@ -242,7 +242,7 @@ export default function MorningBrief() {
                   display: 'flex',
                   gap: 'var(--space-3)',
                   padding: 'var(--space-2) var(--space-3)',
-                  background: `color-mix(in srgb, ${semantic.added} 8%, var(--chrome-surface))`,
+                  background: `color-mix(in srgb, ${semantic.added} 8%, var(--surface-raised))`,
                   boxShadow: `inset 2px 0 0 ${semantic.added}`,
                 }}
               >
@@ -294,7 +294,7 @@ export default function MorningBrief() {
                   fontFamily: 'var(--font-ui)',
                   fontSize: '0.78rem',
                   fontWeight: 600,
-                  color: 'var(--chrome-bg)',
+                  color: 'var(--paper-bg)',
                   background: 'var(--accent)',
                   border: 'none',
                   borderRadius: 'var(--radius-full)',
