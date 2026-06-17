@@ -40,6 +40,7 @@ export default function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
         { id: 'a-map', label: 'Open Knowledge Map', hint: 'Map', perform: () => navigate(`/book/${bookId}/graph`) },
         { id: 'a-study', label: 'Open Study', hint: 'Study', perform: () => navigate(`/book/${bookId}/study`) },
         { id: 'a-notebook', label: 'Open Notebook', hint: 'Notebook', perform: () => navigate(`/book/${bookId}/notebook`) },
+        { id: 'a-brief', label: 'Open Morning Brief', hint: 'Forge', perform: () => navigate(`/book/${bookId}/brief`) },
       )
     }
     list.push({ id: 'a-home', label: 'Go to Bookshelf', hint: 'Home', perform: () => navigate('/') })

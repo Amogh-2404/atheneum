@@ -18,7 +18,7 @@ const FACETS = [
 
 export function currentFacet(pathname: string): string {
   const seg = pathname.split('/')[3] || ''
-  return seg === 'graph' || seg === 'study' || seg === 'notebook' ? seg : 'reader'
+  return seg === 'graph' || seg === 'study' || seg === 'notebook' || seg === 'brief' ? seg : 'reader'
 }
 
 export default function FacetSwitcher() {

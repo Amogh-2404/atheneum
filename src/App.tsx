@@ -4,6 +4,7 @@ import Reader from '@/pages/Reader'
 import KnowledgeGraph from '@/pages/KnowledgeGraph'
 import StudyDashboard from '@/pages/StudyDashboard'
 import AnnotationNotebook from '@/pages/AnnotationNotebook'
+import MorningBrief from '@/pages/MorningBrief'
 import BookLayout from '@/components/shared/BookLayout'
 import OnboardingOverlay from '@/components/shared/OnboardingOverlay'
 import ToastContainer from '@/components/shared/Toast'
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="graph" element={<KnowledgeGraph />} />
           <Route path="study" element={<StudyDashboard />} />
           <Route path="notebook" element={<AnnotationNotebook />} />
+          <Route path="brief" element={<MorningBrief />} />
           <Route path=":chapterId" element={<Reader />} />
         </Route>
       </Routes>
