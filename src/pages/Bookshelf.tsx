@@ -18,6 +18,7 @@ import {
   Coffee,
   MoreHorizontal,
   ArrowRight,
+  Sparkles,
 } from 'lucide-react'
 import type { LucideProps } from 'lucide-react'
 import type { BookSummary } from '@/types/book'
@@ -1072,13 +1073,18 @@ export default function Bookshelf() {
                 fontFamily: 'var(--font-ui)',
                 fontSize: '0.95rem',
                 color: ps.subtitleColor,
-                margin: '0 0 2.5rem 0',
+                margin: '0 0 var(--space-2) 0',
                 letterSpacing: '0.04em',
                 transition: 'color 400ms ease',
               }}
             >
               Your technical library
             </motion.p>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.15 }} style={{ margin: '0 0 2.5rem' }}>
+              <Link to="/wishlist" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-ui)', fontSize: '0.8rem', fontWeight: 600, color: 'var(--accent)', textDecoration: 'none' }}>
+                <Sparkles size={13} strokeWidth={2.2} /> Wishlist — tell me what to build
+              </Link>
+            </motion.div>
           </div>
 
           {/* Theme toggle — premium segmented pill with prominent active state */}

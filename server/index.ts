@@ -12,6 +12,7 @@ import { learningProgressRouter } from './routes/learning-progress.js'
 import { struggleRouter } from './routes/struggle.js'
 import { draftsRouter } from './routes/drafts.js'
 import { historyRouter } from './routes/history.js'
+import { wishlistRouter } from './routes/wishlist.js'
 import { ConnectionManager } from './ws.js'
 import { startWatcher } from './watcher.js'
 
@@ -30,6 +31,9 @@ app.use('*', cors({
 
 // ─── API Routes ───────────────────────────────────────────────────
 app.route('/api/books', booksRouter)
+
+// Sir's wishlist inbox (the morning office-hours daemon fulfils it)
+app.route('/api/wishlist', wishlistRouter)
 
 // Mount chapters under books/:bookId/chapters
 app.route('/api/books/:bookId/chapters', chaptersRouter)

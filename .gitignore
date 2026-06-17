@@ -40,3 +40,6 @@ scripts/capture-screenshots.mjs
 # Generated audit / build artifacts (regenerable from scripts/atheneum)
 build/
 .prereq-gen/
+.reader-plan/
+.aco-seed/
+.aco/state/

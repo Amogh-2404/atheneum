@@ -202,6 +202,38 @@ const MarginAnnotationBlockSchema = BlockBaseSchema.extend({
   author: z.string().optional(),
 })
 
+const SandboxBlockSchema = BlockBaseSchema.extend({
+  type: z.literal('sandbox'),
+  language: z.enum(['javascript', 'typescript', 'python']),
+  code: z.string(),
+  filename: z.string().optional(),
+  readOnly: z.boolean().optional(),
+  lockedRegions: z.array(z.object({ fromLine: z.number(), toLine: z.number(), reason: z.string().optional() })).optional(),
+  expectedOutput: z.string().optional(),
+  tests: z.array(z.object({ name: z.string(), kind: z.enum(['stdout-contains', 'stdout-equals', 'no-error']), value: z.string().optional() })).optional(),
+  autorun: z.boolean().optional(),
+  timeoutMs: z.number().optional(),
+  hideEditor: z.boolean().optional(),
+  stdin: z.string().optional(),
+})
+
+const DerivationBlockSchema = BlockBaseSchema.extend({
+  type: z.literal('derivation'),
+  title: TextContentSchema.optional(),
+  lines: z.array(z.object({ latex: z.string(), delta: z.string().nullable().optional(), note: TextContentSchema.optional() })),
+  mode: z.enum(['scroll', 'tap']).optional(),
+  caption: TextContentSchema.optional(),
+})
+
+const ScrollyFigureBlockSchema = BlockBaseSchema.extend({
+  type: z.literal('scrolly-figure'),
+  stages: z.array(z.object({ kind: z.enum(['image', 'diagram']), src: z.string().optional(), alt: z.string().optional(), diagramId: z.string().optional() })),
+  steps: z.array(z.object({ stage: z.number(), caption: TextContentSchema })),
+  aspect: z.string().optional(),
+  sticky: z.enum(['center', 'top']).optional(),
+  caption: TextContentSchema.optional(),
+})
+
 // ─── Discriminated Union ──────────────────────────────────────────
 
 // ToggleBlockSchema is typed `z.ZodType<any>` because it is recursive (z.lazy),
@@ -228,6 +260,9 @@ const BlockSchema = z.discriminatedUnion('type', [
   SummaryBlockSchema,
   EmbedBlockSchema,
   MarginAnnotationBlockSchema,
+  SandboxBlockSchema,
+  DerivationBlockSchema,
+  ScrollyFigureBlockSchema,
 ] as Parameters<typeof z.discriminatedUnion>[1])
 
 // ─── Chapter ──────────────────────────────────────────────────────
