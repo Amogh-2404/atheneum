@@ -27,7 +27,7 @@ import { SkeletonGraph, ShimmerStyle } from '@/components/shared/Skeleton'
 // ─── Concept node ─────────────────────────────────────────────────
 function ConceptNode({ data, selected }: NodeProps<Node<ConceptNodeData>>) {
   const zoom = useStore((s) => s.transform[2])
-  const showLabel = zoom >= 0.5
+  const showLabel = zoom >= 0.42
   return (
     <div
       style={{
@@ -148,18 +148,45 @@ export default function KnowledgeGraph() {
   const displayEdges = useMemo(
     () => edges.map((e) => {
       if ((e.data as { spine?: boolean })?.spine) {
-        return { ...e, type: 'smoothstep', markerEnd: undefined, style: { stroke: 'var(--chrome-accent)', strokeWidth: 2, opacity: highlighted ? 0.2 : 0.45 } }
+        return { ...e, type: 'smoothstep', markerEnd: undefined, style: { stroke: 'var(--chrome-accent)', strokeWidth: 2, opacity: highlighted ? 0.18 : 0.5 } }
       }
-      const on = !highlighted || (highlighted.has(e.source) && highlighted.has(e.target))
-      return { ...e, style: { stroke: highlighted && on ? 'var(--chrome-accent)' : 'rgba(148,163,184,0.34)', strokeWidth: highlighted && on ? 2 : 1.5, opacity: on ? 0.95 : 0.06 } }
+      // Resting: prerequisites are a faint web — present, never a tangle. Hover a
+      // concept to light its prerequisite chain and dim everything else away.
+      if (!highlighted) {
+        return { ...e, type: 'smoothstep', markerEnd: undefined, style: { stroke: 'rgba(148,163,184,0.34)', strokeWidth: 1, opacity: 0.1 } }
+      }
+      const on = highlighted.has(e.source) && highlighted.has(e.target)
+      return { ...e, type: 'smoothstep', markerEnd: undefined, style: { stroke: on ? 'var(--chrome-accent)' : 'rgba(148,163,184,0.34)', strokeWidth: on ? 2 : 1, opacity: on ? 0.95 : 0.04 } }
     }),
     [edges, highlighted],
   )
   const onNodeMouseEnter = useCallback<NodeMouseHandler>((_e, node) => setHovered(node.id), [])
   const onNodeMouseLeave = useCallback(() => setHovered(null), [])
 
+  // The spine is a vertical column — short for a 3-chapter book, ~9000px tall for a
+  // 100-chapter one. fitView-all would zoom a long spine down to an unreadable
+  // thread. Instead we anchor at the TOP and fit the WIDTH: every map opens reading
+  // "here's chapter one, scroll down through the book," legibly, at any length.
+  const initialViewport = useMemo(() => {
+    if (!nodes.length) return { x: 0, y: 0, zoom: 1 }
+    let minX = Infinity, maxX = -Infinity, minY = Infinity
+    for (const n of nodes) {
+      const w = n.type === 'chapter' ? 250 : NODE_W
+      minX = Math.min(minX, n.position.x)
+      maxX = Math.max(maxX, n.position.x + w)
+      minY = Math.min(minY, n.position.y)
+    }
+    const graphW = maxX - minX
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 1440
+    const zoom = Math.min(0.85, Math.max(0.42, (vw - 140) / graphW))
+    const x = (vw - graphW * zoom) / 2 - minX * zoom
+    const y = 150 - minY * zoom // clear the masthead, start at the first chapter
+    return { x, y, zoom }
+  }, [nodes])
+
+  const prereqCount = useMemo(() => edges.filter((e) => !(e.data as { spine?: boolean })?.spine).length, [edges])
   const subtitle =
-    tier === 'dag' ? `${conceptCount} concepts · ${edges.length} prerequisites · top-to-bottom is learning order`
+    tier === 'dag' ? `${chapterCount} chapters · ${conceptCount} concepts · ${prereqCount} prerequisite links — hover to trace`
     : tier === 'spine-clusters' ? `${chapterCount} chapters · ${conceptCount} concepts · top-to-bottom is reading order`
     : `${chapterCount} chapters · top-to-bottom is reading order`
 
@@ -208,9 +235,8 @@ export default function KnowledgeGraph() {
           onNodeClick={onNodeClick}
           onNodeMouseEnter={onNodeMouseEnter}
           onNodeMouseLeave={onNodeMouseLeave}
-          fitView
-          fitViewOptions={{ padding: 0.2 }}
-          minZoom={0.15}
+          defaultViewport={initialViewport}
+          minZoom={0.08}
           maxZoom={2}
           nodesDraggable={false}
           nodesConnectable={false}

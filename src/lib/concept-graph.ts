@@ -1,4 +1,3 @@
-import dagre from '@dagrejs/dagre'
 import type { Node, Edge } from '@xyflow/react'
 
 /**
@@ -199,40 +198,25 @@ export function buildConceptGraph(outline: OutlineData, chapterOrder: string[]):
   // No real edges -> spine-first (never empty, never a single row).
   if (edgeMap.size === 0) return buildSpineGraph(outline, chapterOrder)
 
-  // Tier C: a real prerequisite DAG, laid out top-to-bottom.
+  // Real prerequisites exist. Rather than a raw dagre/force hairball — which for
+  // 130+ shallow-chained concepts lays out ~10,000px wide and renders as
+  // illegible specks — lay the prerequisites OVER the same readable spine-clusters
+  // layout. Concepts stay anchored to their chapter; the prerequisite edges become
+  // a faint web you trace on hover. Compact and meaningful at any concept count.
+  const base = buildSpineGraph(outline, chapterOrder)
   const degree = new Map<string, number>()
   for (const e of edgeMap.values()) {
     degree.set(e.source as string, (degree.get(e.source as string) || 0) + 1)
     degree.set(e.target as string, (degree.get(e.target as string) || 0) + 1)
   }
-  const chMeta = new Map(chapters.map((c) => [c.id, c]))
-  const nodes: Node[] = keys.map((c) => {
-    const ch = chMeta.get(ci[c].definedIn)
-    return {
-      id: c,
-      type: 'concept',
-      position: { x: 0, y: 0 },
-      data: {
-        label: humanize(c),
-        chapterId: ci[c].definedIn,
-        chapterTitle: ch?.title,
-        chapterNumber: ch?.number,
-        degree: degree.get(c) || 0,
-        color: getChapterColor(ci[c].definedIn, chapterOrder),
-      } as ConceptNodeData,
-    }
-  })
-
-  const g = new dagre.graphlib.Graph()
-  g.setGraph({ rankdir: 'TB', nodesep: 30, ranksep: 70, marginx: 48, marginy: 48 })
-  g.setDefaultEdgeLabel(() => ({}))
-  for (const n of nodes) g.setNode(n.id, { width: NODE_W, height: NODE_H })
-  for (const e of edgeMap.values()) g.setEdge(e.source as string, e.target as string)
-  dagre.layout(g)
-  for (const n of nodes) {
-    const p = g.node(n.id)
-    if (p) n.position = { x: p.x - NODE_W / 2, y: p.y - NODE_H / 2 }
+  for (const n of base.nodes) {
+    if (n.type === 'concept') (n.data as ConceptNodeData).degree = degree.get(n.id as string) || 0
   }
-
-  return { nodes, edges: [...edgeMap.values()], tier: 'dag', conceptCount: keys.length, chapterCount: chapters.length }
+  return {
+    nodes: base.nodes,
+    edges: [...base.edges, ...edgeMap.values()],
+    tier: 'dag',
+    conceptCount: keys.length,
+    chapterCount: chapters.length,
+  }
 }
