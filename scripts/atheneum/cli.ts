@@ -502,7 +502,13 @@ async function cmdImport(opts: ImportOpts): Promise<number> {
       }
     }
   }
-  const outline = {
+  const outline: {
+    _schema: number
+    bookId: string
+    chapters: typeof chapterMeta
+    conceptIndex: typeof conceptIndex
+    prerequisitesInferred?: boolean
+  } = {
     _schema: 1,
     bookId: opts.bookId,
     chapters: chapterMeta,
@@ -513,6 +519,22 @@ async function cmdImport(opts: ImportOpts): Promise<number> {
   // Semantics: outRoot is the parent dir; the bookId dir lives inside it.
   const outRoot = opts.outRoot ?? CONTENT_DIR
   const bookDir = path.join(outRoot, opts.bookId)
+
+  // Preserve prerequisites across re-imports. This importer derives concepts from
+  // the markdown but cannot know prerequisite EDGES (they're authored or inferred
+  // separately and live only in outline.json). Without this, re-importing would
+  // silently flatten the Knowledge Map back to a chapter spine.
+  const prevOutline = await readJson<{
+    conceptIndex?: Record<string, { prerequisites?: string[] }>
+    prerequisitesInferred?: boolean
+  }>(path.join(bookDir, 'outline.json'))
+  if (prevOutline?.conceptIndex) {
+    for (const slug of Object.keys(conceptIndex)) {
+      const prev = prevOutline.conceptIndex[slug]?.prerequisites
+      if (prev?.length) conceptIndex[slug].prerequisites = prev.filter((p) => conceptIndex[p])
+    }
+    if (prevOutline.prerequisitesInferred) outline.prerequisitesInferred = true
+  }
   let bookMeta: Record<string, unknown>
   const existingBookPath = path.join(bookDir, 'book.json')
   const existing = await readJson<Record<string, unknown>>(existingBookPath)

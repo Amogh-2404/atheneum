@@ -41,7 +41,12 @@ export interface ConceptNodeData {
   chapterTitle?: string
   chapterNumber?: number
   degree: number
+  /** how many other concepts depend on this one (out-degree) — its foundational-ness */
+  dependents: number
+  /** prerequisite depth: longest chain of prereqs beneath it (0 = foundational) */
+  depth: number
   color: string
+  width: number
   [key: string]: unknown
 }
 
@@ -54,7 +59,31 @@ export interface ChapterNodeData {
   goal?: string
   conceptCount: number
   color: string
+  width: number
   [key: string]: unknown
+}
+
+/** Responsive layout shape — chosen from viewport width by pickLayout(). */
+export interface LayoutOpts {
+  /** 'lanes' = chapter on the left, concepts gridded to its right (desktop).
+   *  'stack' = chapter full-width on top, concepts gridded below (phones). */
+  mode: 'lanes' | 'stack'
+  chapterW: number
+  conceptW: number
+  conceptH: number
+  cols: number
+  /** gap between grid cells */
+  cell: number
+  /** vertical gap between chapter lanes/blocks */
+  lanePad: number
+}
+
+const LANES: LayoutOpts = { mode: 'lanes', chapterW: 296, conceptW: 188, conceptH: 46, cols: 4, cell: 12, lanePad: 40 }
+
+export function pickLayout(width: number): LayoutOpts {
+  if (width < 560) return { mode: 'stack', chapterW: 312, conceptW: 151, conceptH: 46, cols: 2, cell: 10, lanePad: 30 }
+  if (width < 900) return { mode: 'stack', chapterW: 468, conceptW: 150, conceptH: 46, cols: 3, cell: 11, lanePad: 32 }
+  return LANES
 }
 
 export type GraphTier = 'dag' | 'spine-clusters' | 'spine' | 'empty'
@@ -89,22 +118,42 @@ function humanize(slug: string): string {
 }
 
 // ── Spine-first layout (Tier A 'spine' + Tier B 'spine-clusters') ──
-function buildSpineGraph(outline: OutlineData, order: string[]): BuiltGraph {
+// Responsive: 'lanes' (chapter left, concepts right) on desktop, 'stack' (chapter
+// on top, concepts below) on phones. When prereq edges exist, concepts within a
+// chapter are sorted foundational-first (most-depended-on at the top of the cluster).
+interface SpineExtras {
+  dependents?: Map<string, number>
+  depth?: Map<string, number>
+}
+function buildSpineGraph(
+  outline: OutlineData,
+  order: string[],
+  L: LayoutOpts = LANES,
+  extra: SpineExtras = {},
+): BuiltGraph {
   const chapters = outline.chapters || []
   const ci = outline.conceptIndex || {}
   const conceptKeys = Object.keys(ci)
   if (chapters.length === 0) return { nodes: [], edges: [], tier: 'empty', conceptCount: 0, chapterCount: 0 }
 
+  const dep = extra.dependents
   const byChapter = new Map<string, string[]>()
   for (const slug of conceptKeys) {
     const ch = ci[slug].definedIn
     if (!byChapter.has(ch)) byChapter.set(ch, [])
     byChapter.get(ch)!.push(slug)
   }
+  // foundational concepts first within each cluster (only meaningful when we have edges)
+  if (dep) {
+    for (const list of byChapter.values()) {
+      list.sort((a, b) => (dep.get(b) || 0) - (dep.get(a) || 0) || a.localeCompare(b))
+    }
+  }
 
-  const CHAP_X = 0, CHAP_H = 92
-  const CONC_X = 340, CONC_W = 188, CONC_H = 46, CONC_GAP = 10, PER_ROW = 4
-  const LANE_PAD = 36
+  const CHAP_H = 96
+  const { mode, chapterW, conceptW, conceptH, cols, cell, lanePad } = L
+  const gridW = cols * conceptW + (cols - 1) * cell
+  const concX = mode === 'lanes' ? chapterW + 44 : 0 // lanes: concepts to the right; stack: under the chapter
 
   const nodes: Node[] = []
   const edges: Edge[] = []
@@ -112,15 +161,27 @@ function buildSpineGraph(outline: OutlineData, order: string[]): BuiltGraph {
   chapters.forEach((ch, i) => {
     const color = getChapterColor(ch.id, order)
     const concepts = byChapter.get(ch.id) || []
-    const rows = Math.max(1, Math.ceil(concepts.length / PER_ROW))
-    const conceptsH = concepts.length ? rows * (CONC_H + CONC_GAP) : 0
-    const laneBody = Math.max(CHAP_H, conceptsH)
-    const laneTop = y
+    const rows = Math.ceil(concepts.length / cols)
+    const conceptsH = concepts.length ? rows * (conceptH + cell) - cell : 0
+
+    let chapterY: number
+    let gridTop: number
+    let laneBody: number
+    if (mode === 'lanes') {
+      laneBody = Math.max(CHAP_H, conceptsH)
+      chapterY = y + (laneBody - CHAP_H) / 2
+      gridTop = y
+    } else {
+      // stack: chapter card on top, grid below
+      chapterY = y
+      gridTop = y + CHAP_H + 16
+      laneBody = CHAP_H + (conceptsH ? 16 + conceptsH : 0)
+    }
 
     nodes.push({
       id: `ch-${ch.id}`,
       type: 'chapter',
-      position: { x: CHAP_X, y: laneTop + (laneBody - CHAP_H) / 2 },
+      position: { x: 0, y: chapterY },
       data: {
         chapterId: ch.id,
         number: ch.number ?? i + 1,
@@ -130,23 +191,27 @@ function buildSpineGraph(outline: OutlineData, order: string[]): BuiltGraph {
         goal: ch.learningGoal,
         conceptCount: concepts.length,
         color,
+        width: mode === 'stack' ? Math.max(chapterW, gridW) : chapterW,
       } as ChapterNodeData,
     })
 
     concepts.forEach((slug, k) => {
-      const col = k % PER_ROW
-      const row = Math.floor(k / PER_ROW)
+      const col = k % cols
+      const row = Math.floor(k / cols)
       nodes.push({
         id: slug,
         type: 'concept',
-        position: { x: CONC_X + col * (CONC_W + 10), y: laneTop + row * (CONC_H + CONC_GAP) },
+        position: { x: concX + col * (conceptW + cell), y: gridTop + row * (conceptH + cell) },
         data: {
           label: humanize(slug),
           chapterId: ch.id,
           chapterTitle: ch.title,
           chapterNumber: ch.number ?? i + 1,
           degree: 0,
+          dependents: dep?.get(slug) || 0,
+          depth: extra.depth?.get(slug) || 0,
           color,
+          width: conceptW,
         } as ConceptNodeData,
       })
     })
@@ -154,7 +219,7 @@ function buildSpineGraph(outline: OutlineData, order: string[]): BuiltGraph {
     if (i < chapters.length - 1) {
       edges.push({ id: `spine-${i}`, source: `ch-${ch.id}`, target: `ch-${chapters[i + 1].id}`, data: { spine: true } })
     }
-    y = laneTop + laneBody + LANE_PAD
+    y += laneBody + lanePad
   })
 
   return {
@@ -167,7 +232,11 @@ function buildSpineGraph(outline: OutlineData, order: string[]): BuiltGraph {
 }
 
 // ── Entry: pick the tier ──
-export function buildConceptGraph(outline: OutlineData, chapterOrder: string[]): BuiltGraph {
+export function buildConceptGraph(
+  outline: OutlineData,
+  chapterOrder: string[],
+  layout: LayoutOpts = LANES,
+): BuiltGraph {
   const ci = outline.conceptIndex || {}
   const keys = Object.keys(ci)
   const chapters = outline.chapters || []
@@ -196,25 +265,53 @@ export function buildConceptGraph(outline: OutlineData, chapterOrder: string[]):
   }
 
   // No real edges -> spine-first (never empty, never a single row).
-  if (edgeMap.size === 0) return buildSpineGraph(outline, chapterOrder)
+  if (edgeMap.size === 0) return buildSpineGraph(outline, chapterOrder, layout)
 
   // Real prerequisites exist. Rather than a raw dagre/force hairball — which for
   // 130+ shallow-chained concepts lays out ~10,000px wide and renders as
-  // illegible specks — lay the prerequisites OVER the same readable spine-clusters
-  // layout. Concepts stay anchored to their chapter; the prerequisite edges become
-  // a faint web you trace on hover. Compact and meaningful at any concept count.
-  const base = buildSpineGraph(outline, chapterOrder)
+  // illegible specks — lay the prerequisites OVER the readable spine-clusters
+  // layout. Concepts stay anchored to their chapter, sorted foundational-first;
+  // the prerequisite edges are the dependency structure you trace on hover/focus.
+  const edgesArr = [...edgeMap.values()]
+  // degree = total connections; dependents = out-degree (how many require THIS
+  // concept = how foundational it is); depth = longest prerequisite chain beneath it.
   const degree = new Map<string, number>()
-  for (const e of edgeMap.values()) {
-    degree.set(e.source as string, (degree.get(e.source as string) || 0) + 1)
-    degree.set(e.target as string, (degree.get(e.target as string) || 0) + 1)
+  const dependents = new Map<string, number>()
+  const incoming = new Map<string, string[]>()
+  for (const e of edgesArr) {
+    const s = e.source as string, t = e.target as string
+    degree.set(s, (degree.get(s) || 0) + 1)
+    degree.set(t, (degree.get(t) || 0) + 1)
+    dependents.set(s, (dependents.get(s) || 0) + 1) // s is a prerequisite of t
+    if (!incoming.has(t)) incoming.set(t, [])
+    incoming.get(t)!.push(s)
   }
+  // prerequisite depth via memoized DFS over the prereq (incoming) edges
+  const depth = new Map<string, number>()
+  const seen = new Set<string>()
+  const computeDepth = (n: string): number => {
+    if (depth.has(n)) return depth.get(n)!
+    if (seen.has(n)) return 0 // cycle guard
+    seen.add(n)
+    let d = 0
+    for (const p of incoming.get(n) || []) d = Math.max(d, 1 + computeDepth(p))
+    depth.set(n, d)
+    return d
+  }
+  for (const k of keys) computeDepth(k)
+
+  const base = buildSpineGraph(outline, chapterOrder, layout, { dependents, depth })
   for (const n of base.nodes) {
-    if (n.type === 'concept') (n.data as ConceptNodeData).degree = degree.get(n.id as string) || 0
+    if (n.type === 'concept') {
+      const d = n.data as ConceptNodeData
+      d.degree = degree.get(n.id as string) || 0
+      d.dependents = dependents.get(n.id as string) || 0
+      d.depth = depth.get(n.id as string) || 0
+    }
   }
   return {
     nodes: base.nodes,
-    edges: [...base.edges, ...edgeMap.values()],
+    edges: [...base.edges, ...edgesArr],
     tier: 'dag',
     conceptCount: keys.length,
     chapterCount: chapters.length,
