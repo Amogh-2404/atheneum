@@ -1224,14 +1224,21 @@ export default function Reader() {
                   if (replacementDraftIds.has(block.id)) return null
                   const blockBookmarks = bookmarks.filter(b => b.blockId === block.id)
                   const blockConfusion = confusionMarkers.filter(c => c.blockId === block.id)
+                  // Cinematic blocks own their own entrance and host a sticky / scroll-
+                  // driven child — the wrapper's whileInView reveal fights that. Strip
+                  // ONLY the reveal props for them; keep the motion.div, position:relative
+                  // and all four annotation overlays (they anchor to block.id).
+                  const cinematic = block.type === 'scrolly-figure' || block.type === 'derivation'
                   return (
                     <motion.div
                       key={block.id}
-                      initial={{ opacity: 0, y: 6 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, margin: '0px 0px -8% 0px' }}
-                      exit={{ opacity: 0 }}
-                      transition={tween.enter}
+                      {...(cinematic ? {} : {
+                        initial: { opacity: 0, y: 6 },
+                        whileInView: { opacity: 1, y: 0 },
+                        viewport: { once: true, margin: '0px 0px -8% 0px' },
+                        exit: { opacity: 0 },
+                        transition: tween.enter,
+                      })}
                       style={{ position: 'relative' }}
                     >
                       <BlockRenderer

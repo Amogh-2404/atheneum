@@ -670,6 +670,14 @@
     padding: 1.5rem 1.5rem 2.5rem 2rem;
   }
 
+  /* Cinematic graphics go edge-to-edge on a phone (the reading column is too
+     narrow for a full frame). Cancels the asymmetric mobile gutter exactly;
+     captions keep their own 34ch measure. */
+  .cinematic-bleed {
+    margin-left: -2rem;
+    margin-right: -1.5rem;
+  }
+
   .page-container::before {
     left: 1rem;
   }
