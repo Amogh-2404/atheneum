@@ -9,6 +9,7 @@ import {
   Handle,
   Position,
   MarkerType,
+  useStore,
 } from '@xyflow/react'
 import type { Node, Edge, NodeProps, NodeMouseHandler } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
@@ -23,6 +24,10 @@ import { SkeletonGraph, ShimmerStyle } from '@/components/shared/Skeleton'
 
 // ─── Custom node ──────────────────────────────────────────────────
 function ConceptNode({ data, selected }: NodeProps<Node<ConceptNodeData>>) {
+  // LOD: at overview zoom the labels become mush, so fade them out — the
+  // colored chips still read as structure; labels return as you zoom in.
+  const zoom = useStore((s) => s.transform[2])
+  const showLabel = zoom >= 0.5
   return (
     <div
       style={{
@@ -48,7 +53,7 @@ function ConceptNode({ data, selected }: NodeProps<Node<ConceptNodeData>>) {
       title={data.chapterTitle ? `Defined in Ch.${data.chapterNumber ?? ''} ${data.chapterTitle}` : undefined}
     >
       <Handle type="target" position={Position.Top} style={{ opacity: 0 }} isConnectable={false} />
-      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.label}</span>
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: showLabel ? 1 : 0, transition: 'opacity 120ms ease' }}>{data.label}</span>
       <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} isConnectable={false} />
     </div>
   )
@@ -92,6 +97,45 @@ export default function KnowledgeGraph() {
     },
     [bookId, navigate],
   )
+
+  // Hover a concept -> light up its whole prerequisite chain (what you must
+  // know first) + its direct dependents (what it unlocks), dim everything else.
+  const [hovered, setHovered] = useState<string | null>(null)
+  const adj = useMemo(() => {
+    const incoming = new Map<string, string[]>()
+    const outgoing = new Map<string, string[]>()
+    for (const e of edges) {
+      if (!incoming.has(e.target)) incoming.set(e.target, [])
+      incoming.get(e.target)!.push(e.source)
+      if (!outgoing.has(e.source)) outgoing.set(e.source, [])
+      outgoing.get(e.source)!.push(e.target)
+    }
+    return { incoming, outgoing }
+  }, [edges])
+  const highlighted = useMemo(() => {
+    if (!hovered) return null
+    const set = new Set<string>([hovered])
+    const stack = [hovered]
+    while (stack.length) {
+      const n = stack.pop()!
+      for (const p of adj.incoming.get(n) || []) if (!set.has(p)) { set.add(p); stack.push(p) }
+    }
+    for (const d of adj.outgoing.get(hovered) || []) set.add(d)
+    return set
+  }, [hovered, adj])
+  const displayNodes = useMemo(
+    () => nodes.map((n) => ({ ...n, style: { opacity: highlighted && !highlighted.has(n.id) ? 0.12 : 1, transition: 'opacity 160ms ease' } })),
+    [nodes, highlighted],
+  )
+  const displayEdges = useMemo(
+    () => edges.map((e) => {
+      const on = !highlighted || (highlighted.has(e.source) && highlighted.has(e.target))
+      return { ...e, style: { stroke: highlighted && on ? 'var(--chrome-accent)' : 'rgba(148,163,184,0.34)', strokeWidth: highlighted && on ? 2 : 1.5, opacity: on ? 0.95 : 0.06 } }
+    }),
+    [edges, highlighted],
+  )
+  const onNodeMouseEnter = useCallback<NodeMouseHandler>((_e, node) => setHovered(node.id), [])
+  const onNodeMouseLeave = useCallback(() => setHovered(null), [])
 
   if (loading) {
     return (
@@ -139,11 +183,13 @@ export default function KnowledgeGraph() {
         </div>
       ) : (
         <ReactFlow
-          nodes={nodes}
-          edges={edges}
+          nodes={displayNodes}
+          edges={displayEdges}
           nodeTypes={nodeTypes}
           defaultEdgeOptions={defaultEdgeOptions}
           onNodeClick={onNodeClick}
+          onNodeMouseEnter={onNodeMouseEnter}
+          onNodeMouseLeave={onNodeMouseLeave}
           fitView
           fitViewOptions={{ padding: 0.2 }}
           minZoom={0.15}
