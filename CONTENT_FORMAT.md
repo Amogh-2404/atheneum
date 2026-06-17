@@ -348,6 +348,74 @@ Contains nested blocks (any type):
 }
 ```
 
+### `sandbox` — runnable code cell
+
+An editable, runnable code cell. Runs 100% client-side (nothing hits the server):
+JavaScript/TypeScript in a Web Worker, Python via Pyodide (streamed from a CDN on
+the first Python run). Works on mobile and offline.
+
+```json
+{
+  "id": "blk_xxxxx", "type": "sandbox", "status": "published",
+  "language": "python",                      // "javascript" | "typescript" | "python"
+  "filename": "fair_value.py",               // optional label
+  "code": "print('hi')",                     // starter code; use real \n newlines
+  "expectedOutput": "hi",                    // optional: one stdout-equals check
+  "tests": [                                  // optional checks, shown as PASS/FAIL
+    { "name": "prints hi", "kind": "stdout-contains", "value": "hi" }
+  ],
+  "lockedRegions": [{ "fromLine": 1, "toLine": 2 }], // 1-indexed inclusive; runnable, not editable
+  "autorun": false,                          // JS/TS only — never auto-boots Pyodide
+  "timeoutMs": 0,                            // 0 = default (JS 3s, Python 10s)
+  "readOnly": false, "hideEditor": false
+}
+```
+Test `kind`: `stdout-contains` | `stdout-equals` | `no-error`. Prefer ≤40 starter
+lines on mobile. (Raw CodeMirror 6 + own workers — do NOT swap in @uiw/react-codemirror
+or @floating-ui; both are React-19 peer liabilities deliberately avoided.)
+
+### `derivation` — step-by-step equation reveal
+
+A proof/derivation revealed one line at a time (Next / Back). Each line is KaTeX
+(`trust:false`); the changed term is shown as a Δ chip.
+
+```json
+{
+  "id": "blk_xxxxx", "type": "derivation", "status": "published",
+  "title": "Skewing quotes by inventory",
+  "lines": [
+    { "latex": "p = \\frac{a+b}{2}", "delta": null, "note": "Start from the [[mid-price]]." },
+    { "latex": "p' = p - \\gamma q", "delta": "\\gamma q", "note": "Skew by inventory." }
+  ],
+  "caption": "One move at a time."
+}
+```
+`delta` is the LaTeX of the changed sub-expression (not a character range). `note`,
+`title`, `caption` are TextContent → `[[concepts]]` stay tappable.
+
+### `scrolly-figure` — cinematic scrollytelling
+
+A graphic that PINS while its stages cross-fade and step captions scroll past.
+Stages are images (SVG preferred) the author drops under the book's content dir.
+
+```json
+{
+  "id": "blk_xxxxx", "type": "scrolly-figure", "status": "published",
+  "aspect": "4 / 5", "sticky": "center",
+  "stages": [
+    { "kind": "image", "src": "/content/<book>/fab-0.svg", "alt": "Ingot" },
+    { "kind": "image", "src": "/content/<book>/fab-1.svg", "alt": "Wafer" }
+  ],
+  "steps": [
+    { "stage": 0, "caption": "It starts as pure [[silicon]]." },
+    { "stage": 1, "caption": "Sliced into wafers." }
+  ],
+  "caption": "From sand to chip."
+}
+```
+2–6 stages; each `step.stage` indexes `stages[]`. Reduced-motion / no-JS falls back
+to a plain stacked render. The graphic full-bleeds on phones.
+
 ## Outline (`outline.json`)
 
 ```json
