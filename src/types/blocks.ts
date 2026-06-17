@@ -207,6 +207,29 @@ export interface MarginAnnotationBlock extends BlockBase {
   author?: string
 }
 
+// ─── Runnable Code Sandbox ─────────────────────────────────────────
+
+export interface SandboxTest {
+  name: string
+  kind: 'stdout-contains' | 'stdout-equals' | 'no-error'
+  value?: string
+}
+export interface SandboxLockedRegion { fromLine: number; toLine: number; reason?: string }
+export interface SandboxBlock extends BlockBase {
+  type: 'sandbox'
+  language: 'javascript' | 'typescript' | 'python'
+  code: string
+  filename?: string
+  readOnly?: boolean
+  lockedRegions?: SandboxLockedRegion[] // 1-indexed inclusive; runnable, not editable
+  expectedOutput?: string                // sugar for one stdout-equals check
+  tests?: SandboxTest[]
+  autorun?: boolean                      // JS/TS only; never auto-boots Pyodide
+  timeoutMs?: number                     // 0 = language default (JS 3s, Python 10s)
+  hideEditor?: boolean
+  stdin?: string
+}
+
 // ─── Discriminated Union ───────────────────────────────────────────
 
 export type Block =
@@ -229,3 +252,4 @@ export type Block =
   | SummaryBlock
   | EmbedBlock
   | MarginAnnotationBlock
+  | SandboxBlock
