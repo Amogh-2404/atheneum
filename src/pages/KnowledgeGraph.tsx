@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom'
 import {
   ReactFlow,
   Background,
@@ -170,6 +170,14 @@ export default function KnowledgeGraph() {
   const [hovered, setHovered] = useState<string | null>(null)
   const [focused, setFocused] = useState<string | null>(null)
   const active = focused ?? hovered
+
+  // Deep-link: /book/:id/graph?focus=<slug> opens the map with that concept
+  // focused (the hovercard's "Open in map →"). Guard against a stale/bad slug.
+  const [searchParams] = useSearchParams()
+  useEffect(() => {
+    const f = searchParams.get('focus')
+    if (f && nodes.some((n) => n.id === f)) setFocused(f)
+  }, [searchParams, nodes])
 
   // The lens: a concept's full prerequisite ancestry (what you must know first)
   // plus its direct dependents (what it unlocks).

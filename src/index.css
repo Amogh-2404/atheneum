@@ -77,6 +77,17 @@ body {
   border-bottom-color: transparent !important;
   cursor: text !important;
 }
+/* A live concept ref gets a quiet hover/active wash so it reads as interactive. */
+@media (hover: hover) {
+  .concept-ref[data-resolved="true"]:hover {
+    background: color-mix(in oklab, var(--accent) 10%, transparent);
+    border-radius: var(--radius-1);
+  }
+}
+.concept-ref[data-resolved="true"]:active {
+  background: color-mix(in oklab, var(--accent) 16%, transparent);
+  border-radius: var(--radius-1);
+}
 
 /* The reading-progress ring lives in the right margin — hide it once the column
    fills the viewport and there is no margin to spare. */

@@ -17,13 +17,19 @@ export function useConcepts(bookId: string | undefined) {
     async function build() {
       try {
         const book = await fetchJSON<any>(`/books/${bookId}`)
-        const chapters = await Promise.all(
-          (book.chapters || []).map((ch: any) =>
-            fetchJSON<any>(`/books/${bookId}/chapters/${ch.id}`)
-          )
-        )
+        // Fetch chapters AND the outline (the graph data) in parallel. A missing
+        // outline (older book / 404) degrades to definition-only tooltips, never
+        // an error — so the hovercard keeps working for un-graphed books.
+        const [chapters, outline] = await Promise.all([
+          Promise.all(
+            (book.chapters || []).map((ch: any) =>
+              fetchJSON<any>(`/books/${bookId}/chapters/${ch.id}`)
+            )
+          ),
+          fetchJSON<any>(`/books/${bookId}/outline`).catch(() => undefined),
+        ])
         if (!cancelled) {
-          const index = extractConcepts(bookId!, chapters)
+          const index = extractConcepts(bookId!, chapters, outline)
           setConceptIndex(index)
           setLoading(false)
         }
