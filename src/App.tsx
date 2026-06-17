@@ -5,6 +5,7 @@ import KnowledgeGraph from '@/pages/KnowledgeGraph'
 import StudyDashboard from '@/pages/StudyDashboard'
 import AnnotationNotebook from '@/pages/AnnotationNotebook'
 import MorningBrief from '@/pages/MorningBrief'
+import Wishlist from '@/pages/Wishlist'
 import BookLayout from '@/components/shared/BookLayout'
 import OnboardingOverlay from '@/components/shared/OnboardingOverlay'
 import ToastContainer from '@/components/shared/Toast'
@@ -15,6 +16,7 @@ export default function App() {
       <OnboardingOverlay />
       <Routes>
         <Route path="/" element={<Bookshelf />} />
+        <Route path="/wishlist" element={<Wishlist />} />
         {/* Persistent book shell — the four surfaces share one frame + facet switcher.
             Static segments (graph/study/notebook) outrank the dynamic :chapterId,
             so every existing URL still resolves to the same surface. */}
