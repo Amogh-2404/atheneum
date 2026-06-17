@@ -88,7 +88,7 @@ export default function BlockRenderer({
   onBlockDismissed,
 }: BlockRendererProps) {
   return (
-    <div id={block.id} className={className}>
+    <div id={block.id} data-block-id={block.id} className={className}>
       <ErrorBoundary>
         <DraftIndicator
           isDraft={block.status === 'draft'}

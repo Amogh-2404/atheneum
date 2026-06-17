@@ -5,6 +5,7 @@ import { tween } from '@/lib/motion'
 import { useBook } from '@/hooks/useBook'
 import { useChapter } from '@/hooks/useChapter'
 import { useActiveHeading } from '@/hooks/useActiveHeading'
+import { useReadingTelemetry } from '@/hooks/useReadingTelemetry'
 import { useConcepts } from '@/hooks/useConcepts'
 import { useAnnotations } from '@/hooks/useAnnotations'
 import { useFocusMode } from '@/hooks/useFocusMode'
@@ -132,6 +133,7 @@ export default function Reader() {
   // Heading-spy re-keys on the LOADED chapter id so it re-observes the new
   // chapter's headings instead of the previous chapter's dead nodes.
   const activeHeadingId = useActiveHeading(chapter?.id)
+  useReadingTelemetry(bookId, chapter?.id)
 
   // Fetch history when panel opens
   const openHistory = useCallback(() => {
