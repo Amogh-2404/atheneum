@@ -838,13 +838,21 @@
    -------------------------------------------------------------------------- */
 
 [data-focus-mode="true"] [id^="blk_"] {
-  opacity: 0.12;
+  opacity: 0.15;
   transition: opacity 0.4s ease;
 }
 
 [data-focus-mode="true"] [id^="blk_"].focus-active {
   opacity: 1;
   transition: opacity 0.3s ease;
+}
+
+/* Attention gradient — the blocks flanking the focused one stay half-lit so the
+   eye keeps its place instead of dropping off a cliff (active 1 / near .5 / far .15).
+   :has lets us reach the wrappers on either side of the active block. */
+[data-focus-mode="true"] > div:has(.focus-active) + div [id^="blk_"],
+[data-focus-mode="true"] > div:has(+ div .focus-active) [id^="blk_"] {
+  opacity: 0.5;
 }
 
 /* --------------------------------------------------------------------------

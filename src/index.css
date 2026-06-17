@@ -83,3 +83,11 @@ body {
 @media (max-width: 980px) {
   .reading-progress { display: none !important; }
 }
+
+/* Bookshelf cards lift on hover (framer handles the rise; CSS blooms the shadow). */
+.book-card {
+  transition: box-shadow var(--duration-base) var(--ease-standard);
+}
+@media (hover: hover) {
+  .book-card:hover { box-shadow: var(--shadow-3); }
+}

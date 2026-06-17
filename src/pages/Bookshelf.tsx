@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useBooks } from '@/hooks/useBooks'
+import { spring } from '@/lib/motion'
 import { useKeyboard } from '@/hooks/useKeyboard'
 import RoughBox from '@/components/shared/RoughBox'
 import type { BookSummary } from '@/types/book'
@@ -1127,6 +1128,8 @@ function BookCard({
       className="book-card"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -4, transition: spring.default }}
+      whileTap={{ scale: 0.985, transition: spring.press }}
       transition={{
         duration: 0.35,
         delay: index * 0.08,
