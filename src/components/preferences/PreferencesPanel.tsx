@@ -180,7 +180,7 @@ export default function PreferencesPanel({ onClose }: Props) {
 
   // Section header style
   const sectionHeaderStyle: React.CSSProperties = {
-    fontFamily: "'Rajdhani', var(--font-heading)",
+    fontFamily: "'Inter', var(--font-heading)",
     fontSize: '0.75rem',
     fontWeight: 700,
     color: 'var(--chrome-accent)',
@@ -246,7 +246,7 @@ export default function PreferencesPanel({ onClose }: Props) {
         >
           <h2
             style={{
-              fontFamily: "'Rajdhani', var(--font-heading)",
+              fontFamily: "'Inter', var(--font-heading)",
               fontSize: isMobile ? '1.25rem' : '1.5rem',
               fontWeight: 700,
               color: 'var(--chrome-accent)',
@@ -259,7 +259,7 @@ export default function PreferencesPanel({ onClose }: Props) {
             type="button"
             onClick={onClose}
             style={{
-              background: isMobile ? 'rgba(82, 254, 254, 0.08)' : 'none',
+              background: isMobile ? 'rgba(47, 92, 138, 0.08)' : 'none',
               border: '1px solid var(--chrome-border)',
               borderRadius: isMobile ? 8 : 4,
               color: 'var(--chrome-text)',
@@ -347,7 +347,7 @@ export default function PreferencesPanel({ onClose }: Props) {
               style={{
                 marginTop: '0.75rem',
                 padding: '0.75rem',
-                background: 'rgba(82, 254, 254, 0.03)',
+                background: 'rgba(47, 92, 138, 0.03)',
                 borderRadius: 6,
                 border: '1px solid var(--chrome-border)',
               }}
@@ -403,7 +403,7 @@ export default function PreferencesPanel({ onClose }: Props) {
                     transition: 'background 150ms ease',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(82, 254, 254, 0.06)'
+                    e.currentTarget.style.background = 'rgba(47, 92, 138, 0.06)'
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = 'none'
@@ -452,7 +452,7 @@ export default function PreferencesPanel({ onClose }: Props) {
                 fontFamily: 'var(--font-ui)',
                 fontSize: '0.82rem',
                 color: 'var(--chrome-accent)',
-                background: 'rgba(82, 254, 254, 0.06)',
+                background: 'rgba(47, 92, 138, 0.06)',
                 border: '1px solid var(--chrome-border)',
                 borderRadius: 6,
                 cursor: 'pointer',
@@ -461,11 +461,11 @@ export default function PreferencesPanel({ onClose }: Props) {
                 letterSpacing: '0.02em',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(82, 254, 254, 0.12)'
+                e.currentTarget.style.background = 'rgba(47, 92, 138, 0.12)'
                 e.currentTarget.style.borderColor = 'var(--chrome-accent)'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(82, 254, 254, 0.06)'
+                e.currentTarget.style.background = 'rgba(47, 92, 138, 0.06)'
                 e.currentTarget.style.borderColor = 'var(--chrome-border)'
               }}
             >

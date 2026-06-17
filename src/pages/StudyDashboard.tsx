@@ -13,7 +13,7 @@ const CONFIDENCE_BUTTONS: { key: Confidence; label: string; color: string }[] = 
   { key: 'again', label: 'Again', color: '#dc2626' },
   { key: 'hard', label: 'Hard', color: '#ea580c' },
   { key: 'good', label: 'Good', color: '#16a34a' },
-  { key: 'easy', label: 'Easy', color: '#52FEFE' },
+  { key: 'easy', label: 'Easy', color: 'var(--chrome-accent)' },
 ]
 
 export default function StudyDashboard() {
@@ -117,7 +117,7 @@ export default function StudyDashboard() {
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
             <button type="button" onClick={() => { setSessionResults([]); setReviewIdx(0); setReviewMode(true) }}
-              style={{ fontFamily: 'var(--font-ui)', fontSize: '0.85rem', fontWeight: 600, color: 'var(--chrome-accent)', background: 'rgba(82,254,254,0.08)', border: '1px solid var(--chrome-accent)', borderRadius: 6, padding: '8px 20px', cursor: 'pointer' }}>
+              style={{ fontFamily: 'var(--font-ui)', fontSize: '0.85rem', fontWeight: 600, color: 'var(--chrome-accent)', background: 'rgba(47, 92, 138,0.08)', border: '1px solid var(--chrome-accent)', borderRadius: 6, padding: '8px 20px', cursor: 'pointer' }}>
               Review Again
             </button>
             <Link to={`/book/${bookId}`}
@@ -147,7 +147,7 @@ export default function StudyDashboard() {
             </button>
           </div>
           <div onClick={() => setFlipped(f => !f)}
-            style={{ cursor: 'pointer', border: `2px solid ${flipped ? 'var(--chrome-accent)' : 'var(--chrome-border)'}`, borderRadius: 10, padding: '2rem', minHeight: 200, display: 'flex', flexDirection: 'column', justifyContent: 'center', background: flipped ? 'rgba(82,254,254,0.03)' : 'transparent', transition: 'border-color 200ms' }}>
+            style={{ cursor: 'pointer', border: `2px solid ${flipped ? 'var(--chrome-accent)' : 'var(--chrome-border)'}`, borderRadius: 10, padding: '2rem', minHeight: 200, display: 'flex', flexDirection: 'column', justifyContent: 'center', background: flipped ? 'rgba(47, 92, 138,0.03)' : 'transparent', transition: 'border-color 200ms' }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', color: 'var(--chrome-text)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12 }}>
               {flipped ? 'Answer' : 'Question'}
             </div>
@@ -200,7 +200,7 @@ export default function StudyDashboard() {
         </div>
 
         {/* Due Cards */}
-        <section style={{ marginBottom: 32, padding: '1.25rem', borderRadius: 10, border: '1px solid var(--chrome-border)', background: 'rgba(82,254,254,0.03)' }}>
+        <section style={{ marginBottom: 32, padding: '1.25rem', borderRadius: 10, border: '1px solid var(--chrome-border)', background: 'rgba(47, 92, 138,0.03)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <h2 style={{ fontFamily: 'var(--font-ui)', fontSize: '0.85rem', fontWeight: 700, color: 'var(--chrome-accent)', margin: 0, letterSpacing: '0.04em' }}>
               Flashcards Due

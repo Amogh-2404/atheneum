@@ -429,7 +429,7 @@ export default function AnnotationToolbar({
                 transition: 'color 150ms ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'var(--chrome-accent, #52FEFE)'
+                e.currentTarget.style.color = 'var(--chrome-accent, var(--chrome-accent))'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.color = 'var(--chrome-text, #94a3b8)'
@@ -454,12 +454,12 @@ export default function AnnotationToolbar({
                 display: 'flex',
                 alignItems: 'center',
                 color: showNoteInput
-                  ? 'var(--chrome-accent, #52FEFE)'
+                  ? 'var(--chrome-accent, var(--chrome-accent))'
                   : 'var(--chrome-text, #94a3b8)',
                 transition: 'color 150ms ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'var(--chrome-accent, #52FEFE)'
+                e.currentTarget.style.color = 'var(--chrome-accent, var(--chrome-accent))'
               }}
               onMouseLeave={(e) => {
                 if (!showNoteInput) {
@@ -581,7 +581,7 @@ export default function AnnotationToolbar({
                 disabled={!noteText.trim()}
                 style={{
                   background: noteText.trim()
-                    ? 'var(--chrome-accent, #52FEFE)'
+                    ? 'var(--chrome-accent, var(--chrome-accent))'
                     : 'var(--chrome-border, #1e293b)',
                   border: 'none',
                   borderRadius: 8,

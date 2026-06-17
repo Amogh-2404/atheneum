@@ -46,8 +46,8 @@ body {
 }
 
 ::selection {
-  background: rgba(82, 254, 254, 0.2);
-  color: #52FEFE;
+  background: rgba(47, 92, 138, 0.2);
+  color: var(--chrome-accent);
 }
 
 /* --------------------------------------------------------------------------

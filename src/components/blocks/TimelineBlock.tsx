@@ -18,9 +18,9 @@ function TimelineDot({ seed }: { seed: number }) {
     const rc = rough.svg(svg)
     const node = rc.circle(7, 7, 12, {
       seed,
-      stroke: 'var(--chrome-accent, #52FEFE)',
+      stroke: 'var(--chrome-accent, var(--chrome-accent))',
       strokeWidth: 1.5,
-      fill: 'var(--chrome-accent, #52FEFE)',
+      fill: 'var(--chrome-accent, var(--chrome-accent))',
       fillStyle: 'solid',
       roughness: 1.2,
     })

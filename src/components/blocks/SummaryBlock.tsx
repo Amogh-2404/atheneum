@@ -39,7 +39,7 @@ export default function SummaryBlock({ points }: SummaryBlockType) {
                 color: 'var(--ink-primary)',
               }}
             >
-              <span style={{ color: 'var(--chrome-accent, #52FEFE)', marginTop: '0.1rem' }}>
+              <span style={{ color: 'var(--chrome-accent, var(--chrome-accent))', marginTop: '0.1rem' }}>
                 &bull;
               </span>
               <span>{renderText(point)}</span>

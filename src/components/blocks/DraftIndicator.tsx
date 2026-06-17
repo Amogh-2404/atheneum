@@ -97,7 +97,7 @@ export default function DraftIndicator({
 
       {/* Draft border indicator */}
       <div style={{
-        borderLeft: '3px dashed var(--chrome-accent, #52FEFE)',
+        borderLeft: '3px dashed var(--chrome-accent, var(--chrome-accent))',
         borderRadius: 2,
         paddingLeft: 2,
         opacity: loading ? 0.5 : 1,

@@ -46,7 +46,7 @@ export const NODE_W = 184
 export const NODE_H = 42
 
 export const CHAPTER_COLORS = [
-  '#52FEFE', '#f472b6', '#a78bfa', '#34d399', '#fbbf24',
+  'var(--chrome-accent)', '#f472b6', '#a78bfa', '#34d399', '#fbbf24',
   '#fb923c', '#60a5fa', '#e879f9', '#4ade80', '#f87171',
 ]
 

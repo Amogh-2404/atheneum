@@ -6,7 +6,7 @@ import { spring } from '@/lib/motion'
  * The persistent way between a book's four surfaces. Today they're reachable
  * ONLY from the Reader sidebar; this quiet frosted pill makes Read / Map /
  * Study / Notebook one keystroke apart from anywhere, with a layoutId underline
- * that slides to the active facet. Apparatus, not prose — Rajdhani (--font-ui),
+ * that slides to the active facet. Apparatus, not prose — Inter (--font-ui),
  * chrome-toned, secondary to the content it floats over.
  */
 const FACETS = [

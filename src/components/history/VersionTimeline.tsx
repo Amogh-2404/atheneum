@@ -259,7 +259,7 @@ export default function VersionTimeline({
             type="button"
             onClick={onClose}
             style={{
-              background: isMobile ? 'rgba(82, 254, 254, 0.08)' : 'none',
+              background: isMobile ? 'rgba(47, 92, 138, 0.08)' : 'none',
               border: '1px solid var(--chrome-border)',
               borderRadius: isMobile ? 8 : 4,
               color: 'var(--chrome-text)',
@@ -448,10 +448,10 @@ export default function VersionTimeline({
                         width: '100%',
                         textAlign: 'left',
                         background: isSelected
-                          ? 'rgba(82, 254, 254, 0.08)'
+                          ? 'rgba(47, 92, 138, 0.08)'
                           : 'none',
                         border: isSelected
-                          ? '1px solid rgba(82, 254, 254, 0.25)'
+                          ? '1px solid rgba(47, 92, 138, 0.25)'
                           : '1px solid transparent',
                         padding: '0.6rem 0.75rem',
                         borderRadius: 6,
@@ -462,7 +462,7 @@ export default function VersionTimeline({
                       }}
                       onMouseEnter={(e) => {
                         if (!isSelected) {
-                          e.currentTarget.style.background = 'rgba(82, 254, 254, 0.04)'
+                          e.currentTarget.style.background = 'rgba(47, 92, 138, 0.04)'
                         }
                       }}
                       onMouseLeave={(e) => {
@@ -489,7 +489,7 @@ export default function VersionTimeline({
                             ? '2px solid var(--chrome-accent)'
                             : '2px solid var(--chrome-surface, #1a1a2e)',
                           boxShadow: isSelected
-                            ? '0 0 8px rgba(82, 254, 254, 0.4)'
+                            ? '0 0 8px rgba(47, 92, 138, 0.4)'
                             : 'none',
                           transition: 'all 200ms ease',
                         }}

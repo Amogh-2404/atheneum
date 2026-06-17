@@ -42,7 +42,7 @@
     text-align: left !important;
     width: 100% !important;
     padding: 0.5rem 0.8rem !important;
-    font-family: 'Caveat', 'Lexend', cursive !important;
+    font-family: 'Source Serif 4', Georgia, serif !important;
     font-size: 1rem !important;
     color: #2c2c2c !important;
     cursor: default !important;
@@ -119,16 +119,16 @@
     --ink-primary: #2c2c2c !important;
     --ink-secondary: #4a4a4a !important;
     --ink-faint: #888 !important;
-    --font-heading: 'Caveat', cursive !important;
-    --font-body: 'Caveat', 'Lexend', cursive !important;
+    --font-heading: 'Fraunces', Georgia, serif !important;
+    --font-body: 'Source Serif 4', Georgia, serif !important;
     --font-handwritten: 'Virgil', 'Caveat', cursive !important;
     --font-code: 'JetBrains Mono', monospace !important;
-    --font-ui: 'Rajdhani', system-ui, sans-serif !important;
+    --font-ui: 'Inter', system-ui, sans-serif !important;
   }
 
   /* ─── Typography ─── */
   .notebook-h1 {
-    font-family: 'Caveat', cursive !important;
+    font-family: 'Fraunces', Georgia, serif !important;
     font-size: 2.5rem !important;
     color: #1a1a1a !important;
     margin-bottom: 0.5rem !important;
@@ -136,21 +136,21 @@
   }
 
   .notebook-h2 {
-    font-family: 'Caveat', cursive !important;
+    font-family: 'Fraunces', Georgia, serif !important;
     font-size: 1.8rem !important;
     color: #1a1a1a !important;
     break-after: avoid;
   }
 
   .notebook-h3 {
-    font-family: 'Caveat', cursive !important;
+    font-family: 'Fraunces', Georgia, serif !important;
     font-size: 1.4rem !important;
     color: #2c2c2c !important;
     break-after: avoid;
   }
 
   .notebook-text {
-    font-family: 'Caveat', 'Lexend', cursive !important;
+    font-family: 'Source Serif 4', Georgia, serif !important;
     font-size: 1.1rem !important;
     color: #2c2c2c !important;
     line-height: 1.7 !important;
@@ -186,7 +186,7 @@
   .callout[data-variant="tip"]        { background: #f5f3ff !important; border-left: 4px solid #7c3aed !important; }
   .callout[data-variant="note"]       { background: #f9fafb !important; border-left: 4px solid #6b7280 !important; }
 
-  .callout-title { font-family: 'Caveat', cursive !important; font-weight: 700 !important; color: #1a1a1a !important; }
+  .callout-title { font-family: 'Fraunces', Georgia, serif !important; font-weight: 700 !important; color: #1a1a1a !important; }
   .callout-body { color: #2c2c2c !important; }
 
   /* ─── CODE BLOCKS — allow graceful splitting ─── */
@@ -304,7 +304,7 @@
   .notebook-table th {
     border-bottom: 2px solid #333 !important;
     color: #1a1a1a !important;
-    font-family: 'Caveat', cursive !important;
+    font-family: 'Fraunces', Georgia, serif !important;
     font-weight: 700 !important;
   }
 
@@ -328,7 +328,7 @@
 
   /* ─── QUIZ — proper print formatting ─── */
   .quiz-title {
-    font-family: 'Caveat', cursive !important;
+    font-family: 'Fraunces', Georgia, serif !important;
     font-size: 1.3rem !important;
     font-weight: 700 !important;
     color: #1a1a1a !important;
@@ -391,7 +391,7 @@
   }
 
   .flashcard-label {
-    font-family: 'Rajdhani', system-ui, sans-serif !important;
+    font-family: 'Inter', system-ui, sans-serif !important;
     font-size: 0.7rem !important;
     text-transform: uppercase !important;
     letter-spacing: 0.06em !important;

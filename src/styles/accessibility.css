@@ -18,7 +18,7 @@
 /* Visible focus ring for keyboard navigation — theme-aware via --focus-ring
    (cyan on dark, warm on paper/sepia) so it never clashes with the page. */
 *:focus-visible {
-  outline: 2px solid var(--focus-ring, var(--chrome-accent, #52FEFE));
+  outline: 2px solid var(--focus-ring, var(--chrome-accent, var(--chrome-accent)));
   outline-offset: 2px;
 }
 
@@ -38,7 +38,7 @@
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--chrome-bg, #0a0e17);
-  background: var(--chrome-accent, #52FEFE);
+  background: var(--chrome-accent, var(--chrome-accent));
   border-radius: 0 0 6px 6px;
   text-decoration: none;
   transition: top 150ms ease;

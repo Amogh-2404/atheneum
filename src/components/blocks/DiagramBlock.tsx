@@ -120,7 +120,7 @@ function StaticDiagramPreview({
           alignItems: 'center',
           gap: 5,
           background: 'rgba(10, 14, 23, 0.85)',
-          color: '#52FEFE',
+          color: 'var(--chrome-accent)',
           fontFamily: 'var(--font-ui)',
           fontSize: '0.72rem',
           fontWeight: 600,
@@ -267,7 +267,7 @@ function DiagramModal({
             style={{
               fontFamily: 'var(--font-ui)',
               fontSize: '0.85rem',
-              color: 'var(--chrome-accent, #52FEFE)',
+              color: 'var(--chrome-accent, var(--chrome-accent))',
               letterSpacing: '0.04em',
               fontWeight: 600,
             }}
@@ -288,7 +288,7 @@ function DiagramModal({
             background: 'rgba(255,255,255,0.08)',
             border: '1px solid var(--chrome-border, #1e293b)',
             borderRadius: 6,
-            color: saving ? 'var(--chrome-accent, #52FEFE)' : 'var(--chrome-text, #94a3b8)',
+            color: saving ? 'var(--chrome-accent, var(--chrome-accent))' : 'var(--chrome-text, #94a3b8)',
             fontFamily: 'var(--font-ui)',
             fontSize: '0.8rem',
             fontWeight: 600,

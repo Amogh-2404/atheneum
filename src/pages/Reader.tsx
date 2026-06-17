@@ -458,7 +458,7 @@ export default function Reader() {
       const el = document.getElementById(hash)
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        el.style.outline = '2px solid var(--chrome-accent, #52FEFE)'
+        el.style.outline = '2px solid var(--chrome-accent, var(--chrome-accent))'
         el.style.outlineOffset = '4px'
         el.style.borderRadius = '4px'
         el.style.transition = 'outline-color 2s ease'
@@ -678,7 +678,7 @@ export default function Reader() {
                       borderRadius: 4,
                       borderLeft: isActive ? '3px solid var(--chrome-accent)' : '3px solid transparent',
                       color: isActive ? 'var(--chrome-accent)' : 'var(--chrome-text)',
-                      background: isActive ? 'rgba(82, 254, 254, 0.06)' : 'transparent',
+                      background: isActive ? 'rgba(47, 92, 138, 0.06)' : 'transparent',
                       fontWeight: isActive ? 600 : 400,
                       transition: 'color 200ms ease, background 200ms ease, border-color 200ms ease',
                       display: 'flex',
@@ -761,7 +761,7 @@ export default function Reader() {
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.color = 'var(--chrome-accent)'
-                  e.currentTarget.style.background = 'rgba(82, 254, 254, 0.06)'
+                  e.currentTarget.style.background = 'rgba(47, 92, 138, 0.06)'
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.color = 'var(--chrome-text)'
@@ -804,7 +804,7 @@ export default function Reader() {
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.color = 'var(--chrome-accent)'
-                  e.currentTarget.style.background = 'rgba(82, 254, 254, 0.06)'
+                  e.currentTarget.style.background = 'rgba(47, 92, 138, 0.06)'
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.color = 'var(--chrome-text)'
@@ -925,7 +925,7 @@ export default function Reader() {
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.color = 'var(--chrome-accent)'
-                    e.currentTarget.style.background = 'rgba(82, 254, 254, 0.06)'
+                    e.currentTarget.style.background = 'rgba(47, 92, 138, 0.06)'
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.color = 'var(--chrome-text)'
@@ -1029,7 +1029,7 @@ export default function Reader() {
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.color = 'var(--chrome-accent)'
-                  e.currentTarget.style.background = 'rgba(82, 254, 254, 0.06)'
+                  e.currentTarget.style.background = 'rgba(47, 92, 138, 0.06)'
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.color = 'var(--chrome-text)'

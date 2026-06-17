@@ -36,7 +36,7 @@ export default function BookmarkIndicator({ bookmark, onRemove }: BookmarkIndica
         width="14"
         height="20"
         viewBox="0 0 14 20"
-        fill="var(--chrome-accent, #52FEFE)"
+        fill="var(--chrome-accent, var(--chrome-accent))"
         stroke="none"
       >
         <path d="M0 0h14v20l-7-4.5L0 20V0z" />

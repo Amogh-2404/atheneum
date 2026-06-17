@@ -102,7 +102,7 @@ export default function OnboardingOverlay() {
               borderRadius: 16,
               overflow: 'hidden',
               boxShadow:
-                '0 0 0 1px rgba(82, 254, 254, 0.06), 0 30px 80px rgba(0, 0, 0, 0.6), 0 0 40px rgba(82, 254, 254, 0.04)',
+                '0 0 0 1px rgba(47, 92, 138, 0.06), 0 30px 80px rgba(0, 0, 0, 0.6), 0 0 40px rgba(47, 92, 138, 0.04)',
               display: 'flex',
               flexDirection: 'column',
             }}
@@ -111,7 +111,7 @@ export default function OnboardingOverlay() {
             <div
               style={{
                 height: 2,
-                background: 'linear-gradient(90deg, transparent, var(--chrome-accent, #52FEFE), transparent)',
+                background: 'linear-gradient(90deg, transparent, var(--chrome-accent, var(--chrome-accent)), transparent)',
               }}
             />
 
@@ -152,7 +152,7 @@ export default function OnboardingOverlay() {
                 style={{
                   background: 'none',
                   border: 'none',
-                  fontFamily: "var(--font-ui, 'Rajdhani', system-ui)",
+                  fontFamily: "var(--font-ui, 'Inter', system-ui)",
                   fontSize: '0.82rem',
                   color: 'var(--chrome-text, #94a3b8)',
                   cursor: 'pointer',
@@ -184,7 +184,7 @@ export default function OnboardingOverlay() {
                       borderRadius: 4,
                       background:
                         i === step
-                          ? 'var(--chrome-accent, #52FEFE)'
+                          ? 'var(--chrome-accent, var(--chrome-accent))'
                           : 'var(--chrome-border, #1e293b)',
                       border: 'none',
                       cursor: 'pointer',
@@ -201,12 +201,12 @@ export default function OnboardingOverlay() {
                 type="button"
                 onClick={next}
                 style={{
-                  background: 'rgba(82, 254, 254, 0.1)',
-                  border: '1px solid rgba(82, 254, 254, 0.25)',
-                  fontFamily: "var(--font-ui, 'Rajdhani', system-ui)",
+                  background: 'rgba(47, 92, 138, 0.1)',
+                  border: '1px solid rgba(47, 92, 138, 0.25)',
+                  fontFamily: "var(--font-ui, 'Inter', system-ui)",
                   fontSize: '0.85rem',
                   fontWeight: 600,
-                  color: 'var(--chrome-accent, #52FEFE)',
+                  color: 'var(--chrome-accent, var(--chrome-accent))',
                   cursor: 'pointer',
                   padding: '8px 20px',
                   borderRadius: 8,
@@ -214,12 +214,12 @@ export default function OnboardingOverlay() {
                   letterSpacing: '0.03em',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(82, 254, 254, 0.18)'
-                  e.currentTarget.style.borderColor = 'rgba(82, 254, 254, 0.5)'
+                  e.currentTarget.style.background = 'rgba(47, 92, 138, 0.18)'
+                  e.currentTarget.style.borderColor = 'rgba(47, 92, 138, 0.5)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(82, 254, 254, 0.1)'
-                  e.currentTarget.style.borderColor = 'rgba(82, 254, 254, 0.25)'
+                  e.currentTarget.style.background = 'rgba(47, 92, 138, 0.1)'
+                  e.currentTarget.style.borderColor = 'rgba(47, 92, 138, 0.25)'
                 }}
               >
                 {step === TOTAL_STEPS - 1 ? 'Done' : 'Next'}
@@ -261,7 +261,7 @@ function StepWelcome() {
       </div>
       <h2
         style={{
-          fontFamily: "'Caveat', cursive",
+          fontFamily: "'Fraunces', Georgia, serif",
           fontSize: '2.4rem',
           fontWeight: 700,
           color: 'var(--chrome-hover-text, #f1f5f9)',
@@ -273,7 +273,7 @@ function StepWelcome() {
       </h2>
       <p
         style={{
-          fontFamily: "var(--font-ui, 'Rajdhani', system-ui)",
+          fontFamily: "var(--font-ui, 'Inter', system-ui)",
           fontSize: '1rem',
           color: 'var(--chrome-text, #94a3b8)',
           lineHeight: 1.7,
@@ -307,7 +307,7 @@ function StepHowItWorks() {
     >
       <h2
         style={{
-          fontFamily: "'Caveat', cursive",
+          fontFamily: "'Fraunces', Georgia, serif",
           fontSize: '2rem',
           fontWeight: 700,
           color: 'var(--chrome-hover-text, #f1f5f9)',
@@ -345,8 +345,8 @@ function StepHowItWorks() {
                   width: 64,
                   height: 64,
                   borderRadius: 16,
-                  background: 'rgba(82, 254, 254, 0.06)',
-                  border: '1px solid rgba(82, 254, 254, 0.15)',
+                  background: 'rgba(47, 92, 138, 0.06)',
+                  border: '1px solid rgba(47, 92, 138, 0.15)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -357,7 +357,7 @@ function StepHowItWorks() {
               </div>
               <span
                 style={{
-                  fontFamily: "var(--font-ui, 'Rajdhani', system-ui)",
+                  fontFamily: "var(--font-ui, 'Inter', system-ui)",
                   fontSize: '0.82rem',
                   fontWeight: 600,
                   color: 'var(--chrome-text, #94a3b8)',
@@ -375,9 +375,9 @@ function StepHowItWorks() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.25 + i * 0.15, duration: 0.3 }}
                 style={{
-                  fontFamily: "var(--font-ui, 'Rajdhani', system-ui)",
+                  fontFamily: "var(--font-ui, 'Inter', system-ui)",
                   fontSize: '1.2rem',
-                  color: 'var(--chrome-accent, #52FEFE)',
+                  color: 'var(--chrome-accent, var(--chrome-accent))',
                   margin: '0 16px',
                   marginBottom: 24,
                   opacity: 0.6,
@@ -392,7 +392,7 @@ function StepHowItWorks() {
 
       <p
         style={{
-          fontFamily: "var(--font-ui, 'Rajdhani', system-ui)",
+          fontFamily: "var(--font-ui, 'Inter', system-ui)",
           fontSize: '0.9rem',
           color: 'var(--chrome-text, #94a3b8)',
           lineHeight: 1.6,
@@ -420,7 +420,7 @@ function StepShortcuts() {
     >
       <h2
         style={{
-          fontFamily: "'Caveat', cursive",
+          fontFamily: "'Fraunces', Georgia, serif",
           fontSize: '2rem',
           fontWeight: 700,
           color: 'var(--chrome-hover-text, #f1f5f9)',
@@ -450,8 +450,8 @@ function StepShortcuts() {
               gap: 10,
               padding: '8px 12px',
               borderRadius: 8,
-              background: 'rgba(82, 254, 254, 0.04)',
-              border: '1px solid rgba(82, 254, 254, 0.08)',
+              background: 'rgba(47, 92, 138, 0.04)',
+              border: '1px solid rgba(47, 92, 138, 0.08)',
             }}
           >
             <kbd
@@ -459,9 +459,9 @@ function StepShortcuts() {
                 fontFamily: "var(--font-code, 'JetBrains Mono', monospace)",
                 fontSize: '0.72rem',
                 fontWeight: 600,
-                color: 'var(--chrome-accent, #52FEFE)',
-                background: 'rgba(82, 254, 254, 0.08)',
-                border: '1px solid rgba(82, 254, 254, 0.15)',
+                color: 'var(--chrome-accent, var(--chrome-accent))',
+                background: 'rgba(47, 92, 138, 0.08)',
+                border: '1px solid rgba(47, 92, 138, 0.15)',
                 borderRadius: 4,
                 padding: '2px 8px',
                 minWidth: 36,
@@ -475,7 +475,7 @@ function StepShortcuts() {
             </kbd>
             <span
               style={{
-                fontFamily: "var(--font-ui, 'Rajdhani', system-ui)",
+                fontFamily: "var(--font-ui, 'Inter', system-ui)",
                 fontSize: '0.78rem',
                 color: 'var(--chrome-text, #94a3b8)',
                 textAlign: 'left',

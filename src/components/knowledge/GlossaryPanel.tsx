@@ -143,7 +143,7 @@ export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }
             type="button"
             onClick={onClose}
             style={{
-              background: isMobile ? 'rgba(82, 254, 254, 0.08)' : 'none',
+              background: isMobile ? 'rgba(47, 92, 138, 0.08)' : 'none',
               border: '1px solid var(--chrome-border)',
               borderRadius: isMobile ? 8 : 4,
               color: 'var(--chrome-text)',
@@ -270,7 +270,7 @@ export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }
                     transition: 'background 150ms ease',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(82, 254, 254, 0.06)'
+                    e.currentTarget.style.background = 'rgba(47, 92, 138, 0.06)'
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = 'none'

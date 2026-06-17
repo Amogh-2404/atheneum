@@ -204,7 +204,7 @@ export default function KnowledgeGraph() {
           <MiniMap
             pannable
             zoomable
-            nodeColor={(n) => ((n.data as ConceptNodeData)?.color as string) || '#52FEFE'}
+            nodeColor={(n) => ((n.data as ConceptNodeData)?.color as string) || 'var(--chrome-accent)'}
             nodeStrokeColor="transparent"
             maskColor="rgba(10,14,23,0.62)"
             style={{ background: 'var(--chrome-surface)', border: '1px solid var(--chrome-border)', borderRadius: 'var(--radius-2)' }}

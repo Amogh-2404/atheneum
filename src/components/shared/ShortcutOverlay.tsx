@@ -97,7 +97,7 @@ export default function ShortcutOverlay({ open, onClose }: ShortcutOverlayProps)
               fontFamily: 'var(--font-ui)',
               fontSize: '1rem',
               fontWeight: 700,
-              color: 'var(--chrome-accent, #52FEFE)',
+              color: 'var(--chrome-accent, var(--chrome-accent))',
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
               marginTop: 0,
@@ -152,9 +152,9 @@ export default function ShortcutOverlay({ open, onClose }: ShortcutOverlayProps)
                             fontFamily: 'var(--font-ui)',
                             fontSize: '0.72rem',
                             fontWeight: 600,
-                            color: 'var(--chrome-accent, #52FEFE)',
-                            background: 'rgba(82, 254, 254, 0.08)',
-                            border: '1px solid rgba(82, 254, 254, 0.2)',
+                            color: 'var(--chrome-accent, var(--chrome-accent))',
+                            background: 'rgba(47, 92, 138, 0.08)',
+                            border: '1px solid rgba(47, 92, 138, 0.2)',
                             borderRadius: 4,
                           }}
                         >

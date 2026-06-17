@@ -124,7 +124,7 @@ export default function AnnotationNotebook() {
           transition: 'border-color 200ms, background 150ms',
           marginBottom: 6,
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--chrome-accent)'; e.currentTarget.style.background = 'rgba(82,254,254,0.03)' }}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--chrome-accent)'; e.currentTarget.style.background = 'rgba(47, 92, 138,0.03)' }}
         onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--chrome-border)'; e.currentTarget.style.background = 'transparent' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
@@ -217,7 +217,7 @@ export default function AnnotationNotebook() {
                   fontSize: '0.75rem',
                   fontWeight: isActive ? 700 : 400,
                   color: isActive ? 'var(--chrome-accent)' : 'var(--chrome-text)',
-                  background: isActive ? 'rgba(82,254,254,0.08)' : 'transparent',
+                  background: isActive ? 'rgba(47, 92, 138,0.08)' : 'transparent',
                   border: `1px solid ${isActive ? 'var(--chrome-accent)' : 'var(--chrome-border)'}`,
                   borderRadius: 4,
                   padding: '4px 10px',
@@ -227,8 +227,8 @@ export default function AnnotationNotebook() {
                 }}
                 onMouseEnter={(e) => {
                   if (isActive || isEmpty) return
-                  e.currentTarget.style.borderColor = 'rgba(82,254,254,0.4)'
-                  e.currentTarget.style.background = 'rgba(82,254,254,0.04)'
+                  e.currentTarget.style.borderColor = 'rgba(47, 92, 138,0.4)'
+                  e.currentTarget.style.background = 'rgba(47, 92, 138,0.04)'
                 }}
                 onMouseLeave={(e) => {
                   if (isActive || isEmpty) return

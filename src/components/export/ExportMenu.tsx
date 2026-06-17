@@ -507,7 +507,7 @@ export default function ExportMenu({ bookId, chapterId: _chapterId, book, chapte
         style={btnBase}
         onMouseEnter={(e) => {
           e.currentTarget.style.color = 'var(--chrome-accent)'
-          e.currentTarget.style.background = 'rgba(82, 254, 254, 0.06)'
+          e.currentTarget.style.background = 'rgba(47, 92, 138, 0.06)'
         }}
         onMouseLeave={hoverOut}
       >
@@ -662,7 +662,7 @@ export default function ExportMenu({ bookId, chapterId: _chapterId, book, chapte
                       padding: '0.35rem 0.75rem', cursor: 'pointer',
                       fontFamily: 'var(--font-ui)', fontSize: '0.8rem',
                       color: selectedChapters.has(ch.id) ? 'var(--chrome-hover-text, #f1f5f9)' : 'var(--chrome-text)',
-                      background: selectedChapters.has(ch.id) ? 'rgba(82, 254, 254, 0.08)' : 'transparent',
+                      background: selectedChapters.has(ch.id) ? 'rgba(47, 92, 138, 0.08)' : 'transparent',
                       transition: 'background 150ms',
                     }}
                   >
@@ -702,7 +702,7 @@ export default function ExportMenu({ bookId, chapterId: _chapterId, book, chapte
                     fontSize: '0.82rem',
                     fontWeight: 600,
                     color: selectedChapters.size > 0 ? '#0a0e17' : 'var(--ink-faint)',
-                    background: selectedChapters.size > 0 ? 'var(--chrome-accent, #52FEFE)' : 'transparent',
+                    background: selectedChapters.size > 0 ? 'var(--chrome-accent, var(--chrome-accent))' : 'transparent',
                     border: selectedChapters.size > 0 ? 'none' : '1px solid var(--chrome-border)',
                     borderRadius: '6px',
                     padding: '0.45rem 1rem',

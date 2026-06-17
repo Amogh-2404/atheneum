@@ -83,23 +83,23 @@ function getCoverThemeStyle(theme: AppTheme): CoverThemeStyle {
     /* ── Dark: Neon Terminal — unmistakably cyberpunk ─────────── */
     case 'dark':
       return {
-        spine: 'linear-gradient(90deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 30%, rgba(82,254,254,0.18) 50%, rgba(0,0,0,0.35) 100%)',
-        sweepHighlight: 'radial-gradient(ellipse at 25% 15%, rgba(82,254,254,0.15) 0%, transparent 50%)',
+        spine: 'linear-gradient(90deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 30%, rgba(47, 92, 138,0.18) 50%, rgba(0,0,0,0.35) 100%)',
+        sweepHighlight: 'radial-gradient(ellipse at 25% 15%, rgba(47, 92, 138,0.15) 0%, transparent 50%)',
         sweepShadow: 'radial-gradient(ellipse at 75% 85%, rgba(0,0,0,0.50) 0%, transparent 50%)',
-        borderOuter: 'rgba(82, 254, 254, 0.30)',
-        borderInner: 'rgba(82, 254, 254, 0.15)',
-        ornamentColor: '#52FEFE',
+        borderOuter: 'rgba(47, 92, 138, 0.30)',
+        borderInner: 'rgba(47, 92, 138, 0.15)',
+        ornamentColor: 'var(--chrome-accent)',
         ornamentOpacity: 0.5,
         badgeBg: 'rgba(0,0,0,0.80)',
         badgeText: '#e8f4f4',
-        iconFilter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.6)) drop-shadow(0 0 20px rgba(82,254,254,0.55))',
+        iconFilter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.6)) drop-shadow(0 0 20px rgba(47, 92, 138,0.55))',
         titleColor: '#e8f4f4',
-        titleShadow: '0 2px 16px rgba(0,0,0,0.7), 0 0 24px rgba(82,254,254,0.6), 0 0 48px rgba(82,254,254,0.2)',
-        authorColor: 'rgba(82, 254, 254, 0.65)',
-        ruleGradient: 'linear-gradient(90deg, transparent, rgba(82,254,254,0.5), transparent)',
-        tagBorder: 'rgba(82, 254, 254, 0.25)',
+        titleShadow: '0 2px 16px rgba(0,0,0,0.7), 0 0 24px rgba(47, 92, 138,0.6), 0 0 48px rgba(47, 92, 138,0.2)',
+        authorColor: 'rgba(47, 92, 138, 0.65)',
+        ruleGradient: 'linear-gradient(90deg, transparent, rgba(47, 92, 138,0.5), transparent)',
+        tagBorder: 'rgba(47, 92, 138, 0.25)',
         tagBg: 'rgba(0,0,0,0.5)',
-        tagText: 'rgba(82, 254, 254, 0.7)',
+        tagText: 'rgba(47, 92, 138, 0.7)',
         bottomEdge: 'linear-gradient(to top, rgba(0,0,0,0.4), transparent)',
       }
 
@@ -174,13 +174,13 @@ function getPageThemeStyle(theme: AppTheme): PageThemeStyle {
     case 'dark':
       return {
         pageBg: 'var(--chrome-bg)',
-        titleColor: '#52FEFE',
+        titleColor: 'var(--chrome-accent)',
         subtitleColor: 'var(--chrome-text)',
         textColor: '#f1f5f9',
         cardBg: 'var(--chrome-surface)',
-        cardBorder: 'rgba(82, 254, 254, 0.15)',
-        cardHoverBorder: 'rgba(82, 254, 254, 0.35)',
-        cardHoverGlow: '0 0 24px rgba(82, 254, 254, 0.06)',
+        cardBorder: 'rgba(47, 92, 138, 0.15)',
+        cardHoverBorder: 'rgba(47, 92, 138, 0.35)',
+        cardHoverGlow: '0 0 24px rgba(47, 92, 138, 0.06)',
         accentColor: 'var(--chrome-accent)',
         bookInfoBg: 'var(--chrome-surface)',
         bookInfoSubtitle: 'var(--chrome-text)',
@@ -488,7 +488,7 @@ function BookCover({
   const identityDeep = identityColor(seed, 34)      // shadowed focal hue
   const hueColor = `color-mix(in srgb, ${coverColor} 55%, ${identityMid})`
   const hueColorDeep = `color-mix(in srgb, ${coverColor} 45%, ${identityDeep})`
-  // Pattern/texture stroke inherits the book's hue, not a hardcoded #52FEFE.
+  // Pattern/texture stroke inherits the book's hue, not a hardcoded var(--chrome-accent).
   const patternStroke = identityColor(seed, 62, 80)
 
   // ── Theme-specific background ──
@@ -626,7 +626,7 @@ function BookCover({
               bottom: 0,
               width: 14,
               background: ts.spine,
-              boxShadow: '1px 0 8px rgba(82,254,254,0.06)',
+              boxShadow: '1px 0 8px rgba(47, 92, 138,0.06)',
               zIndex: 5,
               pointerEvents: 'none',
             }}
@@ -699,7 +699,7 @@ function BookCover({
               bottom: 10,
               border: `1px solid ${ts.borderOuter}`,
               borderRadius: 3,
-              boxShadow: '0 0 10px rgba(82,254,254,0.10)',
+              boxShadow: '0 0 10px rgba(47, 92, 138,0.10)',
               pointerEvents: 'none',
               zIndex: 4,
             }}
@@ -992,7 +992,7 @@ function BookCover({
         {/* Title — dark text in light theme, light/glowing in others */}
         <h3
           style={{
-            fontFamily: "'Caveat', cursive",
+            fontFamily: "'Fraunces', Georgia, serif",
             fontSize: '1.55rem',
             fontWeight: 700,
             color: ts.titleColor,
@@ -1020,7 +1020,7 @@ function BookCover({
         {/* Author line */}
         <p
           style={{
-            fontFamily: "'Rajdhani', var(--font-ui)",
+            fontFamily: "'Inter', var(--font-ui)",
             fontSize: '0.62rem',
             fontWeight: 500,
             letterSpacing: '0.18em',
@@ -1374,7 +1374,7 @@ function BookCard({
                       width: `${pct}%`,
                       height: '100%',
                       borderRadius: 2,
-                      background: pct === 100 ? '#16a34a' : 'var(--chrome-accent, #52FEFE)',
+                      background: pct === 100 ? '#16a34a' : 'var(--chrome-accent, var(--chrome-accent))',
                       transition: 'width 300ms ease',
                     }} />
                   </div>
@@ -1608,7 +1608,7 @@ export default function Bookshelf() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
               style={{
-                fontFamily: "'Rajdhani', var(--font-ui)",
+                fontFamily: "'Inter', var(--font-ui)",
                 fontSize: 'clamp(1.6rem, 5vw, 2.4rem)',
                 fontWeight: 700,
                 color: ps.titleColor,
@@ -1667,17 +1667,17 @@ export default function Bookshelf() {
               ]).map(({ key, icon }) => {
                 const isActive = theme === key
                 const activeBg = key === 'dark'
-                  ? 'rgba(82,254,254,0.20)'
+                  ? 'rgba(47, 92, 138,0.20)'
                   : key === 'sepia'
                     ? 'rgba(180,140,80,0.20)'
                     : 'rgba(255,255,255,0.90)'
                 const activeTextColor = key === 'dark'
-                  ? '#52FEFE'
+                  ? 'var(--chrome-accent)'
                   : key === 'sepia'
                     ? '#d4a850'
                     : '#333'
                 const activeGlow = key === 'dark'
-                  ? '0 0 12px rgba(82,254,254,0.25), inset 0 0 8px rgba(82,254,254,0.08)'
+                  ? '0 0 12px rgba(47, 92, 138,0.25), inset 0 0 8px rgba(47, 92, 138,0.08)'
                   : key === 'sepia'
                     ? '0 0 12px rgba(180,140,80,0.20), inset 0 0 8px rgba(180,140,80,0.06)'
                     : '0 1px 6px rgba(0,0,0,0.10)'

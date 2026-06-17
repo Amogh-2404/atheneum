@@ -95,8 +95,8 @@ export default function DraftActionBar({
             width: 22,
             height: 22,
             borderRadius: '50%',
-            background: 'rgba(82, 254, 254, 0.12)',
-            color: 'var(--chrome-accent, #52FEFE)',
+            background: 'rgba(47, 92, 138, 0.12)',
+            color: 'var(--chrome-accent, var(--chrome-accent))',
             fontSize: '0.7rem',
             fontWeight: 700,
           }}>
