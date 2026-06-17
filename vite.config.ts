@@ -42,6 +42,18 @@ export default defineConfig({
               expiration: { maxEntries: 100, maxAgeSeconds: 604800 },
             },
           },
+          {
+            // Pyodide's ~10 MB wasm/stdlib streams from jsDelivr on the first Python
+            // Run. CacheFirst so it's a one-time cost (cheap on a phone over Tailscale
+            // thereafter). NOT precached — bundling it would blow the Workbox 2 MiB cap.
+            urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/pyodide\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'pyodide-runtime',
+              expiration: { maxEntries: 60, maxAgeSeconds: 2592000 }, // 30d
+              cacheableResponse: { statuses: [0, 200] }, // 0 = opaque cross-origin
+            },
+          },
         ],
         navigateFallbackDenylist: [/^\/ws/, /^\/api/],
         cleanupOutdatedCaches: true,

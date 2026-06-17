@@ -21,6 +21,7 @@ import FlashcardBlock from './FlashcardBlock'
 import SummaryBlock from './SummaryBlock'
 import EmbedBlock from './EmbedBlock'
 import MarginAnnotationBlock from './MarginAnnotationBlock'
+import SandboxBlock from './SandboxBlock'
 import UnknownBlock from './UnknownBlock'
 
 function renderBlock(block: Block, isFirstTextBlock?: boolean, bookId?: string, chapterId?: string) {
@@ -63,6 +64,8 @@ function renderBlock(block: Block, isFirstTextBlock?: boolean, bookId?: string, 
       return <EmbedBlock {...block} />
     case 'margin-annotation':
       return <MarginAnnotationBlock {...block} />
+    case 'sandbox':
+      return <SandboxBlock {...block} bookId={bookId} chapterId={chapterId} />
     default:
       return <UnknownBlock type={(block as { type: string }).type} />
   }
