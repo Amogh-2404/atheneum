@@ -22,6 +22,8 @@ import SummaryBlock from './SummaryBlock'
 import EmbedBlock from './EmbedBlock'
 import MarginAnnotationBlock from './MarginAnnotationBlock'
 import SandboxBlock from './SandboxBlock'
+import ScrollyFigureBlock from './ScrollyFigureBlock'
+import DerivationBlock from './DerivationBlock'
 import UnknownBlock from './UnknownBlock'
 
 function renderBlock(block: Block, isFirstTextBlock?: boolean, bookId?: string, chapterId?: string) {
@@ -66,6 +68,10 @@ function renderBlock(block: Block, isFirstTextBlock?: boolean, bookId?: string, 
       return <MarginAnnotationBlock {...block} />
     case 'sandbox':
       return <SandboxBlock {...block} bookId={bookId} chapterId={chapterId} />
+    case 'scrolly-figure':
+      return <ScrollyFigureBlock {...block} bookId={bookId} chapterId={chapterId} />
+    case 'derivation':
+      return <DerivationBlock {...block} bookId={bookId} chapterId={chapterId} />
     default:
       return <UnknownBlock type={(block as { type: string }).type} />
   }

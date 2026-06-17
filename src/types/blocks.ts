@@ -230,6 +230,28 @@ export interface SandboxBlock extends BlockBase {
   stdin?: string
 }
 
+// ─── Cinematic Figures ─────────────────────────────────────────────
+
+export interface ScrollyStage { kind: 'image' | 'diagram'; src?: string; alt?: string; diagramId?: string }
+export interface ScrollyStep { stage: number; caption: TextContent }
+export interface ScrollyFigureBlock extends BlockBase {
+  type: 'scrolly-figure'
+  stages: ScrollyStage[]            // 2-6, stacked + cross-faded
+  steps: ScrollyStep[]              // scrolling captions; step.stage indexes stages[]
+  aspect?: string                   // sticky-frame aspect-ratio (default '4 / 3')
+  sticky?: 'center' | 'top'
+  caption?: TextContent
+}
+
+export interface DerivationLine { latex: string; delta?: string | null; note?: TextContent }
+export interface DerivationBlock extends BlockBase {
+  type: 'derivation'
+  title?: TextContent
+  lines: DerivationLine[]
+  mode?: 'scroll' | 'tap'
+  caption?: TextContent
+}
+
 // ─── Discriminated Union ───────────────────────────────────────────
 
 export type Block =
@@ -253,3 +275,5 @@ export type Block =
   | EmbedBlock
   | MarginAnnotationBlock
   | SandboxBlock
+  | ScrollyFigureBlock
+  | DerivationBlock
