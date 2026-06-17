@@ -101,8 +101,10 @@ function parseMarkdownInline(text: string): React.ReactNode {
         return (
           <span
             key={i}
-            className="concept-ref cursor-pointer border-b border-cyan-400 text-cyan-500 dark:text-cyan-400"
+            className="concept-ref cursor-pointer"
+            style={{ color: 'var(--accent)', borderBottom: '1px solid color-mix(in oklab, var(--accent) 55%, transparent)' }}
             data-concept={token.value.toLowerCase().trim().replace(/[-_]/g, ' ')}
+            data-concept-slug={token.value.toLowerCase().trim().replace(/\s+/g, '-')}
             title={`Concept: ${token.value}`}
           >
             {token.value}
