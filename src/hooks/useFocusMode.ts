@@ -27,18 +27,19 @@ export function useFocusMode(contentRef: React.RefObject<HTMLElement | null>) {
           const id = (entry.target as HTMLElement).id
           if (!id) continue
           if (entry.isIntersecting) {
-            visibleBlocks.set(id, entry.intersectionRatio)
+            visibleBlocks.set(id, entry.boundingClientRect.top)
           } else {
             visibleBlocks.delete(id)
           }
         }
 
-        // Find the block with the highest intersection ratio
+        // The focused block is the one crossing the reading line — among the
+        // blocks inside the band, pick the topmost (smallest top).
         let bestId: string | null = null
-        let bestRatio = 0
-        for (const [id, ratio] of visibleBlocks) {
-          if (ratio > bestRatio) {
-            bestRatio = ratio
+        let bestTop = Infinity
+        for (const [id, top] of visibleBlocks) {
+          if (top < bestTop) {
+            bestTop = top
             bestId = id
           }
         }
@@ -47,7 +48,10 @@ export function useFocusMode(contentRef: React.RefObject<HTMLElement | null>) {
       },
       {
         root: null, // viewport
-        threshold: [0, 0.1, 0.25, 0.5, 0.75, 1.0],
+        // A thin band at ~1/3 down from the top, so the block you're actively
+        // reading (between top and middle) lights up — not whatever fills the screen.
+        rootMargin: '-30% 0px -60% 0px',
+        threshold: 0,
       }
     )
 

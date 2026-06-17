@@ -44,6 +44,8 @@ export default defineConfig({
           },
         ],
         navigateFallbackDenylist: [/^\/ws/, /^\/api/],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
       },
     }),
   ],
