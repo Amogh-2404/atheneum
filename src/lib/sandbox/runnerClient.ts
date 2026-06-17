@@ -23,10 +23,13 @@ export class SandboxRunner {
   }
 
   private spawn() {
-    const url = this.lang === 'python'
-      ? new URL('./py-worker.ts', import.meta.url)
-      : new URL('./js-worker.ts', import.meta.url)
-    const w = new Worker(url, { type: 'module' })
+    // The `new Worker(new URL('./x.ts', import.meta.url), …)` form must be written
+    // INLINE with a literal path — Rollup's static analysis won't follow a variable,
+    // so a hoisted URL silently emits no worker chunk in the production build (works
+    // in dev, crashes in prod). Hence the explicit branch.
+    const w = this.lang === 'python'
+      ? new Worker(new URL('./py-worker.ts', import.meta.url), { type: 'module' })
+      : new Worker(new URL('./js-worker.ts', import.meta.url), { type: 'module' })
     w.onmessage = (e: MessageEvent<OutMsg>) => this.handle(e.data)
     w.onerror = (e) => {
       this.clearWatchdog()
