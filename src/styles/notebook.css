@@ -224,30 +224,34 @@
 
 .notebook-h1 {
   font-family: var(--font-heading);
-  font-size: 2.8rem;
+  font-size: 2.5rem;
   font-weight: 700;
+  font-variation-settings: 'opsz' 64, 'SOFT' 0, 'WONK' 0; /* Fraunces display optical size */
   color: var(--ink-primary);
-  margin: var(--leading) 0 0 0;
-  line-height: calc(var(--leading) * 2); /* 2 ruled lines */
-  letter-spacing: -0.01em;
+  margin: calc(var(--leading) * 1.5) 0 0 0;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
 }
 
 .notebook-h2 {
   font-family: var(--font-heading);
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 1.85rem;
+  font-weight: 600;
+  font-variation-settings: 'opsz' 40, 'SOFT' 0, 'WONK' 0;
   color: var(--ink-primary);
-  margin: var(--leading) 0 0 0;
-  line-height: var(--leading); /* 1 ruled line */
+  margin: calc(var(--leading) * 1.25) 0 0 0;
+  line-height: 1.18;
+  letter-spacing: -0.01em;
 }
 
 .notebook-h3 {
   font-family: var(--font-heading);
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.4rem;
+  font-weight: 600;
+  font-variation-settings: 'opsz' 24, 'SOFT' 0, 'WONK' 0;
   color: var(--ink-secondary);
   margin: var(--leading) 0 0 0;
-  line-height: var(--leading); /* 1 ruled line */
+  line-height: var(--leading);
 }
 
 /* --------------------------------------------------------------------------
@@ -376,12 +380,14 @@
 
 .drop-cap::first-letter {
   font-family: var(--font-heading);
-  font-size: calc(var(--leading) * 2);
+  font-size: calc(var(--leading) * 3);
+  font-variation-settings: 'opsz' 96, 'SOFT' 0, 'WONK' 0;
+  font-weight: 600;
   float: left;
-  line-height: calc(var(--leading) * 2); /* Exactly 2 ruled lines */
-  margin-right: 0.1em;
-  margin-top: 0;
-  color: var(--ink-primary);
+  line-height: calc(var(--leading) * 2.5); /* ~3 lines tall */
+  margin-right: 0.09em;
+  margin-top: 0.02em;
+  color: var(--accent);
 }
 
 /* --------------------------------------------------------------------------

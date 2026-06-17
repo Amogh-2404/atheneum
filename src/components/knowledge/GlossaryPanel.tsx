@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { Search, X } from 'lucide-react'
 import type { ConceptIndex, Concept } from '@/lib/concept-extractor'
 
 function useIsMobile(breakpoint = 768) {
@@ -66,7 +67,7 @@ export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }
         el.scrollIntoView({ behavior: 'smooth', block: 'center' })
         el.style.outline = '2px solid var(--chrome-accent)'
         el.style.outlineOffset = '4px'
-        el.style.borderRadius = '4px'
+        el.style.borderRadius = 'var(--radius-1)'
         el.style.transition = 'outline-color 1.5s ease'
         setTimeout(() => { el.style.outlineColor = 'transparent' }, 1500)
       }
@@ -92,7 +93,7 @@ export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }
         style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(0, 0, 0, 0.4)',
+          background: 'var(--chrome-glass)',
           zIndex: 90,
         }}
       />
@@ -115,13 +116,13 @@ export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }
           borderLeft: '1px solid var(--chrome-border)',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '-8px 0 32px rgba(0, 0, 0, 0.3)',
+          boxShadow: 'var(--shadow-4)',
         }}
       >
         {/* Header */}
         <div
           style={{
-            padding: '1.25rem 1.5rem',
+            padding: 'var(--space-5) var(--space-5)',
             borderBottom: '1px solid var(--chrome-border)',
             display: 'flex',
             alignItems: 'center',
@@ -132,7 +133,7 @@ export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }
             style={{
               fontFamily: 'var(--font-heading)',
               fontSize: isMobile ? '1.25rem' : '1.5rem',
-              fontWeight: 700,
+              fontWeight: 600,
               color: 'var(--chrome-accent)',
               margin: 0,
             }}
@@ -142,24 +143,23 @@ export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close glossary"
             style={{
-              background: isMobile ? 'rgba(47, 92, 138, 0.08)' : 'none',
+              background: isMobile ? 'var(--chrome-surface)' : 'none',
               border: '1px solid var(--chrome-border)',
-              borderRadius: isMobile ? 8 : 4,
+              borderRadius: 'var(--radius-2)',
               color: 'var(--chrome-text)',
               cursor: 'pointer',
-              width: isMobile ? 44 : 28,
-              height: isMobile ? 44 : 28,
+              width: 44,
+              height: 44,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: isMobile ? '20px' : '14px',
-              fontFamily: 'var(--font-ui)',
-              fontWeight: isMobile ? 700 : 400,
+              flexShrink: 0,
               transition: 'color 200ms ease, border-color 200ms ease',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = 'var(--chrome-hover-text, #f1f5f9)'
+              e.currentTarget.style.color = 'var(--chrome-hover-text)'
               e.currentTarget.style.borderColor = 'var(--chrome-accent)'
             }}
             onMouseLeave={(e) => {
@@ -167,40 +167,49 @@ export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }
               e.currentTarget.style.borderColor = 'var(--chrome-border)'
             }}
           >
-            &times;
+            <X size={18} strokeWidth={2} aria-hidden />
           </button>
         </div>
 
         {/* Search */}
-        <div style={{ padding: '0.75rem 1.5rem' }}>
-          <input
-            type="text"
-            placeholder="Filter concepts..."
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            autoFocus
-            style={{
-              width: '100%',
-              padding: isMobile ? '0.75rem 1rem' : '0.5rem 0.75rem',
-              fontFamily: 'var(--font-ui)',
-              fontSize: isMobile ? '1rem' : '0.85rem',
-              background: 'var(--chrome-surface)',
-              border: '1px solid var(--chrome-border)',
-              borderRadius: 6,
-              color: '#e2e8f0',
-              outline: 'none',
-              transition: 'border-color 200ms ease',
-              boxSizing: 'border-box',
-            }}
-            onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--chrome-accent)' }}
-            onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--chrome-border)' }}
-          />
+        <div style={{ padding: 'var(--space-3) var(--space-5)' }}>
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <Search
+              size={16}
+              strokeWidth={2}
+              aria-hidden
+              style={{ position: 'absolute', left: 'var(--space-3)', color: 'var(--chrome-text)', pointerEvents: 'none' }}
+            />
+            <input
+              type="text"
+              placeholder="Filter concepts..."
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              autoFocus
+              style={{
+                width: '100%',
+                minHeight: 44,
+                padding: '0 var(--space-3) 0 calc(var(--space-3) + var(--space-5))',
+                fontFamily: 'var(--font-ui)',
+                fontSize: isMobile ? '1rem' : '0.85rem',
+                background: 'var(--chrome-surface)',
+                border: '1px solid var(--chrome-border)',
+                borderRadius: 'var(--radius-2)',
+                color: 'var(--chrome-hover-text)',
+                outline: 'none',
+                transition: 'border-color 200ms ease',
+                boxSizing: 'border-box',
+              }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--chrome-accent)' }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--chrome-border)' }}
+            />
+          </div>
         </div>
 
         {/* Count */}
         <div
           style={{
-            padding: '0 1.5rem 0.5rem',
+            padding: '0 var(--space-5) var(--space-2)',
             fontFamily: 'var(--font-ui)',
             fontSize: '0.7rem',
             color: 'var(--chrome-text)',
@@ -217,7 +226,7 @@ export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }
           style={{
             flex: 1,
             overflowY: 'auto',
-            padding: '0 1.5rem 1.5rem',
+            padding: '0 var(--space-5) var(--space-5)',
           }}
         >
           {Object.keys(grouped).length === 0 && (
@@ -235,19 +244,19 @@ export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }
           )}
 
           {Object.entries(grouped).map(([letter, concepts]) => (
-            <div key={letter} style={{ marginBottom: '1rem' }}>
+            <div key={letter} style={{ marginBottom: 'var(--space-4)' }}>
               {/* Letter header */}
               <div
                 style={{
                   fontFamily: 'var(--font-ui)',
                   fontSize: '0.7rem',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   color: 'var(--chrome-accent)',
                   letterSpacing: '0.1em',
                   textTransform: 'uppercase',
-                  padding: '0.5rem 0 0.25rem',
+                  padding: 'var(--space-2) 0 var(--space-1)',
                   borderBottom: '1px solid var(--chrome-border)',
-                  marginBottom: '0.5rem',
+                  marginBottom: 'var(--space-2)',
                 }}
               >
                 {letter}
@@ -264,13 +273,13 @@ export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }
                     textAlign: 'left',
                     background: 'none',
                     border: 'none',
-                    padding: '0.5rem 0.5rem',
-                    borderRadius: 4,
+                    padding: 'var(--space-2)',
+                    borderRadius: 'var(--radius-2)',
                     cursor: 'pointer',
                     transition: 'background 150ms ease',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(47, 92, 138, 0.06)'
+                    e.currentTarget.style.background = 'var(--chrome-surface)'
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = 'none'
@@ -281,9 +290,9 @@ export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }
                     style={{
                       fontFamily: 'var(--font-heading)',
                       fontSize: isMobile ? '0.95rem' : '1.1rem',
-                      fontWeight: 700,
-                      color: '#e2e8f0',
-                      marginBottom: 2,
+                      fontWeight: 600,
+                      color: 'var(--chrome-hover-text)',
+                      marginBottom: 'var(--space-1)',
                     }}
                   >
                     {concept.name}
@@ -293,7 +302,7 @@ export default function GlossaryPanel({ conceptIndex, bookId: _bookId, onClose }
                           fontFamily: 'var(--font-ui)',
                           fontSize: '0.65rem',
                           color: 'var(--chrome-text)',
-                          marginLeft: 8,
+                          marginLeft: 'var(--space-2)',
                           fontWeight: 400,
                         }}
                       >
