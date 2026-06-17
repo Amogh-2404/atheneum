@@ -80,7 +80,7 @@ export default function ReactiveMathBlock({
           fontWeight: 600,
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
-          color: 'var(--chrome-accent, #52FEFE)',
+          color: 'var(--chrome-accent, var(--chrome-accent))',
         }}
       >
         Interactive · drag to explore
@@ -138,10 +138,10 @@ export default function ReactiveMathBlock({
                   onChange={(e) => setParam(p.name, parseFloat(e.target.value))}
                   style={{
                     width: '100%',
-                    accentColor: 'var(--chrome-accent, #52FEFE)',
+                    accentColor: 'var(--chrome-accent, var(--chrome-accent))',
                     height: 4,
                     cursor: 'pointer',
-                    background: `linear-gradient(to right, var(--chrome-accent, #52FEFE) ${pct}%, var(--ruled-line-color, rgba(140,160,200,0.3)) ${pct}%)`,
+                    background: `linear-gradient(to right, var(--chrome-accent, var(--chrome-accent)) ${pct}%, var(--ruled-line-color, rgba(140,160,200,0.3)) ${pct}%)`,
                     borderRadius: 2,
                     appearance: 'none',
                     WebkitAppearance: 'none',

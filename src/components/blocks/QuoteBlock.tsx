@@ -1,84 +1,47 @@
-import { useRef, useEffect, useState } from 'react'
 import type { QuoteBlock as QuoteBlockType } from '@/types'
 import { renderText } from '@/lib/render-text'
-import rough from 'roughjs'
 
 export default function QuoteBlock({ text, attribution, source }: QuoteBlockType) {
-  const svgRef = useRef<SVGSVGElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [height, setHeight] = useState(0)
-
-  // Measure container height for the rough vertical line
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setHeight(entry.contentRect.height)
-      }
-    })
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
-
-  // Draw the rough vertical line
-  useEffect(() => {
-    const svg = svgRef.current
-    if (!svg || height <= 0) return
-
-    while (svg.firstChild) {
-      svg.removeChild(svg.firstChild)
-    }
-
-    const rc = rough.svg(svg)
-    const node = rc.line(4, 2, 4, height - 2, {
-      seed: 23,
-      stroke: 'var(--ink-faint)',
-      strokeWidth: 2.5,
-      roughness: 1.8,
-    })
-    svg.appendChild(node)
-  }, [height])
-
   return (
-    <div
-      ref={containerRef}
-      className="notebook-quote"
+    <figure
+      className="codex-quote"
       style={{
-        position: 'relative',
-        borderLeft: 'none',
-        paddingLeft: '1.75rem',
+        margin: 'var(--space-4) 0',
+        paddingLeft: 'var(--space-5)',
+        borderLeft: '3px solid var(--accent)',
       }}
     >
-      {/* Rough.js vertical line instead of CSS border */}
-      <svg
-        ref={svgRef}
-        width={10}
-        height={height || 1}
+      <blockquote
         style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          overflow: 'visible',
-          pointerEvents: 'none',
+          margin: 0,
+          fontFamily: 'var(--font-body)',
+          fontStyle: 'italic',
+          fontSize: '1.0625rem',
+          lineHeight: 1.7,
+          color: 'var(--ink-primary)',
         }}
-      />
-
-      <p style={{ margin: 0, lineHeight: 1.7 }}>
+      >
         {renderText(text)}
-      </p>
+      </blockquote>
 
       {(attribution ?? source) && (
-        <footer style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: 'var(--ink-faint)', fontStyle: 'normal' }}>
+        <figcaption
+          style={{
+            marginTop: 'var(--space-2)',
+            fontFamily: 'var(--font-ui)',
+            fontSize: '0.875rem',
+            fontStyle: 'normal',
+            color: 'var(--ink-faint)',
+          }}
+        >
           {attribution && <span>&mdash; {attribution}</span>}
           {source && (
-            <span style={{ marginLeft: '0.25rem', fontStyle: 'italic' }}>
+            <cite style={{ marginLeft: attribution ? '0.25rem' : 0, fontStyle: 'italic' }}>
               {attribution ? `, ${source}` : source}
-            </span>
+            </cite>
           )}
-        </footer>
+        </figcaption>
       )}
-    </div>
+    </figure>
   )
 }

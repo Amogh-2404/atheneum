@@ -1,67 +1,93 @@
+import type { ComponentType } from 'react'
+import {
+  Info,
+  Lightbulb,
+  AlertTriangle,
+  CheckCircle2,
+  KeyRound,
+  StickyNote,
+} from 'lucide-react'
 import type { CalloutBlock as CalloutBlockType } from '@/types'
 import { renderText } from '@/lib/render-text'
-import RoughBox from '@/components/shared/RoughBox'
+
+type LucideIcon = ComponentType<{ size?: number | string; strokeWidth?: number | string; 'aria-hidden'?: boolean }>
 
 const variantConfig: Record<
   CalloutBlockType['variant'],
-  { icon: string; borderColor: string; cssClass: string }
+  { Icon: LucideIcon; hue: string }
 > = {
-  definition: {
-    icon: '\ud83d\udcd6',
-    borderColor: 'var(--callout-definition-border)',
-    cssClass: 'callout-definition',
-  },
-  example: {
-    icon: '\ud83d\udca1',
-    borderColor: 'var(--callout-example-border)',
-    cssClass: 'callout-example',
-  },
-  'key-concept': {
-    icon: '\ud83d\udd11',
-    borderColor: 'var(--callout-key-concept-border)',
-    cssClass: 'callout-key-concept',
-  },
-  warning: {
-    icon: '\u26a0\ufe0f',
-    borderColor: 'var(--callout-warning-border)',
-    cssClass: 'callout-warning',
-  },
-  tip: {
-    icon: '\u2728',
-    borderColor: 'var(--callout-tip-border)',
-    cssClass: 'callout-tip',
-  },
-  note: {
-    icon: '\ud83d\udcdd',
-    borderColor: 'var(--callout-note-border)',
-    cssClass: 'callout-note',
-  },
+  note: { Icon: Info, hue: 'var(--callout-note-border)' },
+  tip: { Icon: Lightbulb, hue: 'var(--callout-tip-border)' },
+  warning: { Icon: AlertTriangle, hue: 'var(--callout-warning-border)' },
+  example: { Icon: CheckCircle2, hue: 'var(--callout-example-border)' },
+  'key-concept': { Icon: KeyRound, hue: 'var(--callout-key-concept-border)' },
+  definition: { Icon: StickyNote, hue: 'var(--callout-definition-border)' },
 }
 
 export default function CalloutBlock({ variant, title, text, icon }: CalloutBlockType) {
   const config = variantConfig[variant] ?? variantConfig.note
-  // Derive a seed from the variant for consistent wobble
-  const seed = variant.length * 13 + 7
+  const { Icon, hue } = config
+  const label = title ?? variant.replace('-', ' ')
 
   return (
-    <RoughBox
-      seed={seed}
-      stroke={config.borderColor}
-      strokeWidth={1.5}
-      roughness={1.0}
-      padding="0"
+    <aside
+      className="codex-callout"
+      data-variant={variant}
+      style={{
+        // semantic hue resolved once, consumed by rule + tint + eyebrow
+        ['--hue' as string]: hue,
+        display: 'flex',
+        gap: 'var(--space-3)',
+        padding: 'var(--space-4)',
+        borderRadius: 'var(--radius-2)',
+        borderLeft: '2px solid var(--hue)',
+        background: 'color-mix(in srgb, var(--hue) 8%, var(--paper-bg))',
+        margin: 'var(--space-4) 0',
+      }}
     >
-      <aside className={`callout ${config.cssClass}`} data-variant={variant}>
-        {(title || icon) && (
-          <div className="callout-title">
-            <span>{icon ?? config.icon}</span>
-            <span>{title ?? variant.replace('-', ' ')}</span>
-          </div>
+      <span
+        aria-hidden
+        style={{
+          flexShrink: 0,
+          display: 'inline-flex',
+          alignItems: 'flex-start',
+          paddingTop: '0.1em',
+          color: 'var(--hue)',
+        }}
+      >
+        {icon ? (
+          <span style={{ fontSize: '1rem', lineHeight: 1 }}>{icon}</span>
+        ) : (
+          <Icon size={18} strokeWidth={2} aria-hidden />
         )}
-        <div className="callout-body">
+      </span>
+
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div
+          className="codex-callout__eyebrow"
+          style={{
+            fontFamily: 'var(--font-ui)',
+            fontWeight: 600,
+            fontSize: '0.7rem',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: 'var(--hue)',
+            marginBottom: 'var(--space-2)',
+          }}
+        >
+          {label}
+        </div>
+        <div
+          className="codex-callout__body"
+          style={{
+            fontFamily: 'var(--font-body)',
+            color: 'var(--ink-primary)',
+            lineHeight: 1.7,
+          }}
+        >
           {renderText(text)}
         </div>
-      </aside>
-    </RoughBox>
+      </div>
+    </aside>
   )
 }

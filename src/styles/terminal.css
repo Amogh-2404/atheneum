@@ -1,105 +1,157 @@
 /* ==========================================================================
-   Atheneum — Terminal Code Blocks
-   macOS-style terminal windows taped into the notebook.
+   Atheneum — Code Blocks
+   Flat editorial cards. No skeuomorphism: no tape, no tilt, no window chrome
+   gloss. Syntax highlighting is theme-aware via Shiki dual-theme CSS vars
+   (light/sepia → light palette, dark → dark palette) — see the var wiring at
+   the bottom. JetBrains Mono throughout.
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   Terminal Window
+   Card shell
    -------------------------------------------------------------------------- */
 
 .terminal-window {
   position: relative;
-  margin: 2rem 0;
-  border-radius: 8px;
-  overflow: visible; /* allow tape to overflow */
-  box-shadow:
-    0 20px 50px rgba(0, 0, 0, 0.3),
-    0 10px 20px rgba(0, 0, 0, 0.2);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  margin: var(--space-6) 0;
+  border-radius: var(--radius-3);
+  overflow: hidden;
+  background: var(--code-bg);
+  border: var(--hairline);
+  box-shadow: var(--shadow-1);
+  transition: transform var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
 }
 
-/* Seeded rotation via CSS custom property */
-.terminal-window {
-  transform: rotate(var(--tilt, -0.5deg));
-}
-
-/* --------------------------------------------------------------------------
-   Scotch Tape
-   -------------------------------------------------------------------------- */
-
-.terminal-window::before {
-  content: '';
-  position: absolute;
-  top: -10px;
-  left: 30%;
-  width: 70px;
-  height: 26px;
-  background: rgba(255, 255, 255, 0.35);
-  border: 1px dotted rgba(0, 0, 0, 0.12);
-  transform: rotate(-3deg);
-  box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.6);
-  z-index: 5;
-  border-radius: 2px;
-  pointer-events: none;
+/* Restrained lift — 1px nudge + a touch more shadow, never a scale zoom. */
+.terminal-window:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-2);
 }
 
 /* --------------------------------------------------------------------------
-   macOS Title Bar
+   Header (filename · lang label · dots · copy)
    -------------------------------------------------------------------------- */
 
 .terminal-titlebar {
-  background: #e8e6e8;
-  padding: 8px 12px;
+  background: transparent;
+  padding: var(--space-2) var(--space-4);
   display: flex;
   align-items: center;
-  gap: 8px;
-  border-radius: 8px 8px 0 0;
+  gap: var(--space-3);
+  border-bottom: var(--hairline);
   user-select: none;
 }
 
-.terminal-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
+/* Muted, monochrome, un-rotated dots — a quiet nod, not a macOS replica. */
+.terminal-dots {
+  display: flex;
+  gap: 6px;
   flex-shrink: 0;
 }
 
-.terminal-dot-close {
-  background: #ff5f57;
-}
-
-.terminal-dot-minimize {
-  background: #febc2e;
-}
-
-.terminal-dot-maximize {
-  background: #28c940;
+.terminal-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: var(--radius-full);
+  background: var(--ink-faint);
+  opacity: 0.35;
+  flex-shrink: 0;
 }
 
 .terminal-filename {
-  font-family: system-ui, -apple-system, sans-serif;
-  font-size: 12px;
-  color: #666;
-  margin-left: auto;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ink-faint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.terminal-lang {
+  font-family: var(--font-ui);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--ink-faint);
+  white-space: nowrap;
 }
 
 /* --------------------------------------------------------------------------
-   Terminal Body
+   Copy button — token-driven, >=44px tap target
+   -------------------------------------------------------------------------- */
+
+.code-copy-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 32px;
+  padding: 6px 10px;
+  font-family: var(--font-ui);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-faint);
+  background: none;
+  border: none;
+  border-radius: var(--radius-1);
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard);
+}
+
+.code-copy-btn:hover {
+  color: var(--ink-secondary);
+  background: var(--hairline-color);
+}
+
+.code-copy-btn.is-copied {
+  color: var(--accent);
+}
+
+.code-copy-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* Generous tap target on touch without bloating the visual button. */
+@media (pointer: coarse) {
+  .code-copy-btn {
+    min-height: 44px;
+    padding: 6px 12px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Code body
    -------------------------------------------------------------------------- */
 
 .terminal-body {
-  background: #1e1e1e;
-  padding: 1rem 1.5rem;
-  border-radius: 0 0 8px 8px;
+  background: var(--code-bg);
+  padding: var(--space-4) 0;
   overflow-x: auto;
   font-family: var(--font-code);
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.7;
-  color: #d4d4d4;
+  color: var(--code-fg);
   tab-size: 4;
+}
+
+.terminal-body pre {
+  margin: 0;
+}
+
+.terminal-line {
+  display: flex;
+  align-items: baseline;
+  padding: 0 var(--space-5);
+  min-height: 1.7em;
+}
+
+.terminal-line-code {
+  flex: 1;
+  white-space: pre;
 }
 
 .terminal-body::-webkit-scrollbar {
@@ -111,12 +163,12 @@
 }
 
 .terminal-body::-webkit-scrollbar-thumb {
-  background: #444;
-  border-radius: 3px;
+  background: var(--hairline-color);
+  border-radius: var(--radius-full);
 }
 
 /* --------------------------------------------------------------------------
-   Line Numbers
+   Line numbers
    -------------------------------------------------------------------------- */
 
 .terminal-line-number {
@@ -124,188 +176,225 @@
   width: 3ch;
   text-align: right;
   margin-right: 1.5ch;
-  color: #555;
+  color: var(--ink-faint);
+  opacity: 0.55;
   user-select: none;
   pointer-events: none;
+  flex-shrink: 0;
 }
 
 /* --------------------------------------------------------------------------
-   Highlighted Lines
+   Highlighted lines — one accent wash, no neon
    -------------------------------------------------------------------------- */
 
 .terminal-line-highlighted {
-  background: rgba(82, 254, 254, 0.08);
-  margin: 0 -1.5rem;
-  padding: 0 1.5rem;
-  display: block;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 
 /* --------------------------------------------------------------------------
-   Per-line Annotations
+   Per-line annotations
    -------------------------------------------------------------------------- */
 
 .terminal-annotation {
-  font-family: var(--font-handwritten);
-  font-size: 12px;
-  color: var(--chrome-accent);
+  font-family: var(--font-ui);
+  font-size: 0.6875rem;
+  font-style: italic;
+  color: var(--ink-faint);
   margin-left: 2ch;
-  opacity: 0.8;
   white-space: nowrap;
 }
 
 /* --------------------------------------------------------------------------
-   Hover Lift Effect
+   Predict-the-output footer
    -------------------------------------------------------------------------- */
 
-.terminal-window:hover {
-  transform: rotate(var(--tilt, -0.5deg)) translateY(-3px);
-  box-shadow:
-    0 25px 60px rgba(0, 0, 0, 0.35),
-    0 15px 30px rgba(0, 0, 0, 0.25);
+.terminal-predict {
+  border-top: var(--hairline);
+  background: var(--paper-bg);
+  padding: var(--space-4) var(--space-5);
+}
+
+.terminal-predict-label {
+  font-family: var(--font-ui);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: var(--space-2);
+}
+
+.terminal-predict-input {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  font-family: var(--font-code);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ink-primary);
+  background: var(--chrome-surface);
+  border: var(--hairline);
+  border-radius: var(--radius-2);
+  padding: var(--space-2) var(--space-3);
+  outline: none;
+  transition: border-color var(--duration-fast) var(--ease-standard);
+}
+
+.terminal-predict-input:focus-visible {
+  border-color: var(--accent);
+}
+
+.terminal-predict-reveal {
+  margin-top: var(--space-2);
+  min-height: 36px;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--paper-bg);
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-2);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  transition: opacity var(--duration-fast) var(--ease-standard);
+}
+
+.terminal-predict-reveal:hover {
+  opacity: 0.88;
+}
+
+.terminal-predict-block {
+  margin: 0;
+  font-family: var(--font-code);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--ink-primary);
+  background: var(--chrome-surface);
+  border: var(--hairline);
+  border-radius: var(--radius-2);
+  padding: var(--space-2) var(--space-3);
+}
+
+.terminal-predict-block.is-guess {
+  color: var(--ink-secondary);
+}
+
+.terminal-predict-block.is-match {
+  border-color: var(--accent);
+}
+
+.terminal-predict-caption {
+  font-family: var(--font-ui);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: var(--space-1);
+}
+
+.terminal-predict-verdict {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+}
+
+.terminal-predict-verdict.is-match {
+  color: var(--accent);
+}
+
+.terminal-predict-verdict.is-differ {
+  color: var(--ink-secondary);
+}
+
+.terminal-predict-override {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--accent);
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 /* --------------------------------------------------------------------------
-   Syntax Highlighting Token Colors (VS Code Dark+ palette)
+   Theme-aware syntax highlighting
+   --------------------------------------------------------------------------
+   Shiki emits each token with an inline `color` (light theme) plus a
+   `--shiki-dark` custom property (dark theme). We pick the right one per
+   surface. The code surface (--code-bg/--code-fg) is the warm paper on
+   light/sepia and warm-charcoal on dark — no more dark terminal stranded on
+   a sepia page.
    -------------------------------------------------------------------------- */
 
-.token-keyword {
-  color: #c586c0;
+:root {
+  --code-bg: #fbf9f4;
+  --code-fg: #2c2c2c;
 }
 
-.token-string {
-  color: #ce9178;
+[data-theme="sepia"] {
+  --code-bg: #efe6d2;
+  --code-fg: #3d3229;
 }
 
-.token-number {
-  color: #b5cea8;
+[data-theme="dark"] {
+  --code-bg: #14141a;
+  --code-fg: #d4d4d4;
 }
 
-.token-comment {
-  color: #6a9955;
-  font-style: italic;
+/* Light + sepia: use Shiki's light theme (the inline color is the light one). */
+.terminal-body .shiki,
+.terminal-body .shiki span {
+  background-color: transparent !important;
 }
 
-.token-function {
-  color: #dcdcaa;
-}
-
-.token-type {
-  color: #4ec9b0;
-}
-
-.token-variable {
-  color: #9cdcfe;
-}
-
-.token-operator {
-  color: #d4d4d4;
-}
-
-.token-punctuation {
-  color: #808080;
+/* Dark: flip every token to its --shiki-dark value. */
+[data-theme="dark"] .terminal-body .shiki,
+[data-theme="dark"] .terminal-body .shiki span {
+  color: var(--shiki-dark, inherit) !important;
+  background-color: transparent !important;
 }
 
 /* --------------------------------------------------------------------------
-   Dark Theme Overrides
-   -------------------------------------------------------------------------- */
-
-[data-theme="dark"] .terminal-window::before {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-[data-theme="dark"] .terminal-titlebar {
-  background: #2d2d2d;
-}
-
-[data-theme="dark"] .terminal-filename {
-  color: #888;
-}
-
-[data-theme="dark"] .terminal-dot-close {
-  background: #ff5f57;
-}
-
-[data-theme="dark"] .terminal-dot-minimize {
-  background: #febc2e;
-}
-
-[data-theme="dark"] .terminal-dot-maximize {
-  background: #28c940;
-}
-
-/* --------------------------------------------------------------------------
-   Sepia Theme Overrides
-   -------------------------------------------------------------------------- */
-
-[data-theme="sepia"] .terminal-window::before {
-  background: rgba(180, 140, 80, 0.3);
-  border-color: rgba(120, 90, 50, 0.15);
-}
-
-[data-theme="sepia"] .terminal-titlebar {
-  background: #d8ccb0;
-}
-
-[data-theme="sepia"] .terminal-filename {
-  color: #7a6a5a;
-}
-
-[data-theme="sepia"] .terminal-body {
-  background: #2a2218;
-}
-
-/* --------------------------------------------------------------------------
-   Responsive
+   Responsive — no overflow at 360px, line numbers stay, tap targets hold
    -------------------------------------------------------------------------- */
 
 @media (max-width: 768px) {
   .terminal-window {
-    margin: 1.5rem -0.5rem;
-    border-radius: 6px;
-    transform: none !important; /* no rotation on mobile */
-  }
-
-  .terminal-window::before {
-    display: none; /* no tape on mobile */
+    margin: var(--space-5) 0;
   }
 
   .terminal-window:hover {
-    transform: none !important;
+    transform: none;
   }
 
   .terminal-body {
-    padding: 0.75rem 1rem;
-    font-size: 12px;
+    font-size: 0.75rem;
+  }
+
+  .terminal-line {
+    padding: 0 var(--space-4);
   }
 }
 
 @media (max-width: 480px) {
-  .terminal-window {
-    margin: 1rem -0.75rem;
-  }
-
   .terminal-body {
-    padding: 0.5rem 0.75rem;
-    font-size: 11.5px;
+    font-size: 0.75rem;
   }
 
-  /* Hide line numbers on very small screens to save space */
-  .terminal-line-number {
-    display: none;
+  .terminal-line {
+    padding: 0 var(--space-3);
   }
 
+  /* Annotations would overflow a 360px line — defer them on the smallest screens. */
   .terminal-annotation {
     display: none;
-  }
-
-  .terminal-titlebar {
-    padding: 6px 10px;
-    gap: 6px;
-  }
-
-  .terminal-dot {
-    width: 10px;
-    height: 10px;
   }
 }

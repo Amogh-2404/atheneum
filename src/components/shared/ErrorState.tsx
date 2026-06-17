@@ -72,16 +72,16 @@ export default function ErrorState({ message, onRetry, icon = 'warning' }: Error
             fontSize: '0.8rem',
             fontWeight: 600,
             letterSpacing: '0.03em',
-            color: 'var(--chrome-accent, #52FEFE)',
-            background: 'rgba(82, 254, 254, 0.08)',
-            border: '1px solid var(--chrome-accent, #52FEFE)',
+            color: 'var(--chrome-accent, var(--chrome-accent))',
+            background: 'rgba(47, 92, 138, 0.08)',
+            border: '1px solid var(--chrome-accent, var(--chrome-accent))',
             borderRadius: 6,
             padding: '6px 16px',
             cursor: 'pointer',
             transition: 'background 150ms ease',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(82, 254, 254, 0.15)' }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(82, 254, 254, 0.08)' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(47, 92, 138, 0.15)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(47, 92, 138, 0.08)' }}
         >
           Try again
         </button>

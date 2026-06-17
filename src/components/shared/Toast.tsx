@@ -19,8 +19,8 @@ const variantStyles: Record<ToastVariant, { color: string; bg: string; border: s
     border: 'rgba(239, 68, 68, 0.3)',
   },
   info: {
-    color: 'var(--chrome-accent, #52FEFE)',
-    bg: 'rgba(82, 254, 254, 0.06)',
+    color: 'var(--chrome-accent, var(--chrome-accent))',
+    bg: 'rgba(47, 92, 138, 0.06)',
     border: 'var(--chrome-border, #1e293b)',
   },
 }

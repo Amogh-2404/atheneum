@@ -37,9 +37,9 @@ export default function RewrittenChip({ onReview, confusionPresent = false }: Re
         height: 22,
         padding: '0 8px',
         borderRadius: 11,
-        background: 'rgba(82, 254, 254, 0.12)',
-        border: '1px solid rgba(82, 254, 254, 0.4)',
-        color: 'var(--chrome-accent, #52FEFE)',
+        background: 'rgba(47, 92, 138, 0.12)',
+        border: '1px solid rgba(47, 92, 138, 0.4)',
+        color: 'var(--chrome-accent, var(--chrome-accent))',
         cursor: 'pointer',
         fontFamily: 'var(--font-ui)',
         fontSize: '0.62rem',
@@ -51,12 +51,12 @@ export default function RewrittenChip({ onReview, confusionPresent = false }: Re
         transition: 'background 150ms ease, border-color 150ms ease',
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.background = 'rgba(82, 254, 254, 0.22)'
-        e.currentTarget.style.borderColor = 'rgba(82, 254, 254, 0.7)'
+        e.currentTarget.style.background = 'rgba(47, 92, 138, 0.22)'
+        e.currentTarget.style.borderColor = 'rgba(47, 92, 138, 0.7)'
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.background = 'rgba(82, 254, 254, 0.12)'
-        e.currentTarget.style.borderColor = 'rgba(82, 254, 254, 0.4)'
+        e.currentTarget.style.background = 'rgba(47, 92, 138, 0.12)'
+        e.currentTarget.style.borderColor = 'rgba(47, 92, 138, 0.4)'
       }}
     >
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

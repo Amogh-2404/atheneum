@@ -58,7 +58,7 @@ export default function QuizBlock({ id: blockId, questions, bookId, chapterId }:
             padding: '0.5rem 0.75rem',
             marginBottom: '1rem',
             borderRadius: 6,
-            background: 'rgba(82, 254, 254, 0.06)',
+            background: 'rgba(47, 92, 138, 0.06)',
             border: '1px solid var(--chrome-border, #1e293b)',
           }}>
             <span style={{
@@ -66,7 +66,7 @@ export default function QuizBlock({ id: blockId, questions, bookId, chapterId }:
               fontSize: '0.8rem',
               color: 'var(--ink-secondary)',
             }}>
-              Previous score: <strong style={{ color: 'var(--chrome-accent, #52FEFE)' }}>{prevScore.correct}/{prevScore.total}</strong>
+              Previous score: <strong style={{ color: 'var(--chrome-accent, var(--chrome-accent))' }}>{prevScore.correct}/{prevScore.total}</strong>
             </span>
             <button
               type="button"
@@ -75,9 +75,9 @@ export default function QuizBlock({ id: blockId, questions, bookId, chapterId }:
                 fontFamily: 'var(--font-ui)',
                 fontSize: '0.72rem',
                 fontWeight: 600,
-                color: 'var(--chrome-accent, #52FEFE)',
+                color: 'var(--chrome-accent, var(--chrome-accent))',
                 background: 'none',
-                border: '1px solid var(--chrome-accent, #52FEFE)',
+                border: '1px solid var(--chrome-accent, var(--chrome-accent))',
                 borderRadius: 4,
                 padding: '3px 10px',
                 cursor: 'pointer',
@@ -173,7 +173,7 @@ export default function QuizBlock({ id: blockId, questions, bookId, chapterId }:
             borderRadius: 6,
             background: currentCorrect === questions.length
               ? 'rgba(34, 197, 94, 0.08)'
-              : 'rgba(82, 254, 254, 0.06)',
+              : 'rgba(47, 92, 138, 0.06)',
             border: `1px solid ${currentCorrect === questions.length ? '#16a34a' : 'var(--chrome-border, #1e293b)'}`,
             display: 'flex',
             alignItems: 'center',

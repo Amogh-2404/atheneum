@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { ArrowRight } from 'lucide-react'
 import { tween } from '@/lib/motion'
 import type { ConceptIndex, Concept } from '@/lib/concept-extractor'
 
@@ -189,18 +190,18 @@ export default function ConceptTooltip({ conceptIndex }: { conceptIndex: Concept
             pointerEvents: 'auto',
           }}
         >
-          <div style={{ fontFamily: 'var(--font-heading)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--chrome-accent)', marginBottom: 6, lineHeight: 1.3 }}>
+          <div style={{ fontFamily: 'var(--font-heading)', fontSize: '1.1rem', fontWeight: 600, color: 'var(--chrome-accent)', marginBottom: 'var(--space-2)', lineHeight: 1.3 }}>
             {tooltip.name}
           </div>
-          <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.92rem', color: 'var(--chrome-text)', opacity: 0.85, lineHeight: 1.5, marginBottom: 10, display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.92rem', color: 'var(--chrome-text)', opacity: 0.85, lineHeight: 1.5, marginBottom: 'var(--space-3)', display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
             {tooltip.definition}
           </div>
           <button
             type="button"
             onClick={goToDefinition}
-            style={{ fontFamily: 'var(--font-ui)', fontSize: '0.74rem', color: 'var(--chrome-accent)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', letterSpacing: '0.03em', display: 'flex', alignItems: 'center', gap: 5 }}
+            style={{ fontFamily: 'var(--font-ui)', fontSize: '0.78rem', fontWeight: 500, color: 'var(--chrome-accent)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minHeight: 44 }}
           >
-            <span aria-hidden>&rarr;</span> Go to definition
+            <ArrowRight size={14} strokeWidth={2} aria-hidden /> Go to definition
           </button>
         </motion.div>
       )}

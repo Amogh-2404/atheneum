@@ -42,9 +42,20 @@ export default function MathBlock({ expression, display }: MathBlockType) {
     )
   }
 
-  // Display (block) math
+  // Display (block) math — scroll wide equations instead of clipping them off the
+  // screen edge (the silent mobile failure). overscroll-x:contain so a swipe on a
+  // long equation doesn't trigger the browser's back-gesture.
   return (
-    <div className="math-display">
+    <div
+      className="math-display"
+      style={{
+        margin: 'var(--leading, 1.6rem) 0',
+        overflowX: 'auto',
+        overflowY: 'hidden',
+        overscrollBehaviorX: 'contain',
+        WebkitOverflowScrolling: 'touch',
+      }}
+    >
       <div dangerouslySetInnerHTML={{ __html: rendered.html }} />
     </div>
   )

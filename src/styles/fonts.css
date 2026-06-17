@@ -85,6 +85,26 @@
   font-display: swap;
 }
 
+/* --- Fraunces (editorial display serif — headings) variable: opsz+SOFT+WONK+wght.
+       Replaces Caveat as the heading face: a serif heading over a serif body reads
+       as a real bound volume. Caveat is demoted to the reader's own margin notes. --- */
+@font-face {
+  font-family: 'Fraunces';
+  src: url('/fonts/Fraunces-var.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* --- Inter (UI / chrome) variable — replaces Rajdhani everywhere. --- */
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/Inter-var.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* --- OpenDyslexic (accessibility) --- */
 @font-face {
   font-family: 'OpenDyslexic';

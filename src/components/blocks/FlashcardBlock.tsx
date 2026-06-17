@@ -9,7 +9,7 @@ const CONFIDENCE_BUTTONS: { key: Confidence; label: string; color: string }[] = 
   { key: 'again', label: 'Again', color: '#dc2626' },
   { key: 'hard', label: 'Hard', color: '#ea580c' },
   { key: 'good', label: 'Good', color: '#16a34a' },
-  { key: 'easy', label: 'Easy', color: '#52FEFE' },
+  { key: 'easy', label: 'Easy', color: 'var(--chrome-accent)' },
 ]
 
 interface FlashcardBlockProps extends FlashcardBlockType {
@@ -76,7 +76,7 @@ export default function FlashcardBlock({ id: blockId, cards, bookId, chapterId }
       case 'again': return '#dc2626'
       case 'hard': return '#ea580c'
       case 'good': return '#16a34a'
-      case 'easy': return '#52FEFE'
+      case 'easy': return 'var(--chrome-accent)'
       default: return 'var(--ink-faint)'
     }
   }
@@ -104,7 +104,7 @@ export default function FlashcardBlock({ id: blockId, cards, bookId, chapterId }
             onClick={() => { setCurrent(0); setFlipped(false); setSessionComplete(false) }}
             style={{
               fontFamily: 'var(--font-ui)', fontSize: '0.8rem', fontWeight: 600,
-              color: 'var(--chrome-accent, #52FEFE)', background: 'rgba(82, 254, 254, 0.08)',
+              color: 'var(--chrome-accent, var(--chrome-accent))', background: 'rgba(47, 92, 138, 0.08)',
               border: '1px solid var(--chrome-accent)', borderRadius: 6,
               padding: '6px 16px', cursor: 'pointer',
             }}
@@ -168,7 +168,7 @@ export default function FlashcardBlock({ id: blockId, cards, bookId, chapterId }
             transition={{ duration: 0.3, ease: 'easeInOut' }}
             style={{
               border: flipped
-                ? '2px solid var(--chrome-accent, #52FEFE)'
+                ? '2px solid var(--chrome-accent, var(--chrome-accent))'
                 : '2px solid var(--ink-primary)',
               borderRadius: '10px',
               padding: '1.5rem 1.75rem',
@@ -176,7 +176,7 @@ export default function FlashcardBlock({ id: blockId, cards, bookId, chapterId }
               display: 'flex',
               flexDirection: 'column',
               background: flipped
-                ? 'rgba(82, 254, 254, 0.03)'
+                ? 'rgba(47, 92, 138, 0.03)'
                 : 'transparent',
             }}
           >
@@ -295,7 +295,7 @@ export default function FlashcardBlock({ id: blockId, cards, bookId, chapterId }
                   borderRadius: 4,
                   border: 'none',
                   background: i === current
-                    ? 'var(--chrome-accent, #52FEFE)'
+                    ? 'var(--chrome-accent, var(--chrome-accent))'
                     : getDotColor(i),
                   opacity: i === current ? 1 : (getDotColor(i) !== 'var(--ink-faint)' ? 0.7 : 0.4),
                   cursor: 'pointer',

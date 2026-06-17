@@ -1,10 +1,25 @@
 import { useMemo, useState, useEffect, useCallback } from 'react'
+import type { ComponentType } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useBooks } from '@/hooks/useBooks'
 import { spring } from '@/lib/motion'
 import { useKeyboard } from '@/hooks/useKeyboard'
-import RoughBox from '@/components/shared/RoughBox'
+import {
+  BookOpen,
+  Zap,
+  Landmark,
+  TrendingUp,
+  Microscope,
+  Layers,
+  Cpu,
+  Sun,
+  Moon,
+  Coffee,
+  MoreHorizontal,
+  ArrowRight,
+} from 'lucide-react'
+import type { LucideProps } from 'lucide-react'
 import type { BookSummary } from '@/types/book'
 
 /* ─── Theme Hook ─────────────────────────────────────────────────── */
@@ -39,116 +54,90 @@ function useAppTheme(): AppTheme {
   return theme
 }
 
-/* ─── Theme-Specific Cover Palette ───────────────────────────────── */
-
-interface CoverThemeStyle {
-  /** Spine overlay gradient */
-  spine: string
-  /** Light sweep / glare */
-  sweepHighlight: string
-  sweepShadow: string
-  /** Decorative border outer rgba */
-  borderOuter: string
-  /** Decorative border inner rgba */
-  borderInner: string
-  /** Corner ornament color + opacity */
-  ornamentColor: string
-  ornamentOpacity: number
-  /** Chapter badge bg */
-  badgeBg: string
-  /** Chapter badge text */
-  badgeText: string
-  /** Icon filter — for glow effects */
-  iconFilter: string
-  /** Title text color */
+/* ─── Cover Style — one type-forward template, tokenized ─────────── */
+/**
+ * The redesigned cover is a single editorial template across all three
+ * themes: a calm muted identity band, a Fraunces title, a hairline rule,
+ * an Inter eyebrow micro-label, and a monochrome-tinted Lucide icon.
+ * No neon / circuit / scanline / leather / damask / vignette treatments,
+ * no per-theme skeuomorphism — the only thing that varies by theme is the
+ * surface/ink token set, which already lives in notebook.css.
+ */
+interface CoverStyle {
+  /** Cover paper surface (sits on the card) */
+  surface: string
+  /** Title ink */
   titleColor: string
-  /** Title text shadow */
-  titleShadow: string
-  /** Author line color */
-  authorColor: string
-  /** Decorative rule gradient */
-  ruleGradient: string
-  /** Tag pill border */
-  tagBorder: string
-  /** Tag pill background */
-  tagBg: string
-  /** Tag pill text color */
-  tagText: string
-  /** Bottom edge shadow */
-  bottomEdge: string
+  /** Eyebrow micro-label ink */
+  eyebrowColor: string
+  /** Hairline rule + frame */
+  hairline: string
+  /** Chapter badge surface / ink */
+  badgeBg: string
+  badgeBorder: string
+  badgeText: string
+  /** Monochrome tint applied to the Lucide icon */
+  iconColor: string
 }
 
-function getCoverThemeStyle(theme: AppTheme): CoverThemeStyle {
+function getCoverStyle(theme: AppTheme): CoverStyle {
   switch (theme) {
-    /* ── Dark: Neon Terminal — unmistakably cyberpunk ─────────── */
     case 'dark':
       return {
-        spine: 'linear-gradient(90deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 30%, rgba(82,254,254,0.18) 50%, rgba(0,0,0,0.35) 100%)',
-        sweepHighlight: 'radial-gradient(ellipse at 25% 15%, rgba(82,254,254,0.15) 0%, transparent 50%)',
-        sweepShadow: 'radial-gradient(ellipse at 75% 85%, rgba(0,0,0,0.50) 0%, transparent 50%)',
-        borderOuter: 'rgba(82, 254, 254, 0.30)',
-        borderInner: 'rgba(82, 254, 254, 0.15)',
-        ornamentColor: '#52FEFE',
-        ornamentOpacity: 0.5,
-        badgeBg: 'rgba(0,0,0,0.80)',
-        badgeText: '#e8f4f4',
-        iconFilter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.6)) drop-shadow(0 0 20px rgba(82,254,254,0.55))',
-        titleColor: '#e8f4f4',
-        titleShadow: '0 2px 16px rgba(0,0,0,0.7), 0 0 24px rgba(82,254,254,0.6), 0 0 48px rgba(82,254,254,0.2)',
-        authorColor: 'rgba(82, 254, 254, 0.65)',
-        ruleGradient: 'linear-gradient(90deg, transparent, rgba(82,254,254,0.5), transparent)',
-        tagBorder: 'rgba(82, 254, 254, 0.25)',
-        tagBg: 'rgba(0,0,0,0.5)',
-        tagText: 'rgba(82, 254, 254, 0.7)',
-        bottomEdge: 'linear-gradient(to top, rgba(0,0,0,0.4), transparent)',
+        surface: 'var(--chrome-surface)',
+        titleColor: 'var(--ink-primary)',
+        eyebrowColor: 'var(--ink-faint)',
+        hairline: 'var(--hairline-color)',
+        badgeBg: 'rgba(255,255,255,0.04)',
+        badgeBorder: 'var(--hairline-color)',
+        badgeText: 'var(--ink-secondary)',
+        iconColor: 'var(--ink-secondary)',
       }
-
-    /* ── Sepia: Leather Bound — antique bookshop ─────────────── */
     case 'sepia':
       return {
-        spine: 'linear-gradient(90deg, rgba(30,18,8,0.75) 0%, rgba(42,26,14,0.35) 40%, rgba(212,168,80,0.10) 60%, rgba(42,26,14,0.30) 100%)',
-        sweepHighlight: 'radial-gradient(ellipse at 25% 15%, rgba(244,236,216,0.20) 0%, transparent 50%)',
-        sweepShadow: 'radial-gradient(ellipse at 75% 85%, rgba(30,18,8,0.35) 0%, transparent 50%)',
-        borderOuter: 'rgba(212, 168, 80, 0.30)',
-        borderInner: 'rgba(212, 168, 80, 0.18)',
-        ornamentColor: '#d4a850',
-        ornamentOpacity: 0.45,
-        badgeBg: 'rgba(42,26,14,0.70)',
-        badgeText: '#f4ecd8',
-        iconFilter: 'drop-shadow(0 3px 8px rgba(42,26,14,0.5)) sepia(0.4) saturate(0.7)',
-        titleColor: '#f4ecd8',
-        titleShadow: '0 2px 12px rgba(42,26,14,0.6), 0 0 10px rgba(212,168,80,0.45), 0 1px 3px rgba(42,26,14,0.4)',
-        authorColor: 'rgba(212, 168, 80, 0.75)',
-        ruleGradient: 'linear-gradient(90deg, transparent, rgba(212,168,80,0.50), transparent)',
-        tagBorder: 'rgba(212, 168, 80, 0.30)',
-        tagBg: 'rgba(42,26,14,0.50)',
-        tagText: 'rgba(212, 168, 80, 0.85)',
-        bottomEdge: 'linear-gradient(to top, rgba(42,26,14,0.25), transparent)',
+        surface: 'color-mix(in srgb, var(--paper-bg) 92%, #000)',
+        titleColor: 'var(--ink-primary)',
+        eyebrowColor: 'var(--ink-faint)',
+        hairline: 'var(--hairline-color)',
+        badgeBg: 'color-mix(in srgb, var(--paper-bg) 60%, transparent)',
+        badgeBorder: 'var(--hairline-color)',
+        badgeText: 'var(--ink-secondary)',
+        iconColor: 'var(--ink-secondary)',
       }
-
-    /* ── Light: Clean Editorial — airy, minimal, premium ───── */
-    default:
+    default: // light
       return {
-        spine: 'linear-gradient(90deg, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.02) 50%, transparent 100%)',
-        sweepHighlight: 'none',
-        sweepShadow: 'none',
-        borderOuter: 'rgba(0,0,0,0.10)',
-        borderInner: 'rgba(0,0,0,0.06)',
-        ornamentColor: 'rgba(0,0,0,0.25)',
-        ornamentOpacity: 0.6,
-        badgeBg: 'rgba(0,0,0,0.06)',
-        badgeText: '#5a5a5a',
-        iconFilter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.08))',
-        titleColor: '#2c2c2c',
-        titleShadow: 'none',
-        authorColor: 'rgba(0,0,0,0.35)',
-        ruleGradient: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.15), transparent)',
-        tagBorder: 'rgba(0,0,0,0.10)',
-        tagBg: 'rgba(0,0,0,0.04)',
-        tagText: '#666',
-        bottomEdge: 'linear-gradient(to top, rgba(0,0,0,0.04), transparent)',
+        surface: 'color-mix(in srgb, var(--paper-bg) 96%, #000)',
+        titleColor: 'var(--ink-primary)',
+        eyebrowColor: 'var(--ink-faint)',
+        hairline: 'var(--hairline-color)',
+        badgeBg: 'color-mix(in srgb, var(--ink-primary) 5%, transparent)',
+        badgeBorder: 'var(--hairline-color)',
+        badgeText: 'var(--ink-secondary)',
+        iconColor: 'var(--ink-secondary)',
       }
   }
+}
+
+/* ─── Icon mapping — emoji → Lucide (no emoji ever rendered) ──────── */
+
+const COVER_ICON_MAP: Record<string, ComponentType<LucideProps>> = {
+  '⚡': Zap,
+  '🏛️': Landmark,
+  '🏛': Landmark,
+  '📈': TrendingUp,
+  '🔬': Microscope,
+  '🧱': Layers,
+  '🖥️': Cpu,
+  '🖥': Cpu,
+  '💻': Cpu,
+  '📚': BookOpen,
+  '📖': BookOpen,
+}
+
+/** Resolve a stored emoji coverIcon to a Lucide component (BookOpen fallback). */
+function resolveCoverIcon(coverIcon?: string): ComponentType<LucideProps> {
+  if (coverIcon && COVER_ICON_MAP[coverIcon]) return COVER_ICON_MAP[coverIcon]
+  return BookOpen
 }
 
 /* ─── Theme-Specific Page Colors ─────────────────────────────────── */
@@ -169,55 +158,41 @@ interface PageThemeStyle {
   bookInfoMeta: string
 }
 
+/**
+ * Page chrome is fully tokenized — every theme draws from the same ink/paper
+ * token set, so there is exactly ONE accent (var(--accent)) and zero raw hex.
+ * The per-theme switch is kept only for the two cases (card surface, hairline)
+ * that legitimately differ, both resolved through tokens.
+ */
 function getPageThemeStyle(theme: AppTheme): PageThemeStyle {
+  const shared = {
+    pageBg: 'var(--paper-bg)',
+    titleColor: 'var(--ink-primary)',
+    subtitleColor: 'var(--ink-secondary)',
+    textColor: 'var(--ink-primary)',
+    cardBorder: 'var(--hairline-color)',
+    cardHoverBorder: 'var(--hairline-color)',
+    cardHoverGlow: 'var(--shadow-3)',
+    accentColor: 'var(--accent)',
+    bookInfoSubtitle: 'var(--ink-secondary)',
+    bookInfoDesc: 'var(--ink-secondary)',
+    bookInfoMeta: 'var(--ink-faint)',
+  } as const
+
   switch (theme) {
     case 'dark':
-      return {
-        pageBg: 'var(--chrome-bg)',
-        titleColor: '#52FEFE',
-        subtitleColor: 'var(--chrome-text)',
-        textColor: '#f1f5f9',
-        cardBg: 'var(--chrome-surface)',
-        cardBorder: 'rgba(82, 254, 254, 0.15)',
-        cardHoverBorder: 'rgba(82, 254, 254, 0.35)',
-        cardHoverGlow: '0 0 24px rgba(82, 254, 254, 0.06)',
-        accentColor: 'var(--chrome-accent)',
-        bookInfoBg: 'var(--chrome-surface)',
-        bookInfoSubtitle: 'var(--chrome-text)',
-        bookInfoDesc: 'rgba(241, 245, 249, 0.75)',
-        bookInfoMeta: 'rgba(241, 245, 249, 0.5)',
-      }
+      return { ...shared, cardBg: 'var(--chrome-surface)', bookInfoBg: 'var(--chrome-surface)' }
     case 'sepia':
       return {
-        pageBg: '#2a2015',
-        titleColor: '#d4a373',
-        subtitleColor: '#c4a882',
-        textColor: '#f4ecd8',
-        cardBg: 'rgba(58, 42, 26, 0.6)',
-        cardBorder: 'rgba(212, 168, 80, 0.15)',
-        cardHoverBorder: 'rgba(212, 168, 80, 0.35)',
-        cardHoverGlow: '0 0 24px rgba(180, 140, 80, 0.1)',
-        accentColor: '#d4a373',
-        bookInfoBg: 'rgba(58, 42, 26, 0.6)',
-        bookInfoSubtitle: '#c4a882',
-        bookInfoDesc: 'rgba(244, 236, 216, 0.7)',
-        bookInfoMeta: 'rgba(244, 236, 216, 0.45)',
+        ...shared,
+        cardBg: 'color-mix(in srgb, var(--paper-bg) 94%, #000)',
+        bookInfoBg: 'color-mix(in srgb, var(--paper-bg) 94%, #000)',
       }
     default: // light
       return {
-        pageBg: '#f8f6f1',
-        titleColor: '#2c2c2c',
-        subtitleColor: '#666',
-        textColor: '#333',
-        cardBg: '#ffffff',
-        cardBorder: 'rgba(0,0,0,0.08)',
-        cardHoverBorder: 'rgba(0,0,0,0.15)',
-        cardHoverGlow: '0 4px 20px rgba(0,0,0,0.08)',
-        accentColor: '#555',
-        bookInfoBg: '#ffffff',
-        bookInfoSubtitle: '#555',
-        bookInfoDesc: 'rgba(0,0,0,0.55)',
-        bookInfoMeta: 'rgba(0,0,0,0.38)',
+        ...shared,
+        cardBg: 'color-mix(in srgb, var(--paper-bg) 98%, #fff)',
+        bookInfoBg: 'color-mix(in srgb, var(--paper-bg) 98%, #fff)',
       }
   }
 }
@@ -293,27 +268,25 @@ function ContinueReadingCard({
         <div
           style={{
             background: ps.cardBg,
-            border: `1px solid ${ps.cardBorder}`,
-            borderRadius: 12,
-            padding: 'clamp(0.75rem, 2vw, 1.25rem) clamp(1rem, 2.5vw, 1.5rem)',
-            backdropFilter: 'blur(12px)',
+            border: `var(--hairline)`,
+            borderRadius: 'var(--radius-3)',
+            padding: 'clamp(var(--space-3), 2vw, var(--space-5)) clamp(var(--space-4), 2.5vw, var(--space-5))',
+            boxShadow: 'var(--shadow-1)',
             transition:
-              'border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease',
+              'box-shadow var(--duration-base) var(--ease-standard), transform var(--duration-base) var(--ease-standard)',
           }}
           onMouseEnter={(e) => {
             const el = e.currentTarget
-            el.style.borderColor = ps.cardHoverBorder
-            el.style.boxShadow = ps.cardHoverGlow
-            el.style.transform = 'translateY(-1px)'
+            el.style.boxShadow = 'var(--shadow-3)'
+            el.style.transform = 'translateY(-2px)'
           }}
           onMouseLeave={(e) => {
             const el = e.currentTarget
-            el.style.borderColor = ps.cardBorder
-            el.style.boxShadow = 'none'
+            el.style.boxShadow = 'var(--shadow-1)'
             el.style.transform = 'translateY(0)'
           }}
         >
-          {/* Label */}
+          {/* Eyebrow micro-label */}
           <p
             style={{
               fontFamily: 'var(--font-ui)',
@@ -321,7 +294,7 @@ function ContinueReadingCard({
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
               color: ps.accentColor,
-              margin: '0 0 0.6rem 0',
+              margin: '0 0 var(--space-2) 0',
             }}
           >
             Continue Reading
@@ -330,11 +303,12 @@ function ContinueReadingCard({
           {/* Book + Chapter */}
           <p
             style={{
-              fontFamily: 'var(--font-ui)',
-              fontSize: '1.05rem',
+              fontFamily: 'var(--font-heading)',
+              fontSize: '1.15rem',
               fontWeight: 600,
               color: ps.textColor,
-              margin: '0 0 0.15rem 0',
+              margin: '0 0 var(--space-1) 0',
+              lineHeight: 1.2,
             }}
           >
             {book.title}
@@ -344,7 +318,7 @@ function ContinueReadingCard({
               fontFamily: 'var(--font-ui)',
               fontSize: '0.8rem',
               color: ps.subtitleColor,
-              margin: '0 0 0.75rem 0',
+              margin: '0 0 var(--space-3) 0',
             }}
           >
             {chapterLabel}
@@ -355,20 +329,20 @@ function ContinueReadingCard({
             )}
           </p>
 
-          {/* Progress bar */}
+          {/* Thin accent progress bar */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 12,
+              gap: 'var(--space-3)',
             }}
           >
             <div
               style={{
                 flex: 1,
                 height: 3,
-                borderRadius: 2,
-                background: theme === 'light' ? 'rgba(0,0,0,0.08)' : 'var(--chrome-border)',
+                borderRadius: 'var(--radius-full)',
+                background: 'var(--hairline-color)',
                 overflow: 'hidden',
               }}
             >
@@ -377,8 +351,8 @@ function ContinueReadingCard({
                   height: '100%',
                   width: `${percent}%`,
                   background: ps.accentColor,
-                  borderRadius: 2,
-                  transition: 'width 300ms ease',
+                  borderRadius: 'var(--radius-full)',
+                  transition: 'width var(--duration-slow) var(--ease-standard)',
                 }}
               />
             </div>
@@ -395,6 +369,9 @@ function ContinueReadingCard({
             </span>
             <span
               style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
                 fontFamily: 'var(--font-ui)',
                 fontSize: '0.8rem',
                 color: ps.accentColor,
@@ -402,7 +379,7 @@ function ContinueReadingCard({
                 flexShrink: 0,
               }}
             >
-              Resume →
+              Resume <ArrowRight size={14} strokeWidth={2} aria-hidden />
             </span>
           </div>
         </div>
@@ -411,56 +388,35 @@ function ContinueReadingCard({
   )
 }
 
-/* ─── Book Cover — Premium Design ────────────────────────────────── */
+/* ─── Book Cover — one type-forward editorial template ───────────── */
 
 /**
- * Deterministic pseudo-random from a seed — used to vary pattern
- * angles and offsets per book so no two covers look identical.
- */
-function seededRandom(seed: number): () => number {
-  let s = seed | 0
-  return () => {
-    s = (s * 16807 + 0) % 2147483647
-    return (s - 1) / 2147483646
-  }
-}
-
-/**
- * Identity hue for a cover, spread across the wheel.
- *
- * The stored `coverColor` carries each book's intended hue, but the seeded
- * data set can cluster (several blue-grays). To guarantee covers are
- * distinguishable BY COLOUR — not just the icon — we derive a stable hue
- * per title (golden-ratio spaced so neighbours land far apart on the wheel)
- * and mix the stored colour toward it. The result is a saturated, distinct
- * hue family per book that is still deterministic across renders.
+ * Stable identity hue per title, golden-ratio spaced so neighbours land far
+ * apart on the wheel. Used ONLY for the single calm muted spine band — never
+ * for a saturated gradient or a neon stroke.
  */
 function coverIdentityHue(seed: number): number {
   // 0.618… is the golden conjugate — successive multiples scatter evenly.
   return Math.round(((seed * 0.61803398875) % 1) * 360)
 }
 
-/** A vivid HSL anchor for this book, used to differentiate every cover. */
-function identityColor(seed: number, lightness: number, saturation = 72): string {
-  return `hsl(${coverIdentityHue(seed)}, ${saturation}%, ${lightness}%)`
-}
-
 /**
- * Build a circuit/pattern SVG tinted with `stroke` so the texture itself
- * carries the book's identity instead of a hardcoded cyan. Colour is passed
- * through encodeURIComponent so any hsl()/hex value survives the data URI.
+ * A SINGLE calm muted band colour for the book's identity. The raw saturated
+ * coverColor/hue is deliberately desaturated to HSL sat ~38-48% so the band
+ * reads as a quiet editorial spine, not a poster gradient. Lightness is
+ * theme-aware so the band sits comfortably on paper vs. warm-charcoal.
  */
-function tintedCircuitPattern(stroke: string): string {
-  const c = encodeURIComponent(stroke)
-  return `url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 20 L10 20 L10 10 L30 10 L30 20 L40 20' fill='none' stroke='${c}' stroke-opacity='0.32' stroke-width='0.9'/%3E%3Cpath d='M20 0 L20 10' fill='none' stroke='${c}' stroke-opacity='0.26' stroke-width='0.7'/%3E%3Cpath d='M20 30 L20 40' fill='none' stroke='${c}' stroke-opacity='0.26' stroke-width='0.7'/%3E%3Ccircle cx='10' cy='10' r='2' fill='${c}' fill-opacity='0.36'/%3E%3Ccircle cx='30' cy='10' r='2' fill='${c}' fill-opacity='0.36'/%3E%3Ccircle cx='30' cy='20' r='1.4' fill='${c}' fill-opacity='0.28'/%3E%3Ccircle cx='20' cy='30' r='1.2' fill='${c}' fill-opacity='0.24'/%3E%3C/svg%3E")`
+function mutedBandColor(seed: number, theme: AppTheme): string {
+  const hue = coverIdentityHue(seed)
+  const sat = 43 // squarely inside the 38-48% calm band
+  const lightness = theme === 'dark' ? 52 : theme === 'sepia' ? 46 : 56
+  return `hsl(${hue}, ${sat}%, ${lightness}%)`
 }
 
 function BookCover({
   title,
-  coverColor,
   coverIcon,
   chapterCount,
-  tags,
   theme,
 }: {
   title: string
@@ -470,480 +426,62 @@ function BookCover({
   tags: string[]
   theme: AppTheme
 }) {
-  const ts = getCoverThemeStyle(theme)
-
+  const cs = getCoverStyle(theme)
   const seed = hashSeed(title)
-  const rand = seededRandom(seed)
-
-  // Vary pattern offset per book
-  const patternRotate = Math.round(-15 + rand() * 30)
-  const dotOffsetX = Math.round(rand() * 40)
-  const dotOffsetY = Math.round(rand() * 40)
-
-  // ── Per-book identity colour ──
-  // Mix the stored coverColor toward a golden-ratio-spread hue so every
-  // cover lands in a distinct hue family (Atheneum cyan / Lock-Free amber /
-  // IMC green …) even when the stored palette clusters into blue-grays.
-  const identityMid = identityColor(seed, 50)       // vivid mid-tone
-  const identityDeep = identityColor(seed, 34)      // shadowed focal hue
-  const hueColor = `color-mix(in srgb, ${coverColor} 55%, ${identityMid})`
-  const hueColorDeep = `color-mix(in srgb, ${coverColor} 45%, ${identityDeep})`
-  // Pattern/texture stroke inherits the book's hue, not a hardcoded #52FEFE.
-  const patternStroke = identityColor(seed, 62, 80)
-
-  // ── Theme-specific background ──
-  // Each theme gets a FUNDAMENTALLY different base
-
-  let coverBackground: string
-
-  if (theme === 'light') {
-    // LIGHT base — cream/white with coverColor as subtle accent band
-    coverBackground = '#f5f2ec'
-  } else if (theme === 'dark') {
-    // Dark gradient — the focal band carries a STRONG hue (≈60%) for identity,
-    // with the dark vignette held to the EDGES so titles stay legible.
-    const edge1 = `color-mix(in srgb, ${hueColorDeep} 30%, #0a0e17)`
-    const edge2 = `color-mix(in srgb, ${hueColorDeep} 14%, #050810)`
-    const angle = Math.round(130 + rand() * 40)
-    coverBackground = `linear-gradient(${angle}deg, ${edge2} 0%, ${hueColor} 45%, ${edge1} 100%)`
-  } else {
-    // Sepia — rich warm brown tones, NOT coverColor-based
-    coverBackground = `linear-gradient(165deg, #3a2a1a 0%, #2e1f12 40%, #2a1a0e 100%)`
-  }
-
-  // ── Dark theme patterns — tinted with the book's identity hue ──
-  const circuitPattern = tintedCircuitPattern(patternStroke)
-  const gridPattern = `url("data:image/svg+xml,%3Csvg width='24' height='24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M24 0 L24 24 M0 24 L24 24' fill='none' stroke='${encodeURIComponent(patternStroke)}' stroke-opacity='0.10' stroke-width='0.5'/%3E%3C/svg%3E")`
-
-  // ── Sepia theme patterns ──
-  const damaskPattern = `url("data:image/svg+xml,%3Csvg width='32' height='32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M16 2 Q24 10 16 18 Q8 10 16 2 Z' fill='none' stroke='%23d4a850' stroke-opacity='0.20' stroke-width='0.9'/%3E%3Cpath d='M16 14 Q24 22 16 30 Q8 22 16 14 Z' fill='none' stroke='%23d4a850' stroke-opacity='0.17' stroke-width='0.8'/%3E%3Cpath d='M0 16 Q8 10 0 2' fill='none' stroke='%23d4a850' stroke-opacity='0.14' stroke-width='0.7'/%3E%3Cpath d='M32 16 Q24 10 32 2' fill='none' stroke='%23d4a850' stroke-opacity='0.14' stroke-width='0.7'/%3E%3Ccircle cx='16' cy='10' r='1.2' fill='%23d4a850' fill-opacity='0.18'/%3E%3C/svg%3E")`
-  const leatherPattern = `url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.14'/%3E%3C/svg%3E")`
-
-  const visibleTags = tags.slice(0, 3)
+  const band = mutedBandColor(seed, theme)
+  const Icon = resolveCoverIcon(coverIcon)
 
   return (
     <div
       style={{
         width: '100%',
         aspectRatio: '3 / 4',
-        borderRadius: '6px 6px 0 0',
+        borderRadius: 'var(--radius-3) var(--radius-3) 0 0',
         position: 'relative',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        transition: 'background 400ms ease',
-        background: coverBackground,
+        background: cs.surface,
+        transition: 'background var(--duration-slow) var(--ease-standard)',
       }}
     >
-
-      {/* ═══════════════════════════════════════════════════════
-          LIGHT THEME — "Clean Editorial"
-          Light cream base, coverColor as horizontal accent band
-          ═══════════════════════════════════════════════════════ */}
-      {theme === 'light' && (
-        <>
-          {/* Wide horizontal color band at top — the book's identity hue (stored
-              coverColor mixed toward the golden-spread hue) so light covers are
-              distinguishable by colour, not just the icon. */}
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              height: '25%',
-              background: `color-mix(in srgb, ${coverColor} 50%, ${identityColor(seed, 56, 64)})`,
-              opacity: 0.6,
-              pointerEvents: 'none',
-              zIndex: 1,
-            }}
-          />
-          {/* Fade the band into cream */}
-          <div
-            style={{
-              position: 'absolute',
-              top: '15%',
-              left: 0,
-              right: 0,
-              height: '15%',
-              background: 'linear-gradient(to bottom, transparent, #f5f2ec)',
-              pointerEvents: 'none',
-              zIndex: 2,
-            }}
-          />
-          {/* Thin single-line border frame */}
-          <div
-            style={{
-              position: 'absolute',
-              top: 10,
-              left: 10,
-              right: 10,
-              bottom: 10,
-              border: '1px solid rgba(0,0,0,0.10)',
-              borderRadius: 2,
-              pointerEvents: 'none',
-              zIndex: 4,
-            }}
-          />
-          {/* Spine: barely visible light gray strip */}
-          <div
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: 10,
-              background: 'linear-gradient(90deg, rgba(0,0,0,0.04) 0%, transparent 100%)',
-              zIndex: 5,
-              pointerEvents: 'none',
-            }}
-          />
-        </>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════
-          DARK THEME — "Neon Terminal"
-          Circuit board + neon stripe + grid + CRT lines + glow
-          ═══════════════════════════════════════════════════════ */}
-      {theme === 'dark' && (
-        <>
-          {/* Dark tint overlay */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'linear-gradient(180deg, rgba(10,14,23,0.30) 0%, rgba(5,8,16,0.50) 100%)',
-              pointerEvents: 'none',
-              zIndex: 1,
-            }}
-          />
-          {/* Spine with cyan edge glow */}
-          <div
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: 14,
-              background: ts.spine,
-              boxShadow: '1px 0 8px rgba(82,254,254,0.06)',
-              zIndex: 5,
-              pointerEvents: 'none',
-            }}
-          />
-          {/* Primary: bold circuit board traces */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              backgroundImage: circuitPattern,
-              backgroundSize: '40px 40px',
-              backgroundPosition: `${dotOffsetX}px ${dotOffsetY}px`,
-              transform: `rotate(${patternRotate}deg) scale(1.2)`,
-              opacity: 1,
-              pointerEvents: 'none',
-              zIndex: 2,
-            }}
-          />
-          {/* Secondary: graph paper grid */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              backgroundImage: gridPattern,
-              backgroundSize: '24px 24px',
-              opacity: 1,
-              pointerEvents: 'none',
-              zIndex: 2,
-            }}
-          />
-          {/* Hue stripe — a restrained accent line at ~25%, in the book's own
-              hue. Lower opacity + softer glow so it reads as poise, not shout. */}
-          <div
-            style={{
-              position: 'absolute',
-              top: '25%',
-              left: 0,
-              right: 0,
-              height: 1,
-              background: `linear-gradient(90deg, transparent 8%, ${identityColor(seed, 66, 78)} 50%, transparent 92%)`,
-              opacity: 0.5,
-              boxShadow: `0 0 8px ${identityColor(seed, 60, 70)}`,
-              pointerEvents: 'none',
-              zIndex: 3,
-            }}
-          />
-          {/* CRT scan-line effect — neutralised and faint, texture not statement */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              backgroundImage: `repeating-linear-gradient(
-                0deg,
-                transparent,
-                transparent 3px,
-                rgba(255, 255, 255, 0.018) 3px,
-                rgba(255, 255, 255, 0.018) 4px
-              )`,
-              pointerEvents: 'none',
-              zIndex: 2,
-            }}
-          />
-          {/* Border frame — double-line with cyan glow */}
-          <div
-            style={{
-              position: 'absolute',
-              top: 10,
-              left: 22,
-              right: 10,
-              bottom: 10,
-              border: `1px solid ${ts.borderOuter}`,
-              borderRadius: 3,
-              boxShadow: '0 0 10px rgba(82,254,254,0.10)',
-              pointerEvents: 'none',
-              zIndex: 4,
-            }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              top: 14,
-              left: 26,
-              right: 14,
-              bottom: 14,
-              border: `1px solid ${ts.borderInner}`,
-              borderRadius: 2,
-              pointerEvents: 'none',
-              zIndex: 4,
-            }}
-          />
-        </>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════
-          SEPIA THEME — "Leather Bound"
-          Warm brown base, gold accents, strong vignette, page edges
-          ═══════════════════════════════════════════════════════ */}
-      {theme === 'sepia' && (
-        <>
-          {/* Gold/amber accent tint from coverColor — blended warm */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: `radial-gradient(ellipse at 50% 40%, color-mix(in srgb, ${coverColor} 20%, #d4a850) 0%, transparent 70%)`,
-              opacity: 0.15,
-              pointerEvents: 'none',
-              zIndex: 1,
-            }}
-          />
-          {/* Spine */}
-          <div
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: 14,
-              background: ts.spine,
-              zIndex: 5,
-              pointerEvents: 'none',
-            }}
-          />
-          {/* Damask pattern */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              backgroundImage: damaskPattern,
-              backgroundSize: '32px 32px',
-              backgroundPosition: `${dotOffsetX}px ${dotOffsetY}px`,
-              transform: `rotate(${patternRotate}deg) scale(1.2)`,
-              opacity: 1,
-              pointerEvents: 'none',
-              zIndex: 2,
-            }}
-          />
-          {/* Leather-grain noise texture */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              backgroundImage: leatherPattern,
-              backgroundSize: '200px 200px',
-              opacity: 1,
-              pointerEvents: 'none',
-              zIndex: 2,
-              mixBlendMode: 'overlay',
-            }}
-          />
-          {/* Strong vignette — box-shadow inset */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              boxShadow: 'inset 0 0 60px 20px rgba(30, 18, 8, 0.60), inset 0 0 120px 40px rgba(30, 18, 8, 0.30)',
-              pointerEvents: 'none',
-              zIndex: 3,
-            }}
-          />
-          {/* Page edge effect — right side, stacked lines */}
-          <div
-            style={{
-              position: 'absolute',
-              top: 4,
-              right: 0,
-              bottom: 4,
-              width: 8,
-              background: `repeating-linear-gradient(
-                180deg,
-                rgba(212,168,80,0.18) 0px,
-                rgba(180,140,80,0.10) 1px,
-                rgba(244,236,216,0.14) 2px,
-                rgba(180,140,80,0.08) 3px
-              )`,
-              borderLeft: '1px solid rgba(212,168,80,0.25)',
-              pointerEvents: 'none',
-              zIndex: 5,
-            }}
-          />
-          {/* Border frame */}
-          <div
-            style={{
-              position: 'absolute',
-              top: 10,
-              left: 22,
-              right: 12,
-              bottom: 10,
-              border: `1px solid ${ts.borderOuter}`,
-              borderRadius: 3,
-              pointerEvents: 'none',
-              zIndex: 4,
-            }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              top: 14,
-              left: 26,
-              right: 16,
-              bottom: 14,
-              border: `1px solid ${ts.borderInner}`,
-              borderRadius: 2,
-              pointerEvents: 'none',
-              zIndex: 4,
-            }}
-          />
-        </>
-      )}
-
-      {/* ── Light sweep / glare (dark + sepia only) ──────── */}
-      {theme !== 'light' && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: `${ts.sweepHighlight}, ${ts.sweepShadow}`,
-            pointerEvents: 'none',
-            zIndex: 3,
-          }}
-        />
-      )}
-
-      {/* ── Corner ornaments — theme-specific ──────────────── */}
-      {theme === 'dark' ? (
-        <>
-          {/* Dark: LARGE angular tech brackets */}
-          <svg style={{ position: 'absolute', top: 4, left: 16, zIndex: 5, opacity: ts.ornamentOpacity }} width="28" height="28" viewBox="0 0 28 28">
-            <path d="M0 24 L0 0 L24 0" fill="none" stroke={ts.ornamentColor} strokeWidth="1.8" />
-            <path d="M0 16 L0 0 L16 0" fill="none" stroke={ts.ornamentColor} strokeWidth="0.8" strokeOpacity="0.5" />
-          </svg>
-          <svg style={{ position: 'absolute', top: 4, right: 4, zIndex: 5, opacity: ts.ornamentOpacity }} width="28" height="28" viewBox="0 0 28 28">
-            <path d="M4 0 L28 0 L28 24" fill="none" stroke={ts.ornamentColor} strokeWidth="1.8" />
-            <path d="M12 0 L28 0 L28 16" fill="none" stroke={ts.ornamentColor} strokeWidth="0.8" strokeOpacity="0.5" />
-          </svg>
-          <svg style={{ position: 'absolute', bottom: 4, left: 16, zIndex: 5, opacity: ts.ornamentOpacity }} width="28" height="28" viewBox="0 0 28 28">
-            <path d="M0 4 L0 28 L24 28" fill="none" stroke={ts.ornamentColor} strokeWidth="1.8" />
-            <path d="M0 12 L0 28 L16 28" fill="none" stroke={ts.ornamentColor} strokeWidth="0.8" strokeOpacity="0.5" />
-          </svg>
-          <svg style={{ position: 'absolute', bottom: 4, right: 4, zIndex: 5, opacity: ts.ornamentOpacity }} width="28" height="28" viewBox="0 0 28 28">
-            <path d="M28 4 L28 28 L4 28" fill="none" stroke={ts.ornamentColor} strokeWidth="1.8" />
-            <path d="M28 12 L28 28 L12 28" fill="none" stroke={ts.ornamentColor} strokeWidth="0.8" strokeOpacity="0.5" />
-          </svg>
-        </>
-      ) : theme === 'sepia' ? (
-        <>
-          {/* Sepia: LARGE ornate corners with boosted opacity */}
-          <svg style={{ position: 'absolute', top: 3, left: 15, zIndex: 5, opacity: ts.ornamentOpacity }} width="30" height="30" viewBox="0 0 30 30">
-            <path d="M0 28 L0 6 Q0 0 6 0 L28 0" fill="none" stroke={ts.ornamentColor} strokeWidth="1.5" />
-            <path d="M0 18 C5 18 7 16 7 11" fill="none" stroke={ts.ornamentColor} strokeWidth="1" strokeOpacity="0.7" />
-            <path d="M12 0 C12 5 14 7 18 7" fill="none" stroke={ts.ornamentColor} strokeWidth="1" strokeOpacity="0.7" />
-            <circle cx="3" cy="3" r="1.8" fill={ts.ornamentColor} fillOpacity="0.4" />
-            <circle cx="3" cy="3" r="0.8" fill={ts.ornamentColor} fillOpacity="0.6" />
-          </svg>
-          <svg style={{ position: 'absolute', top: 3, right: 3, zIndex: 5, opacity: ts.ornamentOpacity }} width="30" height="30" viewBox="0 0 30 30">
-            <path d="M2 0 L24 0 Q30 0 30 6 L30 28" fill="none" stroke={ts.ornamentColor} strokeWidth="1.5" />
-            <path d="M18 0 C18 5 16 7 12 7" fill="none" stroke={ts.ornamentColor} strokeWidth="1" strokeOpacity="0.7" />
-            <path d="M30 18 C25 18 23 16 23 11" fill="none" stroke={ts.ornamentColor} strokeWidth="1" strokeOpacity="0.7" />
-            <circle cx="27" cy="3" r="1.8" fill={ts.ornamentColor} fillOpacity="0.4" />
-            <circle cx="27" cy="3" r="0.8" fill={ts.ornamentColor} fillOpacity="0.6" />
-          </svg>
-          <svg style={{ position: 'absolute', bottom: 3, left: 15, zIndex: 5, opacity: ts.ornamentOpacity }} width="30" height="30" viewBox="0 0 30 30">
-            <path d="M0 2 L0 24 Q0 30 6 30 L28 30" fill="none" stroke={ts.ornamentColor} strokeWidth="1.5" />
-            <path d="M0 12 C5 12 7 14 7 19" fill="none" stroke={ts.ornamentColor} strokeWidth="1" strokeOpacity="0.7" />
-            <path d="M12 30 C12 25 14 23 18 23" fill="none" stroke={ts.ornamentColor} strokeWidth="1" strokeOpacity="0.7" />
-            <circle cx="3" cy="27" r="1.8" fill={ts.ornamentColor} fillOpacity="0.4" />
-            <circle cx="3" cy="27" r="0.8" fill={ts.ornamentColor} fillOpacity="0.6" />
-          </svg>
-          <svg style={{ position: 'absolute', bottom: 3, right: 3, zIndex: 5, opacity: ts.ornamentOpacity }} width="30" height="30" viewBox="0 0 30 30">
-            <path d="M30 2 L30 24 Q30 30 24 30 L2 30" fill="none" stroke={ts.ornamentColor} strokeWidth="1.5" />
-            <path d="M30 12 C25 12 23 14 23 19" fill="none" stroke={ts.ornamentColor} strokeWidth="1" strokeOpacity="0.7" />
-            <path d="M18 30 C18 25 16 23 12 23" fill="none" stroke={ts.ornamentColor} strokeWidth="1" strokeOpacity="0.7" />
-            <circle cx="27" cy="27" r="1.8" fill={ts.ornamentColor} fillOpacity="0.4" />
-            <circle cx="27" cy="27" r="0.8" fill={ts.ornamentColor} fillOpacity="0.6" />
-          </svg>
-        </>
-      ) : (
-        <>
-          {/* Light: thin elegant corner lines in dark gray */}
-          <svg style={{ position: 'absolute', top: 14, left: 14, zIndex: 5, opacity: ts.ornamentOpacity }} width="18" height="18" viewBox="0 0 18 18">
-            <path d="M0 18 L0 3 Q0 0 3 0 L18 0" fill="none" stroke={ts.ornamentColor} strokeWidth="0.8" />
-          </svg>
-          <svg style={{ position: 'absolute', top: 14, right: 14, zIndex: 5, opacity: ts.ornamentOpacity }} width="18" height="18" viewBox="0 0 18 18">
-            <path d="M0 0 L15 0 Q18 0 18 3 L18 18" fill="none" stroke={ts.ornamentColor} strokeWidth="0.8" />
-          </svg>
-          <svg style={{ position: 'absolute', bottom: 14, left: 14, zIndex: 5, opacity: ts.ornamentOpacity }} width="18" height="18" viewBox="0 0 18 18">
-            <path d="M0 0 L0 15 Q0 18 3 18 L18 18" fill="none" stroke={ts.ornamentColor} strokeWidth="0.8" />
-          </svg>
-          <svg style={{ position: 'absolute', bottom: 14, right: 14, zIndex: 5, opacity: ts.ornamentOpacity }} width="18" height="18" viewBox="0 0 18 18">
-            <path d="M18 0 L18 15 Q18 18 15 18 L0 18" fill="none" stroke={ts.ornamentColor} strokeWidth="0.8" />
-          </svg>
-        </>
-      )}
-
-      {/* ── Chapter count badge ──────────────────────────── */}
+      {/* ── Identity spine: one calm muted band on the left edge ─── */}
       <div
         style={{
           position: 'absolute',
-          top: 18,
-          right: 18,
-          zIndex: 6,
-          background: ts.badgeBg,
-          backdropFilter: 'blur(6px)',
-          borderRadius: 6,
-          padding: '3px 8px',
+          top: 0,
+          left: 0,
+          bottom: 0,
+          width: 6,
+          background: band,
+          zIndex: 1,
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* ── Chapter count badge — Lucide icon, no emoji ─────────── */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 'var(--space-4)',
+          right: 'var(--space-4)',
+          zIndex: 3,
+          background: cs.badgeBg,
+          border: `1px solid ${cs.badgeBorder}`,
+          borderRadius: 'var(--radius-full)',
+          padding: '2px var(--space-2)',
           display: 'flex',
           alignItems: 'center',
           gap: 4,
         }}
       >
-        <span style={{ fontSize: '0.6rem', opacity: 0.8 }}>📖</span>
+        <BookOpen size={11} strokeWidth={2} color={cs.badgeText} aria-hidden />
         <span
           style={{
             fontFamily: 'var(--font-ui)',
-            fontSize: '0.6rem',
+            fontSize: '0.62rem',
             fontWeight: 600,
-            color: ts.badgeText,
+            color: cs.badgeText,
             letterSpacing: '0.03em',
           }}
         >
@@ -951,155 +489,69 @@ function BookCover({
         </span>
       </div>
 
-      {/* ── Main content area ────────────────────────────── */}
+      {/* ── Main content — icon, title, hairline rule, eyebrow ──── */}
       <div
         style={{
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          alignItems: 'center',
-          padding: '2.5rem 1.5rem 1rem 2rem',
+          alignItems: 'flex-start',
+          padding: 'var(--space-6) var(--space-5) var(--space-5) var(--space-5)',
           position: 'relative',
-          zIndex: 6,
+          zIndex: 2,
         }}
       >
-        {/* Icon — large and prominent, with theme-aware glow */}
-        {coverIcon && (
-          <span
-            style={{
-              fontSize: '2.8rem',
-              lineHeight: 1,
-              marginBottom: '0.75rem',
-              filter: ts.iconFilter,
-              transition: 'filter 400ms ease',
-            }}
-          >
-            {coverIcon}
-          </span>
-        )}
-
-        {/* Thin decorative rule above title */}
-        <div
-          style={{
-            width: 32,
-            height: 1,
-            background: ts.ruleGradient,
-            marginBottom: '0.65rem',
-          }}
+        {/* Small monochrome-tinted Lucide icon */}
+        <Icon
+          size={26}
+          strokeWidth={1.6}
+          color={cs.iconColor}
+          style={{ marginBottom: 'var(--space-4)' }}
+          aria-hidden
         />
 
-        {/* Title — dark text in light theme, light/glowing in others */}
+        {/* Title — Fraunces, the centrepiece */}
         <h3
           style={{
-            fontFamily: "'Caveat', cursive",
-            fontSize: '1.55rem',
-            fontWeight: 700,
-            color: ts.titleColor,
+            fontFamily: 'var(--font-heading)',
+            fontSize: 'clamp(1.6rem, 4vw, 1.85rem)',
+            fontWeight: 600,
+            color: cs.titleColor,
             margin: 0,
-            lineHeight: 1.25,
-            textAlign: 'center',
-            textShadow: ts.titleShadow,
-            maxWidth: '90%',
-            transition: 'color 400ms ease, text-shadow 400ms ease',
+            lineHeight: 1.18,
+            textAlign: 'left',
+            letterSpacing: '-0.01em',
           }}
         >
           {title}
         </h3>
 
-        {/* Thin rule below title */}
+        {/* Hairline rule */}
         <div
           style={{
-            width: 24,
+            width: 40,
             height: 1,
-            background: ts.ruleGradient,
-            marginTop: '0.6rem',
+            background: cs.hairline,
+            margin: 'var(--space-3) 0',
           }}
         />
 
-        {/* Author line */}
+        {/* Eyebrow micro-label — Inter, uppercase (eyebrow only) */}
         <p
           style={{
-            fontFamily: "'Rajdhani', var(--font-ui)",
+            fontFamily: 'var(--font-ui)',
             fontSize: '0.62rem',
-            fontWeight: 500,
-            letterSpacing: '0.18em',
+            fontWeight: 600,
+            letterSpacing: '0.16em',
             textTransform: 'uppercase',
-            color: ts.authorColor,
-            margin: '0.6rem 0 0 0',
-            textShadow: theme === 'light' ? 'none' : '0 1px 4px rgba(0,0,0,0.3)',
-            transition: 'color 400ms ease',
+            color: cs.eyebrowColor,
+            margin: 0,
           }}
         >
           Atheneum
         </p>
       </div>
-
-      {/* ── Tag pills at bottom ──────────────────────────── */}
-      {visibleTags.length > 0 && (
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            flexWrap: 'wrap',
-            gap: 4,
-            padding: '0 1.5rem 14px 2rem',
-            position: 'relative',
-            zIndex: 6,
-          }}
-        >
-          {visibleTags.map((tag) => (
-            <span
-              key={tag}
-              style={{
-                fontFamily: 'var(--font-ui)',
-                fontSize: '0.52rem',
-                fontWeight: 500,
-                letterSpacing: '0.04em',
-                padding: '2px 7px',
-                borderRadius: 999,
-                border: `1px solid ${ts.tagBorder}`,
-                background: ts.tagBg,
-                backdropFilter: 'blur(4px)',
-                color: ts.tagText,
-                textTransform: 'lowercase',
-                transition: 'border-color 400ms ease, background 400ms ease, color 400ms ease',
-              }}
-            >
-              {tag}
-            </span>
-          ))}
-          {tags.length > 3 && (
-            <span
-              style={{
-                fontFamily: 'var(--font-ui)',
-                fontSize: '0.52rem',
-                fontWeight: 500,
-                padding: '2px 6px',
-                borderRadius: 999,
-                color: ts.tagText,
-                opacity: 0.6,
-              }}
-            >
-              +{tags.length - 3}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* ── Bottom edge shadow (page depth) ──────────────── */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: 6,
-          background: ts.bottomEdge,
-          zIndex: 7,
-          pointerEvents: 'none',
-        }}
-      />
     </div>
   )
 }
@@ -1138,7 +590,7 @@ function BookCard({
       style={{ position: 'relative' }}
       onMouseLeave={() => { setMenuOpen(false); setConfirmDelete(false) }}
     >
-      {/* Context menu button */}
+      {/* Context menu button — 44px touch target */}
       {(onArchive || onDelete) && (
         <button
           type="button"
@@ -1146,27 +598,25 @@ function BookCard({
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpen(!menuOpen); setConfirmDelete(false) }}
           style={{
             position: 'absolute',
-            top: 8,
-            right: 8,
+            top: 'var(--space-1)',
+            right: 'var(--space-1)',
             zIndex: 10,
-            width: 28,
-            height: 28,
-            borderRadius: '50%',
-            background: 'rgba(0,0,0,0.5)',
+            width: 44,
+            height: 44,
+            borderRadius: 'var(--radius-full)',
+            background: 'var(--chrome-glass)',
             border: 'none',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             opacity: 0,
-            transition: 'opacity 200ms ease',
-            color: '#fff',
-            fontSize: '14px',
-            fontWeight: 700,
+            transition: 'opacity var(--duration-base) var(--ease-standard)',
+            color: 'var(--chrome-hover-text)',
           }}
           className="book-card-menu-btn"
         >
-          ···
+          <MoreHorizontal size={18} strokeWidth={2} aria-hidden />
         </button>
       )}
 
@@ -1175,15 +625,15 @@ function BookCard({
         <div
           style={{
             position: 'absolute',
-            top: 40,
-            right: 8,
+            top: 'var(--space-7)',
+            right: 'var(--space-2)',
             zIndex: 20,
-            background: 'var(--chrome-surface, #1a1a2e)',
-            border: '1px solid var(--chrome-border, #333)',
-            borderRadius: 8,
-            padding: '4px 0',
+            background: 'var(--chrome-surface)',
+            border: 'var(--hairline)',
+            borderRadius: 'var(--radius-2)',
+            padding: 'var(--space-1) 0',
             minWidth: 140,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+            boxShadow: 'var(--shadow-3)',
           }}
           onClick={(e) => e.preventDefault()}
         >
@@ -1194,12 +644,12 @@ function BookCard({
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onArchive(book.id); setMenuOpen(false) }}
                   style={{
-                    display: 'block', width: '100%', padding: '8px 16px', border: 'none',
+                    display: 'block', width: '100%', minHeight: 44, padding: 'var(--space-2) var(--space-4)', border: 'none',
                     background: 'none', color: 'var(--chrome-text)', cursor: 'pointer', textAlign: 'left',
                     fontFamily: 'var(--font-ui)', fontSize: '0.82rem',
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'none' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--chrome-hover-text)' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--chrome-text)' }}
                 >
                   Archive
                 </button>
@@ -1209,29 +659,29 @@ function BookCard({
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setConfirmDelete(true) }}
                   style={{
-                    display: 'block', width: '100%', padding: '8px 16px', border: 'none',
+                    display: 'block', width: '100%', minHeight: 44, padding: 'var(--space-2) var(--space-4)', border: 'none',
                     background: 'none', color: 'var(--color-error, #f87171)', cursor: 'pointer', textAlign: 'left',
                     fontFamily: 'var(--font-ui)', fontSize: '0.82rem',
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(248,113,113,0.08)' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'none' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.7' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
                 >
                   Delete
                 </button>
               )}
             </>
           ) : (
-            <div style={{ padding: '8px 12px' }}>
-              <p style={{ fontSize: '0.78rem', color: 'var(--color-error, #fca5a5)', margin: '0 0 8px 0', lineHeight: 1.4, fontFamily: 'var(--font-ui)' }}>
+            <div style={{ padding: 'var(--space-2) var(--space-3)' }}>
+              <p style={{ fontSize: '0.78rem', color: 'var(--color-error, #fca5a5)', margin: '0 0 var(--space-2) 0', lineHeight: 1.4, fontFamily: 'var(--font-ui)' }}>
                 Delete "{book.title}"? This cannot be undone.
               </p>
-              <div style={{ display: 'flex', gap: 6 }}>
+              <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onDelete!(book.id); setMenuOpen(false); setConfirmDelete(false) }}
                   style={{
-                    flex: 1, padding: '6px', border: 'none', borderRadius: 4,
-                    background: '#dc2626', color: '#fff', cursor: 'pointer',
+                    flex: 1, minHeight: 44, padding: 'var(--space-2)', border: 'none', borderRadius: 'var(--radius-1)',
+                    background: 'var(--color-error, #dc2626)', color: '#fff', cursor: 'pointer',
                     fontFamily: 'var(--font-ui)', fontSize: '0.75rem', fontWeight: 600,
                   }}
                 >
@@ -1241,8 +691,8 @@ function BookCard({
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setConfirmDelete(false) }}
                   style={{
-                    flex: 1, padding: '6px', border: '1px solid var(--chrome-border)',
-                    borderRadius: 4, background: 'none', color: 'var(--chrome-text)', cursor: 'pointer',
+                    flex: 1, minHeight: 44, padding: 'var(--space-2)', border: 'var(--hairline)',
+                    borderRadius: 'var(--radius-1)', background: 'none', color: 'var(--chrome-text)', cursor: 'pointer',
                     fontFamily: 'var(--font-ui)', fontSize: '0.75rem',
                   }}
                 >
@@ -1258,30 +708,25 @@ function BookCard({
         to={`/book/${book.id}`}
         style={{ textDecoration: 'none', display: 'block' }}
       >
-        <RoughBox
-          stroke={theme === 'light' ? 'rgba(0,0,0,0.10)' : 'var(--chrome-border)'}
-          strokeWidth={1.2}
-          roughness={1.5}
-          seed={hashSeed(book.id)}
-          padding="0"
-        >
           <div
             style={{
               background: ps.bookInfoBg,
-              borderRadius: 6,
+              border: 'var(--hairline)',
+              borderRadius: 'var(--radius-3)',
               overflow: 'hidden',
+              boxShadow: 'var(--shadow-1)',
               transition:
-                'transform 200ms ease, box-shadow 200ms ease',
+                'transform var(--duration-base) var(--ease-standard), box-shadow var(--duration-base) var(--ease-standard)',
             }}
             onMouseEnter={(e) => {
               const el = e.currentTarget
-              el.style.transform = 'scale(1.02)'
-              el.style.boxShadow = ps.cardHoverGlow
+              el.style.transform = 'translateY(-2px)'
+              el.style.boxShadow = 'var(--shadow-3)'
             }}
             onMouseLeave={(e) => {
               const el = e.currentTarget
-              el.style.transform = 'scale(1)'
-              el.style.boxShadow = 'none'
+              el.style.transform = 'translateY(0)'
+              el.style.boxShadow = 'var(--shadow-1)'
             }}
           >
             {/* Generated cover */}
@@ -1365,24 +810,23 @@ function BookCard({
                   <div style={{
                     width: '100%',
                     height: 3,
-                    borderRadius: 2,
-                    background: 'rgba(128,128,128,0.15)',
-                    marginTop: 6,
+                    borderRadius: 'var(--radius-full)',
+                    background: 'var(--hairline-color)',
+                    marginTop: 'var(--space-2)',
                     overflow: 'hidden',
                   }}>
                     <div style={{
                       width: `${pct}%`,
                       height: '100%',
-                      borderRadius: 2,
-                      background: pct === 100 ? '#16a34a' : 'var(--chrome-accent, #52FEFE)',
-                      transition: 'width 300ms ease',
+                      borderRadius: 'var(--radius-full)',
+                      background: pct === 100 ? 'var(--color-success, #16a34a)' : 'var(--accent)',
+                      transition: 'width var(--duration-slow) var(--ease-standard)',
                     }} />
                   </div>
                 )
               })()}
             </div>
           </div>
-        </RoughBox>
       </Link>
     </motion.div>
   )
@@ -1447,28 +891,29 @@ function ArchivedSection({ books, theme, onChange }: { books: BookSummary[]; the
                 }}
                 style={{
                   position: 'absolute',
-                  top: 8,
-                  right: 8,
+                  top: 'var(--space-2)',
+                  right: 'var(--space-2)',
                   zIndex: 10,
-                  padding: '6px 14px',
-                  borderRadius: 6,
-                  background: 'rgba(212,175,55,0.15)',
-                  border: '1px solid rgba(212,175,55,0.3)',
-                  color: '#d4af37',
+                  minHeight: 44,
+                  padding: 'var(--space-2) var(--space-4)',
+                  borderRadius: 'var(--radius-2)',
+                  background: 'color-mix(in srgb, var(--accent) 12%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--accent) 30%, transparent)',
+                  color: 'var(--accent)',
                   cursor: 'pointer',
                   fontFamily: 'var(--font-ui)',
                   fontSize: '0.72rem',
                   fontWeight: 600,
                   letterSpacing: '0.04em',
-                  transition: 'all 200ms ease',
+                  transition: 'background var(--duration-base) var(--ease-standard), border-color var(--duration-base) var(--ease-standard)',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(212,175,55,0.25)'
-                  e.currentTarget.style.borderColor = '#d4af37'
+                  e.currentTarget.style.background = 'color-mix(in srgb, var(--accent) 20%, transparent)'
+                  e.currentTarget.style.borderColor = 'var(--accent)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(212,175,55,0.15)'
-                  e.currentTarget.style.borderColor = 'rgba(212,175,55,0.3)'
+                  e.currentTarget.style.background = 'color-mix(in srgb, var(--accent) 12%, transparent)'
+                  e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--accent) 30%, transparent)'
                 }}
               >
                 Unarchive
@@ -1494,7 +939,7 @@ import ErrorState from '@/components/shared/ErrorState'
 
 function BookshelfSkeleton() {
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--chrome-bg)', padding: '3rem 2rem' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--paper-bg)', padding: '3rem 2rem' }}>
       <ShimmerStyle />
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24, marginTop: 48 }}>
@@ -1517,14 +962,14 @@ function EmptyState() {
         alignItems: 'center',
         justifyContent: 'center',
         gap: 16,
-        background: 'var(--chrome-bg)',
+        background: 'var(--paper-bg)',
       }}
     >
       <p
         style={{
-          fontFamily: 'var(--font-handwritten)',
+          fontFamily: 'var(--font-heading)',
           fontSize: '1.4rem',
-          color: 'var(--chrome-text)',
+          color: 'var(--ink-secondary)',
           textAlign: 'center',
           maxWidth: 420,
           lineHeight: 1.5,
@@ -1580,7 +1025,7 @@ export default function Bookshelf() {
 
   if (error) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--chrome-bg)' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--paper-bg)' }}>
         <ErrorState message={error} icon="error" onRetry={refetch} />
       </div>
     )
@@ -1608,17 +1053,16 @@ export default function Bookshelf() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
               style={{
-                fontFamily: "'Rajdhani', var(--font-ui)",
-                fontSize: 'clamp(1.6rem, 5vw, 2.4rem)',
-                fontWeight: 700,
+                fontFamily: 'var(--font-heading)',
+                fontSize: 'clamp(1.8rem, 5vw, 2.6rem)',
+                fontWeight: 600,
                 color: ps.titleColor,
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                margin: '0 0 0.25rem 0',
-                transition: 'color 400ms ease',
+                letterSpacing: '-0.01em',
+                margin: '0 0 var(--space-1) 0',
+                transition: 'color var(--duration-slow) var(--ease-standard)',
               }}
             >
-              ATHENEUM
+              Atheneum
             </motion.h1>
             <motion.p
               initial={{ opacity: 0 }}
@@ -1652,35 +1096,20 @@ export default function Bookshelf() {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                background: theme === 'light' ? 'rgba(0,0,0,0.04)' : 'var(--chrome-surface)',
-                border: `1px solid ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'var(--chrome-border)'}`,
-                borderRadius: 22,
+                background: theme === 'light' ? 'color-mix(in srgb, var(--ink-primary) 4%, transparent)' : 'var(--chrome-surface)',
+                border: 'var(--hairline)',
+                borderRadius: 'var(--radius-full)',
                 padding: 3,
                 gap: 2,
                 width: 150,
               }}
             >
               {([
-                { key: 'light' as AppTheme, icon: '\u2600', label: 'Light' },
-                { key: 'dark' as AppTheme, icon: '\uD83C\uDF19', label: 'Dark' },
-                { key: 'sepia' as AppTheme, icon: '\uD83E\uDEB6', label: 'Sepia' },
-              ]).map(({ key, icon }) => {
+                { key: 'light' as AppTheme, Icon: Sun, label: 'Light' },
+                { key: 'dark' as AppTheme, Icon: Moon, label: 'Dark' },
+                { key: 'sepia' as AppTheme, Icon: Coffee, label: 'Sepia' },
+              ]).map(({ key, Icon, label }) => {
                 const isActive = theme === key
-                const activeBg = key === 'dark'
-                  ? 'rgba(82,254,254,0.20)'
-                  : key === 'sepia'
-                    ? 'rgba(180,140,80,0.20)'
-                    : 'rgba(255,255,255,0.90)'
-                const activeTextColor = key === 'dark'
-                  ? '#52FEFE'
-                  : key === 'sepia'
-                    ? '#d4a850'
-                    : '#333'
-                const activeGlow = key === 'dark'
-                  ? '0 0 12px rgba(82,254,254,0.25), inset 0 0 8px rgba(82,254,254,0.08)'
-                  : key === 'sepia'
-                    ? '0 0 12px rgba(180,140,80,0.20), inset 0 0 8px rgba(180,140,80,0.06)'
-                    : '0 1px 6px rgba(0,0,0,0.10)'
                 return (
                   <button
                     type="button"
@@ -1690,41 +1119,32 @@ export default function Bookshelf() {
                       document.documentElement.setAttribute('data-theme', key)
                       window.dispatchEvent(new Event('storage'))
                     }}
-                    aria-label={`Switch to ${key} theme`}
+                    aria-label={`Switch to ${label} theme`}
+                    aria-pressed={isActive}
                     style={{
                       flex: 1,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: 0,
-                      height: 32,
+                      height: 36,
                       border: 'none',
                       outline: 'none',
                       cursor: 'pointer',
-                      padding: '0 4px',
-                      borderRadius: 18,
-                      background: isActive ? activeBg : 'transparent',
-                      boxShadow: isActive ? activeGlow : 'none',
-                      color: isActive ? activeTextColor : (theme === 'light' ? 'rgba(0,0,0,0.4)' : 'var(--chrome-text)'),
-                      fontFamily: 'var(--font-ui)',
-                      fontSize: '1rem',
-                      fontWeight: isActive ? 600 : 400,
-                      transition: 'all 250ms ease',
-                      transform: isActive ? 'scale(1.08)' : 'scale(1)',
-                      opacity: isActive ? 1 : 0.5,
+                      padding: '0 var(--space-1)',
+                      borderRadius: 'var(--radius-full)',
+                      background: isActive ? 'color-mix(in srgb, var(--accent) 16%, transparent)' : 'transparent',
+                      color: isActive ? 'var(--accent)' : (theme === 'light' ? 'var(--ink-faint)' : 'var(--chrome-text)'),
+                      transition: 'background var(--duration-base) var(--ease-standard), color var(--duration-base) var(--ease-standard), opacity var(--duration-base) var(--ease-standard)',
+                      opacity: isActive ? 1 : 0.6,
                     }}
                     onMouseEnter={(e) => {
-                      if (!isActive) {
-                        e.currentTarget.style.opacity = '0.85'
-                        e.currentTarget.style.transform = 'scale(1.08)'
-                      }
+                      if (!isActive) e.currentTarget.style.opacity = '0.9'
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.opacity = isActive ? '1' : '0.5'
-                      e.currentTarget.style.transform = isActive ? 'scale(1.08)' : 'scale(1)'
+                      e.currentTarget.style.opacity = isActive ? '1' : '0.6'
                     }}
                   >
-                    <span style={{ fontSize: '1.1rem', lineHeight: 1 }}>{icon}</span>
+                    <Icon size={16} strokeWidth={2} aria-hidden />
                   </button>
                 )
               })}

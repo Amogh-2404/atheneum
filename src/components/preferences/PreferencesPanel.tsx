@@ -1,7 +1,19 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
+import { X, Download, Trash2, AlertTriangle } from 'lucide-react'
 
 /* ─── Types ────────────────────────────────────────────────────────── */
+
+/* Destructive intent — not the brand accent; consolidated so the red lives
+   in exactly one place rather than sprayed across button styles. */
+const DANGER = {
+  text: '#dc2626',
+  textSoft: '#b91c1c',
+  surface: 'color-mix(in srgb, #dc2626 8%, transparent)',
+  surfaceHover: 'color-mix(in srgb, #dc2626 14%, transparent)',
+  border: 'color-mix(in srgb, #dc2626 24%, transparent)',
+  borderHover: 'color-mix(in srgb, #dc2626 44%, transparent)',
+}
 
 interface Preferences {
   fontSize: number       // rem value, 0.85 – 1.5
@@ -19,9 +31,10 @@ const DEFAULTS: Preferences = {
 
 const STORAGE_KEY = 'atheneum-preferences'
 
+// Swatch colours mirror each theme's actual --paper-bg so the preview reads true.
 const THEMES: { key: Preferences['theme']; color: string; label: string }[] = [
   { key: 'light', color: '#faf8f3', label: 'Light' },
-  { key: 'dark', color: '#1a1a2e', label: 'Dark' },
+  { key: 'dark', color: '#16161A', label: 'Dark' },
   { key: 'sepia', color: '#f4ecd8', label: 'Sepia' },
 ]
 
@@ -96,18 +109,21 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
         style={{
           fontFamily: 'var(--font-ui)',
           fontSize: '0.85rem',
-          color: '#e2e8f0',
-          letterSpacing: '0.01em',
+          color: 'var(--chrome-hover-text)',
         }}
       >
         {label}
       </span>
       <div
         onClick={(e) => { e.preventDefault(); onChange(!checked) }}
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
         style={{
-          width: 40,
-          height: 22,
-          borderRadius: 11,
+          width: 44,
+          height: 24,
+          minHeight: 24,
+          borderRadius: 'var(--radius-4)',
           background: checked ? 'var(--chrome-accent)' : 'var(--chrome-border)',
           position: 'relative',
           transition: 'background 200ms ease',
@@ -117,13 +133,13 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
       >
         <div
           style={{
-            width: 16,
-            height: 16,
+            width: 18,
+            height: 18,
             borderRadius: '50%',
-            background: checked ? '#0a0a1a' : '#94a3b8',
+            background: checked ? 'var(--chrome-bg)' : 'var(--chrome-text)',
             position: 'absolute',
             top: 3,
-            left: checked ? 21 : 3,
+            left: checked ? 23 : 3,
             transition: 'left 200ms ease, background 200ms ease',
           }}
         />
@@ -178,19 +194,19 @@ export default function PreferencesPanel({ onClose }: Props) {
     setConfirmingClear(false)
   }, [])
 
-  // Section header style
+  // Section header style — uppercase eyebrow, the one place tracking is allowed
   const sectionHeaderStyle: React.CSSProperties = {
-    fontFamily: "'Rajdhani', var(--font-heading)",
+    fontFamily: 'var(--font-ui)',
     fontSize: '0.75rem',
-    fontWeight: 700,
+    fontWeight: 600,
     color: 'var(--chrome-accent)',
     letterSpacing: '0.1em',
     textTransform: 'uppercase',
-    margin: '0 0 0.75rem 0',
+    margin: '0 0 var(--space-3) 0',
   }
 
   const sectionStyle: React.CSSProperties = {
-    padding: '1rem 0',
+    padding: 'var(--space-4) 0',
     borderBottom: '1px solid var(--chrome-border)',
   }
 
@@ -206,7 +222,7 @@ export default function PreferencesPanel({ onClose }: Props) {
         style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(0, 0, 0, 0.4)',
+          background: 'var(--chrome-glass)',
           zIndex: 90,
         }}
       />
@@ -230,14 +246,14 @@ export default function PreferencesPanel({ onClose }: Props) {
           borderLeft: '1px solid var(--chrome-border)',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '-8px 0 32px rgba(0, 0, 0, 0.3)',
+          boxShadow: 'var(--shadow-4)',
           fontFamily: 'var(--font-ui)',
         }}
       >
         {/* Header */}
         <div
           style={{
-            padding: '1.25rem 1.5rem',
+            padding: 'var(--space-5) var(--space-5)',
             borderBottom: '1px solid var(--chrome-border)',
             display: 'flex',
             alignItems: 'center',
@@ -246,9 +262,9 @@ export default function PreferencesPanel({ onClose }: Props) {
         >
           <h2
             style={{
-              fontFamily: "'Rajdhani', var(--font-heading)",
+              fontFamily: 'var(--font-heading)',
               fontSize: isMobile ? '1.25rem' : '1.5rem',
-              fontWeight: 700,
+              fontWeight: 600,
               color: 'var(--chrome-accent)',
               margin: 0,
             }}
@@ -258,24 +274,23 @@ export default function PreferencesPanel({ onClose }: Props) {
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close preferences"
             style={{
-              background: isMobile ? 'rgba(82, 254, 254, 0.08)' : 'none',
+              background: isMobile ? 'var(--chrome-bg)' : 'none',
               border: '1px solid var(--chrome-border)',
-              borderRadius: isMobile ? 8 : 4,
+              borderRadius: 'var(--radius-2)',
               color: 'var(--chrome-text)',
               cursor: 'pointer',
-              width: isMobile ? 44 : 28,
-              height: isMobile ? 44 : 28,
+              width: 44,
+              height: 44,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: isMobile ? '20px' : '14px',
-              fontFamily: 'var(--font-ui)',
-              fontWeight: isMobile ? 700 : 400,
+              flexShrink: 0,
               transition: 'color 200ms ease, border-color 200ms ease',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = 'var(--chrome-hover-text, #f1f5f9)'
+              e.currentTarget.style.color = 'var(--chrome-hover-text)'
               e.currentTarget.style.borderColor = 'var(--chrome-accent)'
             }}
             onMouseLeave={(e) => {
@@ -283,7 +298,7 @@ export default function PreferencesPanel({ onClose }: Props) {
               e.currentTarget.style.borderColor = 'var(--chrome-border)'
             }}
           >
-            &times;
+            <X size={18} strokeWidth={2} aria-hidden />
           </button>
         </div>
 
@@ -299,8 +314,8 @@ export default function PreferencesPanel({ onClose }: Props) {
           <div style={sectionStyle}>
             <h3 style={sectionHeaderStyle}>Reading</h3>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ fontSize: '0.85rem', color: '#e2e8f0' }}>Font Size</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-1)' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--chrome-hover-text)' }}>Font Size</span>
               <span
                 style={{
                   fontSize: '0.75rem',
@@ -345,10 +360,10 @@ export default function PreferencesPanel({ onClose }: Props) {
             {/* Preview */}
             <div
               style={{
-                marginTop: '0.75rem',
-                padding: '0.75rem',
-                background: 'rgba(82, 254, 254, 0.03)',
-                borderRadius: 6,
+                marginTop: 'var(--space-3)',
+                padding: 'var(--space-3)',
+                background: 'var(--chrome-bg)',
+                borderRadius: 'var(--radius-2)',
                 border: '1px solid var(--chrome-border)',
               }}
             >
@@ -356,7 +371,7 @@ export default function PreferencesPanel({ onClose }: Props) {
                 style={{
                   fontSize: `${prefs.fontSize}rem`,
                   fontFamily: 'var(--font-body)',
-                  color: '#e2e8f0',
+                  color: 'var(--chrome-hover-text)',
                   margin: 0,
                   lineHeight: 1.6,
                 }}
@@ -384,58 +399,62 @@ export default function PreferencesPanel({ onClose }: Props) {
           {/* ─── Theme ─── */}
           <div style={sectionStyle}>
             <h3 style={sectionHeaderStyle}>Theme</h3>
-            <div style={{ display: 'flex', gap: 16, padding: '0.25rem 0' }}>
-              {THEMES.map((t) => (
-                <button
-                  type="button"
-                  key={t.key}
-                  onClick={() => update('theme', t.key)}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: 6,
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '0.4rem 0.6rem',
-                    borderRadius: 8,
-                    transition: 'background 150ms ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(82, 254, 254, 0.06)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'none'
-                  }}
-                >
-                  <div
+            <div style={{ display: 'flex', gap: 'var(--space-4)', padding: 'var(--space-1) 0' }}>
+              {THEMES.map((t) => {
+                const active = prefs.theme === t.key
+                return (
+                  <button
+                    type="button"
+                    key={t.key}
+                    onClick={() => update('theme', t.key)}
+                    aria-pressed={active}
                     style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: '50%',
-                      background: t.color,
-                      border: prefs.theme === t.key
-                        ? '3px solid var(--chrome-accent)'
-                        : '2px solid var(--chrome-border)',
-                      transition: 'border-color 200ms ease, transform 200ms ease',
-                      transform: prefs.theme === t.key ? 'scale(1.1)' : 'scale(1)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 'var(--space-2)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 'var(--space-2)',
+                      minHeight: 44,
+                      borderRadius: 'var(--radius-2)',
+                      transition: 'background 150ms ease',
                     }}
-                  />
-                  <span
-                    style={{
-                      fontFamily: 'var(--font-ui)',
-                      fontSize: '0.7rem',
-                      color: prefs.theme === t.key ? 'var(--chrome-accent)' : 'var(--chrome-text)',
-                      fontWeight: prefs.theme === t.key ? 600 : 400,
-                      letterSpacing: '0.02em',
-                      transition: 'color 200ms ease',
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'var(--chrome-bg)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'none'
                     }}
                   >
-                    {t.label}
-                  </span>
-                </button>
-              ))}
+                    <div
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: '50%',
+                        background: t.color,
+                        border: active
+                          ? '2px solid var(--chrome-accent)'
+                          : '1px solid var(--chrome-border)',
+                        boxShadow: active ? '0 0 0 2px var(--chrome-surface), 0 0 0 3px var(--chrome-accent)' : 'none',
+                        transition: 'border-color 200ms ease, box-shadow 200ms ease',
+                      }}
+                    />
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-ui)',
+                        fontSize: '0.7rem',
+                        color: active ? 'var(--chrome-accent)' : 'var(--chrome-text)',
+                        fontWeight: active ? 600 : 400,
+                        transition: 'color 200ms ease',
+                      }}
+                    >
+                      {t.label}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           </div>
 
@@ -448,27 +467,32 @@ export default function PreferencesPanel({ onClose }: Props) {
               onClick={handleExport}
               style={{
                 width: '100%',
-                padding: '0.6rem 1rem',
+                minHeight: 44,
+                padding: 'var(--space-2) var(--space-4)',
                 fontFamily: 'var(--font-ui)',
                 fontSize: '0.82rem',
                 color: 'var(--chrome-accent)',
-                background: 'rgba(82, 254, 254, 0.06)',
+                background: 'var(--chrome-bg)',
                 border: '1px solid var(--chrome-border)',
-                borderRadius: 6,
+                borderRadius: 'var(--radius-2)',
                 cursor: 'pointer',
                 transition: 'background 150ms ease, border-color 150ms ease',
-                marginBottom: 8,
-                letterSpacing: '0.02em',
+                marginBottom: 'var(--space-2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 'var(--space-2)',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(82, 254, 254, 0.12)'
+                e.currentTarget.style.background = 'var(--chrome-surface)'
                 e.currentTarget.style.borderColor = 'var(--chrome-accent)'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(82, 254, 254, 0.06)'
+                e.currentTarget.style.background = 'var(--chrome-bg)'
                 e.currentTarget.style.borderColor = 'var(--chrome-border)'
               }}
             >
+              <Download size={15} strokeWidth={2} aria-hidden />
               Export Annotations
             </button>
 
@@ -478,63 +502,76 @@ export default function PreferencesPanel({ onClose }: Props) {
                 onClick={() => setConfirmingClear(true)}
                 style={{
                   width: '100%',
-                  padding: '0.6rem 1rem',
+                  minHeight: 44,
+                  padding: 'var(--space-2) var(--space-4)',
                   fontFamily: 'var(--font-ui)',
                   fontSize: '0.82rem',
-                  color: '#f87171',
-                  background: 'rgba(248, 113, 113, 0.06)',
-                  border: '1px solid rgba(248, 113, 113, 0.2)',
-                  borderRadius: 6,
+                  color: DANGER.text,
+                  background: DANGER.surface,
+                  border: `1px solid ${DANGER.border}`,
+                  borderRadius: 'var(--radius-2)',
                   cursor: 'pointer',
                   transition: 'background 150ms ease, border-color 150ms ease',
-                  letterSpacing: '0.02em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 'var(--space-2)',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(248, 113, 113, 0.12)'
-                  e.currentTarget.style.borderColor = 'rgba(248, 113, 113, 0.4)'
+                  e.currentTarget.style.background = DANGER.surfaceHover
+                  e.currentTarget.style.borderColor = DANGER.borderHover
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(248, 113, 113, 0.06)'
-                  e.currentTarget.style.borderColor = 'rgba(248, 113, 113, 0.2)'
+                  e.currentTarget.style.background = DANGER.surface
+                  e.currentTarget.style.borderColor = DANGER.border
                 }}
               >
+                <Trash2 size={15} strokeWidth={2} aria-hidden />
                 Clear All Data
               </button>
             ) : (
               <div
                 style={{
-                  padding: '0.75rem',
-                  background: 'rgba(248, 113, 113, 0.08)',
-                  border: '1px solid rgba(248, 113, 113, 0.3)',
-                  borderRadius: 6,
+                  padding: 'var(--space-3)',
+                  background: DANGER.surface,
+                  border: `1px solid ${DANGER.border}`,
+                  borderRadius: 'var(--radius-2)',
                 }}
               >
                 <p
                   style={{
                     fontSize: '0.8rem',
-                    color: '#fca5a5',
-                    margin: '0 0 0.5rem 0',
+                    color: DANGER.text,
+                    margin: '0 0 var(--space-2) 0',
                     lineHeight: 1.5,
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 'var(--space-2)',
                   }}
                 >
+                  <AlertTriangle size={16} strokeWidth={2} aria-hidden style={{ flexShrink: 0, marginTop: 2 }} />
                   This will permanently delete all annotations, bookmarks, notes, and reading progress. Are you sure?
                 </p>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
                   <button
                     type="button"
                     onClick={handleClearAll}
                     style={{
                       flex: 1,
-                      padding: '0.5rem',
+                      minHeight: 44,
+                      padding: 'var(--space-2)',
                       fontFamily: 'var(--font-ui)',
                       fontSize: '0.78rem',
-                      color: '#fff',
-                      background: '#dc2626',
+                      color: 'var(--chrome-bg)',
+                      background: DANGER.text,
                       border: 'none',
-                      borderRadius: 4,
+                      borderRadius: 'var(--radius-1)',
                       cursor: 'pointer',
                       fontWeight: 600,
+                      transition: 'background 150ms ease',
                     }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = DANGER.textSoft }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = DANGER.text }}
                   >
                     Yes, clear everything
                   </button>
@@ -543,13 +580,14 @@ export default function PreferencesPanel({ onClose }: Props) {
                     onClick={() => setConfirmingClear(false)}
                     style={{
                       flex: 1,
-                      padding: '0.5rem',
+                      minHeight: 44,
+                      padding: 'var(--space-2)',
                       fontFamily: 'var(--font-ui)',
                       fontSize: '0.78rem',
                       color: 'var(--chrome-text)',
                       background: 'none',
                       border: '1px solid var(--chrome-border)',
-                      borderRadius: 4,
+                      borderRadius: 'var(--radius-1)',
                       cursor: 'pointer',
                     }}
                   >
@@ -568,28 +606,28 @@ export default function PreferencesPanel({ onClose }: Props) {
           -webkit-appearance: none;
           appearance: none;
           background: var(--chrome-border);
-          border-radius: 2px;
+          border-radius: var(--radius-1);
           outline: none;
         }
         .preferences-panel input[type="range"]::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
-          width: 16px;
-          height: 16px;
+          width: 18px;
+          height: 18px;
           border-radius: 50%;
           background: var(--chrome-accent);
           cursor: pointer;
           border: 2px solid var(--chrome-surface);
-          box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+          box-shadow: var(--shadow-1);
         }
         .preferences-panel input[type="range"]::-moz-range-thumb {
-          width: 16px;
-          height: 16px;
+          width: 18px;
+          height: 18px;
           border-radius: 50%;
           background: var(--chrome-accent);
           cursor: pointer;
           border: 2px solid var(--chrome-surface);
-          box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+          box-shadow: var(--shadow-1);
         }
       `}</style>
     </>

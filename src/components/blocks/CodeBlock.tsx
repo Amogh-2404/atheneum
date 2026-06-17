@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useCallback } from 'react'
+import { Check, Copy, ArrowRight } from 'lucide-react'
 import type { CodeBlock as CodeBlockType } from '@/types'
 import { useToast } from '@/hooks/useToast'
 import { useLearningProgress } from '@/hooks/useLearningProgress'
@@ -33,12 +34,18 @@ const PRELOADED_LANGS = [
   'diff',
 ]
 
+// Dual theme: light/sepia surfaces render the light palette, dark renders the
+// dark one. Shiki emits both in a single pass (inline color + --shiki-dark var),
+// so a [data-theme] change flips colors via CSS with no re-highlight.
+const LIGHT_THEME = 'github-light'
+const DARK_THEME = 'github-dark'
+
 async function getHighlighter() {
   if (!highlighterPromise) {
     highlighterPromise = import('shiki')
       .then(async (shiki) => {
         return shiki.createHighlighter({
-          themes: ['github-dark'],
+          themes: [LIGHT_THEME, DARK_THEME],
           langs: PRELOADED_LANGS,
         })
       })
@@ -55,7 +62,9 @@ async function getHighlighter() {
 getHighlighter()
 
 /**
- * Highlight code with Shiki and return per-line token spans.
+ * Highlight code with Shiki (dual-theme) and return per-line token spans.
+ * Each token carries an inline light color plus a --shiki-dark var so the
+ * surface re-themes via CSS on [data-theme] change with no re-highlight.
  * Falls back to null if Shiki is unavailable or the language is unsupported.
  */
 async function highlightCode(
@@ -98,10 +107,13 @@ async function highlightCode(
       }
     }
 
-    // Use codeToHtml and extract the inner content
+    // Use codeToHtml with dual themes and extract the inner content. Each token
+    // carries an inline `color` (light) plus a `--shiki-dark` custom property
+    // (dark); terminal.css selects per [data-theme].
     const html = highlighter.codeToHtml(code, {
       lang,
-      theme: 'github-dark',
+      themes: { light: LIGHT_THEME, dark: DARK_THEME },
+      defaultColor: 'light',
     })
 
     // Shiki output: <pre ...><code ...>LINE_CONTENT</code></pre>
@@ -144,9 +156,8 @@ async function highlightCode(
 // ─── CodeBlock Component ─────────────────────────────────────────────
 
 /**
- * Terminal code block — macOS window chrome "taped to the notebook page".
- * Uses CSS classes from terminal.css.
- * Shiki syntax highlighting loads asynchronously.
+ * Code block — a flat editorial card. Uses CSS classes from terminal.css.
+ * Syntax highlighting is theme-aware (Shiki dual-theme) and loads async.
  */
 export default function CodeBlock({
   id: blockId,
@@ -156,7 +167,8 @@ export default function CodeBlock({
   highlightLines,
   annotations,
   showLineNumbers = true,
-  tiltSeed,
+  // tiltSeed retained for prop/type compatibility; no longer used (skeuomorphism removed).
+  tiltSeed: _tiltSeed,
   predict,
   expectedOutput,
   bookId,
@@ -208,13 +220,6 @@ export default function CodeBlock({
     }
   }, [code, toast])
 
-  // Deterministic tilt from seed, range [-1.2, 1.2] degrees
-  const tilt = useMemo(() => {
-    if (tiltSeed == null) return -0.5
-    const hash = ((tiltSeed * 2654435761) >>> 0) / 4294967296
-    return (hash - 0.5) * 2.4
-  }, [tiltSeed])
-
   const highlightSet = useMemo(
     () => new Set(highlightLines ?? []),
     [highlightLines]
@@ -238,28 +243,19 @@ export default function CodeBlock({
   }, [code, language])
 
   return (
-    <div
-      className="terminal-window"
-      style={{ '--tilt': `${tilt}deg` } as React.CSSProperties}
-    >
-      {/* macOS title bar */}
+    <div className="terminal-window">
+      {/* Header: dots \u00b7 filename \u00b7 lang \u00b7 copy */}
       <div className="terminal-titlebar">
-        <div style={{ display: 'flex', gap: '6px' }}>
-          <span className="terminal-dot terminal-dot-close" />
-          <span className="terminal-dot terminal-dot-minimize" />
-          <span className="terminal-dot terminal-dot-maximize" />
+        <div className="terminal-dots" aria-hidden="true">
+          <span className="terminal-dot" />
+          <span className="terminal-dot" />
+          <span className="terminal-dot" />
         </div>
         {filename && <span className="terminal-filename">{filename}</span>}
         {language && (
           <span
-            style={{
-              fontFamily: 'var(--font-ui)',
-              fontSize: '0.6875rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              color: '#888',
-              marginLeft: filename ? '0' : 'auto',
-            }}
+            className="terminal-lang"
+            style={{ marginLeft: filename ? undefined : 'auto' }}
           >
             {language}
           </span>
@@ -267,34 +263,21 @@ export default function CodeBlock({
         <button
           type="button"
           onClick={handleCopy}
-          className="code-copy-btn"
-          style={{
-            marginLeft: 'auto',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: copied ? '#16a34a' : 'rgba(255,255,255,0.4)',
-            fontFamily: 'var(--font-ui)',
-            fontSize: '0.6875rem',
-            fontWeight: 600,
-            letterSpacing: '0.04em',
-            padding: '2px 6px',
-            borderRadius: 4,
-            transition: 'color 200ms, background 150ms',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-          }}
-          onMouseEnter={(e) => { if (!copied) e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
-          onMouseLeave={(e) => { if (!copied) e.currentTarget.style.color = 'rgba(255,255,255,0.4)' }}
+          className={copied ? 'code-copy-btn is-copied' : 'code-copy-btn'}
+          aria-label={copied ? 'Copied to clipboard' : 'Copy code to clipboard'}
         >
-          {copied ? '\u2713 Copied' : 'Copy'}
+          {copied ? (
+            <Check size={13} aria-hidden="true" />
+          ) : (
+            <Copy size={13} aria-hidden="true" />
+          )}
+          {copied ? 'Copied' : 'Copy'}
         </button>
       </div>
 
       {/* Code body */}
       <div className="terminal-body">
-        <pre style={{ margin: 0 }}>
+        <pre className="shiki">
           <code>
             {rawLines.map((line, i) => {
               const lineNum = i + 1
@@ -306,24 +289,21 @@ export default function CodeBlock({
                 <div
                   key={i}
                   className={
-                    isHighlighted ? 'terminal-line-highlighted' : undefined
+                    isHighlighted
+                      ? 'terminal-line terminal-line-highlighted'
+                      : 'terminal-line'
                   }
-                  style={{
-                    display: 'flex',
-                    padding: '0 1.5rem',
-                    minHeight: '1.7em',
-                  }}
                 >
                   {showLineNumbers && (
                     <span className="terminal-line-number">{lineNum}</span>
                   )}
                   {shikiHtml ? (
                     <span
-                      style={{ flex: 1, whiteSpace: 'pre' }}
+                      className="terminal-line-code"
                       dangerouslySetInnerHTML={{ __html: shikiHtml || '&nbsp;' }}
                     />
                   ) : (
-                    <span style={{ flex: 1, color: '#d4d4d4', whiteSpace: 'pre' }}>
+                    <span className="terminal-line-code">
                       {line || '\u00a0'}
                     </span>
                   )}
@@ -342,172 +322,75 @@ export default function CodeBlock({
 
       {/* ── Predict-the-output footer ── */}
       {isPredict && (
-        <div
-          style={{
-            borderTop: '1px solid rgba(255,255,255,0.08)',
-            background: 'rgba(0,0,0,0.18)',
-            padding: '0.85rem 1.5rem 1.05rem',
-          }}
-        >
+        <div className="terminal-predict">
           {!revealed ? (
             <>
-              <div
-                style={{
-                  fontFamily: 'var(--font-ui)',
-                  fontSize: '0.66rem',
-                  letterSpacing: '0.09em',
-                  textTransform: 'uppercase',
-                  color: 'rgba(255,255,255,0.5)',
-                  marginBottom: 8,
-                }}
-              >
+              <div className="terminal-predict-label">
                 Predict the output before you reveal it
               </div>
               <textarea
+                className="terminal-predict-input"
                 value={guess}
                 onChange={(e) => setGuess(e.target.value)}
                 placeholder="What does this print?"
                 spellCheck={false}
                 rows={2}
+                aria-label="Predict the output"
                 onKeyDown={(e) => {
                   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') handleReveal()
-                }}
-                style={{
-                  width: '100%',
-                  boxSizing: 'border-box',
-                  resize: 'vertical',
-                  fontFamily: 'var(--font-code)',
-                  fontSize: '0.85rem',
-                  lineHeight: 1.5,
-                  color: '#d4d4d4',
-                  background: 'rgba(0,0,0,0.3)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 5,
-                  padding: '0.5rem 0.6rem',
-                  outline: 'none',
                 }}
               />
               <button
                 type="button"
+                className="terminal-predict-reveal"
                 onClick={handleReveal}
-                style={{
-                  marginTop: 8,
-                  fontFamily: 'var(--font-ui)',
-                  fontSize: '0.72rem',
-                  fontWeight: 600,
-                  letterSpacing: '0.04em',
-                  color: '#0a0e17',
-                  background: 'var(--chrome-accent, #52FEFE)',
-                  border: 'none',
-                  borderRadius: 5,
-                  padding: '0.45rem 0.95rem',
-                  cursor: 'pointer',
-                }}
               >
                 Reveal output
               </button>
             </>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
               {hasGuess && (
                 <div>
-                  <div
-                    style={{
-                      fontFamily: 'var(--font-ui)',
-                      fontSize: '0.6rem',
-                      letterSpacing: '0.08em',
-                      textTransform: 'uppercase',
-                      color: 'rgba(255,255,255,0.4)',
-                      marginBottom: 4,
-                    }}
-                  >
-                    Your prediction
-                  </div>
-                  <pre
-                    style={{
-                      margin: 0,
-                      fontFamily: 'var(--font-code)',
-                      fontSize: '0.85rem',
-                      lineHeight: 1.5,
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
-                      color: 'rgba(212,212,212,0.65)',
-                      background: 'rgba(0,0,0,0.28)',
-                      border: '1px solid rgba(255,255,255,0.06)',
-                      borderRadius: 5,
-                      padding: '0.5rem 0.6rem',
-                    }}
-                  >
-                    {guess}
-                  </pre>
+                  <div className="terminal-predict-caption">Your prediction</div>
+                  <pre className="terminal-predict-block is-guess">{guess}</pre>
                 </div>
               )}
               <div>
-                <div
-                  style={{
-                    fontFamily: 'var(--font-ui)',
-                    fontSize: '0.6rem',
-                    letterSpacing: '0.08em',
-                    textTransform: 'uppercase',
-                    color: 'rgba(255,255,255,0.4)',
-                    marginBottom: 4,
-                  }}
-                >
-                  Actual output
-                </div>
+                <div className="terminal-predict-caption">Actual output</div>
                 <pre
-                  style={{
-                    margin: 0,
-                    fontFamily: 'var(--font-code)',
-                    fontSize: '0.85rem',
-                    lineHeight: 1.5,
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                    color: '#d4d4d4',
-                    background: 'rgba(0,0,0,0.32)',
-                    border: `1px solid ${matched || overridden ? 'rgba(74,222,128,0.35)' : 'rgba(255,255,255,0.08)'}`,
-                    borderRadius: 5,
-                    padding: '0.5rem 0.6rem',
-                  }}
+                  className={
+                    matched || overridden
+                      ? 'terminal-predict-block is-match'
+                      : 'terminal-predict-block'
+                  }
                 >
                   {expectedOutput}
                 </pre>
               </div>
               {hasGuess && (
                 <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    fontFamily: 'var(--font-ui)',
-                    fontSize: '0.74rem',
-                  }}
+                  className={
+                    matched || overridden
+                      ? 'terminal-predict-verdict is-match'
+                      : 'terminal-predict-verdict is-differ'
+                  }
                 >
                   {matched || overridden ? (
-                    <span style={{ color: '#4ade80', display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
+                    <>
+                      <Check size={14} aria-hidden="true" />
                       Matched
-                    </span>
+                    </>
                   ) : (
                     <>
-                      <span style={{ color: '#f59e0b' }}>Differs from the actual output</span>
+                      <span>Differs from the actual output</span>
                       <button
                         type="button"
+                        className="terminal-predict-override"
                         onClick={handleOverride}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          padding: 0,
-                          cursor: 'pointer',
-                          color: 'var(--chrome-accent, #52FEFE)',
-                          fontFamily: 'var(--font-ui)',
-                          fontSize: '0.74rem',
-                          fontWeight: 600,
-                        }}
                       >
-                        I was right &rarr;
+                        I was right{' '}
+                        <ArrowRight size={13} aria-hidden="true" style={{ verticalAlign: 'text-bottom' }} />
                       </button>
                     </>
                   )}

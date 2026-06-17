@@ -46,8 +46,8 @@ body {
 }
 
 ::selection {
-  background: rgba(82, 254, 254, 0.2);
-  color: #52FEFE;
+  background: rgba(47, 92, 138, 0.2);
+  color: var(--chrome-accent);
 }
 
 /* --------------------------------------------------------------------------
@@ -90,4 +90,9 @@ body {
 }
 @media (hover: hover) {
   .book-card:hover { box-shadow: var(--shadow-3); }
+}
+
+/* Knowledge Map: hide the minimap on phones — it overlaps the spine + facet bar. */
+@media (max-width: 768px) {
+  .react-flow__minimap { display: none !important; }
 }
