@@ -20,6 +20,16 @@ booksRouter.get('/', (c) => {
   if (existsSync(indexPath)) {
     try {
       const data = JSON.parse(readFileSync(indexPath, 'utf-8'))
+      // `chapterCount` in _index.json drifts whenever chapters are added/removed (the
+      // daemon writes a book's entry once and never updates it — runtime/pattern-codex
+      // showed 0 despite 12/11 chapters). Derive it from the actual chapters dir so the
+      // cover is always accurate; fall back to the stored value only if the dir is empty.
+      if (data && Array.isArray(data.books)) {
+        data.books = data.books.map((b: any) => ({
+          ...b,
+          chapterCount: countChapters(b.id) || b.chapterCount || 0,
+        }))
+      }
       return c.json(data)
     } catch {
       // Fall through to directory scan
