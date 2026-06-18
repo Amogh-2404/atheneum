@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useSyncExternalStore } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Highlighter, Bookmark as BookmarkIcon, StickyNote, HelpCircle, ArrowLeft } from 'lucide-react'
+import { Highlighter, Bookmark as BookmarkIcon, StickyNote, HelpCircle, ArrowLeft, Trash2 } from 'lucide-react'
 import { useBook } from '@/hooks/useBook'
 import { useAnnotations } from '@/hooks/useAnnotations'
+import { annotationStore } from '@/stores/annotationStore'
 import type { Annotation, Highlight, Bookmark, MarginNote, ConfusionMarker } from '@/hooks/useAnnotations'
 import { SkeletonBlock, ShimmerStyle } from '@/components/shared/Skeleton'
 import ErrorState from '@/components/shared/ErrorState'
@@ -36,22 +37,17 @@ const highlightColor = (c: string) => HIGHLIGHT_COLORS[c] || HIGHLIGHT_COLORS.ye
 export default function AnnotationNotebook() {
   const { bookId } = useParams()
   const { book, loading, error } = useBook(bookId)
-  // Called for its side effect: syncs this book's annotations from the server into
-  // localStorage, which allBookAnnotations (below) reads directly across all chapters.
-  useAnnotations(bookId)
+  // Hydrate this book + expose remove for the inline delete. useAnnotations triggers the
+  // store's one-time server hydrate; we read the LIVE store directly below so a highlight
+  // added in the Reader appears here instantly (and a delete here removes the Reader mark).
+  const { removeAnnotation } = useAnnotations(bookId)
+  const all = useSyncExternalStore(annotationStore.subscribe, annotationStore.getSnapshot)
   const [filter, setFilter] = useState<FilterType>('all')
   const [sortBy, setSortBy] = useState<SortBy>('chapter')
 
-  // Get all annotations for this book (not chapter-filtered, not type-filtered) —
-  // the single source the filtered view and the per-type counts both derive from.
-  const bookAnnotations = useMemo(() => {
-    try {
-      const raw = localStorage.getItem('atheneum-annotations')
-      if (!raw) return []
-      const all: Annotation[] = JSON.parse(raw)
-      return all.filter(a => a.bookId === bookId)
-    } catch { return [] }
-  }, [bookId])
+  // All annotations for this book (across chapters) — the single live source the filtered
+  // view and the per-type counts both derive from.
+  const bookAnnotations = useMemo(() => all.filter((a) => a.bookId === bookId), [all, bookId])
 
   // Per-type counts for the filter pills (count is independent of the active filter)
   const typeCounts = useMemo(() => {
@@ -154,7 +150,25 @@ export default function AnnotationNotebook() {
     else if (a.type === 'confusion') { Icon = HelpCircle; eyebrow = 'Confusion' }
 
     return (
-      <motion.div key={a.id} {...pressable}>
+      <motion.div key={a.id} {...pressable} style={{ position: 'relative' }}>
+        {/* Inline delete — removes from the live store, so the Reader's overlay rect
+            vanishes the instant this is tapped (the bidirectional half of the sync). */}
+        <button
+          type="button"
+          aria-label="Delete annotation"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeAnnotation(a.id) }}
+          onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = '#c0556a' }}
+          onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--ink-faint)' }}
+          style={{
+            position: 'absolute', top: 6, right: 6, zIndex: 2,
+            width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: 'none', borderRadius: 'var(--radius-full)', background: 'transparent',
+            color: 'var(--ink-faint)', opacity: 0.5, cursor: 'pointer',
+            transition: 'opacity 150ms, color 150ms',
+          }}
+        >
+          <Trash2 size={14} strokeWidth={2} />
+        </button>
         <Link
           to={link}
           style={{

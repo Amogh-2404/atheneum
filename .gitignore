@@ -42,6 +42,7 @@ build/
 .prereq-gen/
 .reader-plan/
 .hardening-plan/
+.highlight-plan/
 .aco-seed/
 .aco/state/
 .aco/attachments/

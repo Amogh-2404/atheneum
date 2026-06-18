@@ -1,23 +1,19 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-
-/* ─── Types ────────────────────────────────────────────────────────── */
+import { StickyNote, Copy, Check, Trash2 } from 'lucide-react'
 
 interface HighlightActionToolbarProps {
-  /** The highlight ID that was clicked */
   highlightId: string | null
-  /** Current color of the highlight */
   currentColor: string
-  /** Position (absolute, document coordinates) */
+  selectedText?: string
+  note?: string
   x: number
   y: number
-  /** Callbacks */
   onChangeColor: (id: string, color: string) => void
+  onUpdateNote: (id: string, note: string) => void
   onRemove: (id: string) => void
   onClose: () => void
 }
-
-/* ─── Highlight colours (same as AnnotationToolbar) ───────────────── */
 
 const COLORS: { key: string; hex: string }[] = [
   { key: 'yellow', hex: '#FFEB3B' },
@@ -27,181 +23,140 @@ const COLORS: { key: string; hex: string }[] = [
   { key: 'purple', hex: '#9575CD' },
 ]
 
-/* ─── Component ───────────────────────────────────────────────────── */
-
 export default function HighlightActionToolbar({
   highlightId,
   currentColor,
+  selectedText,
+  note,
   x,
   y,
   onChangeColor,
+  onUpdateNote,
   onRemove,
   onClose,
 }: HighlightActionToolbarProps) {
   const toolbarRef = useRef<HTMLDivElement>(null)
+  const [copied, setCopied] = useState(false)
+  const [noteOpen, setNoteOpen] = useState(false)
+  const [noteVal, setNoteVal] = useState(note ?? '')
+  const noteRef = useRef<HTMLTextAreaElement>(null)
 
-  // Coordinates are container-relative (from parent's position:relative)
   const clampedX = Math.max(20, x)
-  // y is already positioned above the highlight; if it's negative (above container top), flip below
   const flippedBelow = y < 0
   const finalY = flippedBelow ? y + 48 : y
 
-  // Close on click outside
+  // Reset transient state whenever a different highlight is targeted.
+  useEffect(() => {
+    setCopied(false)
+    setNoteOpen(false)
+    setNoteVal(note ?? '')
+  }, [highlightId, note])
+
+  useEffect(() => {
+    if (noteOpen) noteRef.current?.focus()
+  }, [noteOpen])
+
+  // Close on outside press, Escape, and scroll-away (so it never floats orphaned).
   useEffect(() => {
     if (!highlightId) return
-    function handleMouseDown(e: MouseEvent) {
-      if (toolbarRef.current && e.target instanceof Node && !toolbarRef.current.contains(e.target)) {
-        onClose()
-      }
+    function onDown(e: MouseEvent | TouchEvent) {
+      if (toolbarRef.current && e.target instanceof Node && !toolbarRef.current.contains(e.target)) onClose()
     }
-    // Small delay to avoid closing immediately from the same click
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    const onScroll = () => onClose()
     const timer = setTimeout(() => {
-      document.addEventListener('mousedown', handleMouseDown)
+      document.addEventListener('mousedown', onDown)
+      document.addEventListener('touchstart', onDown)
+      // PAGE scroll only (no capture) so a code block / table scrolling underneath the
+      // popover doesn't close it; bound after open so the opening tap can't self-close.
+      window.addEventListener('scroll', onScroll, { passive: true })
     }, 50)
+    window.addEventListener('keydown', onKey)
     return () => {
       clearTimeout(timer)
-      document.removeEventListener('mousedown', handleMouseDown)
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('touchstart', onDown)
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('scroll', onScroll)
     }
   }, [highlightId, onClose])
 
-  // Close on Escape
-  useEffect(() => {
-    if (!highlightId) return
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handleKey)
-    return () => window.removeEventListener('keydown', handleKey)
-  }, [highlightId, onClose])
+  const iconBtn = (extra?: React.CSSProperties): React.CSSProperties => ({
+    background: 'none', border: 'none', cursor: 'pointer',
+    minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: 'var(--ink-secondary)', transition: 'color 150ms ease', ...extra,
+  })
+
+  const copy = () => {
+    if (selectedText) navigator.clipboard?.writeText(selectedText).catch(() => {})
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1200)
+  }
+  const saveNote = () => {
+    if (highlightId) onUpdateNote(highlightId, noteVal.trim())
+    onClose()
+  }
 
   return (
     <AnimatePresence>
       {highlightId && (
         <motion.div
           ref={toolbarRef}
-          initial={{ opacity: 0, scale: 0.85, y: 4 }}
+          initial={{ opacity: 0, scale: 0.9, y: 4 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.85, y: 4 }}
-          transition={{ duration: 0.15, ease: 'easeOut' }}
+          exit={{ opacity: 0, scale: 0.9, y: 4 }}
+          transition={{ type: 'spring', stiffness: 520, damping: 32 }}
           style={{
-            position: 'absolute',
-            left: clampedX,
-            top: finalY,
-            transform: flippedBelow
-              ? 'translate(-50%, 0%)'
-              : 'translate(-50%, -100%)',
-            zIndex: 100,
-            background: 'var(--chrome-surface, #111827)',
-            border: '1px solid var(--chrome-border, #1e293b)',
-            borderRadius: 20,
-            padding: '6px 12px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
-            userSelect: 'none',
+            position: 'absolute', left: clampedX, top: finalY,
+            transform: flippedBelow ? 'translate(-50%, 0%)' : 'translate(-50%, -100%)',
+            zIndex: 100, background: 'var(--surface-raised)', border: 'var(--hairline)',
+            borderRadius: 16, padding: noteOpen ? '8px 10px' : '6px 10px',
+            display: 'flex', flexDirection: 'column', gap: 8,
+            boxShadow: 'var(--shadow-2)', userSelect: 'none', width: noteOpen ? 264 : undefined,
           }}
         >
-          {/* Colour circles — click to change color */}
-          {COLORS.map((c) => (
-            <button
-              type="button"
-              key={c.key}
-              title={`Change to ${c.key}`}
-              onClick={() => {
-                onChangeColor(highlightId, c.key)
-                onClose()
-              }}
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                margin: '-4px -6px',
-              }}
-              onMouseEnter={(e) => {
-                const circle = e.currentTarget.firstElementChild as HTMLElement
-                if (circle) {
-                  circle.style.borderColor = '#fff'
-                  circle.style.transform = 'scale(1.2)'
-                }
-              }}
-              onMouseLeave={(e) => {
-                const circle = e.currentTarget.firstElementChild as HTMLElement
-                if (circle && c.key !== currentColor) {
-                  circle.style.borderColor = 'transparent'
-                  circle.style.transform = 'scale(1)'
-                }
-              }}
-            >
-              <span
-                style={{
-                  width: 18,
-                  height: 18,
-                  borderRadius: '50%',
-                  background: c.hex,
-                  border: c.key === currentColor
-                    ? '2px solid #fff'
-                    : '2px solid transparent',
-                  display: 'block',
-                  transition: 'border-color 150ms ease, transform 150ms ease',
-                  pointerEvents: 'none',
-                  transform: c.key === currentColor ? 'scale(1.2)' : 'scale(1)',
-                }}
-              />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {COLORS.map((c) => (
+              <button
+                type="button" key={c.key} title={`Change to ${c.key}`}
+                onClick={() => { onChangeColor(highlightId, c.key); onClose() }}
+                style={{ width: 44, height: 44, borderRadius: '50%', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, margin: '-2px -4px' }}
+              >
+                <span style={{ width: 18, height: 18, borderRadius: '50%', background: c.hex, border: c.key === currentColor ? '2px solid var(--ink-primary)' : '2px solid transparent', display: 'block', transition: 'border-color 150ms ease, transform 150ms ease', pointerEvents: 'none', transform: c.key === currentColor ? 'scale(1.18)' : 'scale(1)' }} />
+              </button>
+            ))}
+            <div style={{ width: 1, height: 16, background: 'var(--hairline-color, rgba(0,0,0,0.10))', margin: '0 2px' }} />
+            <button type="button" title={note ? 'Edit note' : 'Add note'} onClick={() => setNoteOpen((v) => !v)}
+              style={iconBtn(noteOpen || note ? { color: 'var(--accent)' } : undefined)}>
+              <StickyNote size={16} strokeWidth={2} />
             </button>
-          ))}
+            <button type="button" title="Copy text" onClick={copy} style={iconBtn(copied ? { color: '#5E8E6E' } : undefined)}>
+              {copied ? <Check size={16} strokeWidth={2.4} /> : <Copy size={16} strokeWidth={2} />}
+            </button>
+            <button type="button" title="Remove highlight" onClick={() => { onRemove(highlightId); onClose() }}
+              style={iconBtn()}
+              onMouseEnter={(e) => { e.currentTarget.style.color = '#c0556a' }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--ink-secondary)' }}>
+              <Trash2 size={16} strokeWidth={2} />
+            </button>
+          </div>
 
-          {/* Divider */}
-          <div
-            style={{
-              width: 1,
-              height: 16,
-              background: 'var(--chrome-border, #1e293b)',
-              margin: '0 2px',
-            }}
-          />
-
-          {/* Remove button */}
-          <button
-            type="button"
-            title="Remove highlight"
-            onClick={() => {
-              onRemove(highlightId)
-              onClose()
-            }}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: 10,
-              margin: -8,
-              display: 'flex',
-              alignItems: 'center',
-              color: 'var(--chrome-text, #94a3b8)',
-              transition: 'color 150ms ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#f87171'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'var(--chrome-text, #94a3b8)'
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-              <line x1="10" y1="11" x2="10" y2="17" />
-              <line x1="14" y1="11" x2="14" y2="17" />
-            </svg>
-          </button>
+          {noteOpen && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <textarea
+                ref={noteRef} value={noteVal} onChange={(e) => setNoteVal(e.target.value)}
+                onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') saveNote() }}
+                placeholder="A note on this highlight…" rows={2}
+                style={{ width: '100%', boxSizing: 'border-box', resize: 'none', fontFamily: 'var(--font-body)', fontSize: '15px', lineHeight: 1.45, color: 'var(--ink-primary)', background: 'var(--paper-bg)', border: 'var(--hairline)', borderRadius: 'var(--radius-2)', padding: '8px 10px', outline: 'none' }}
+              />
+              <button type="button" onClick={saveNote}
+                style={{ alignSelf: 'flex-end', minHeight: 36, padding: '0 14px', fontFamily: 'var(--font-ui)', fontSize: '0.8rem', fontWeight: 600, color: 'var(--paper-bg)', background: 'var(--accent)', border: 'none', borderRadius: 'var(--radius-2)', cursor: 'pointer' }}>
+                Save note
+              </button>
+            </div>
+          )}
         </motion.div>
       )}
     </AnimatePresence>

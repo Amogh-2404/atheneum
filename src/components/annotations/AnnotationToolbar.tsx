@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { textOffsetInBlock } from '@/lib/block-offsets'
 
 /* ─── Types ────────────────────────────────────────────────────────── */
 
@@ -35,27 +36,13 @@ const COLORS: { key: 'yellow' | 'green' | 'blue' | 'pink' | 'purple'; hex: strin
 
 /* ─── Helpers ──────────────────────────────────────────────────────── */
 
-/** Walk up from a node to find the closest ancestor with an id attribute */
+/** Resolve the block id from a node — by the [data-block-id] attribute the BlockRenderer
+ *  wrapper carries, the SAME anchor the renderer and hit-test use. (Climbing to the first
+ *  `id` was the bug: a heading's inner <h1 id="slug"> shadowed the wrapper's blk_ id, so
+ *  heading highlights were stored under the slug and never painted/tappable.) */
 function findBlockId(node: Node | null): string | null {
-  let el: HTMLElement | null =
-    node instanceof HTMLElement ? node : node?.parentElement ?? null
-  while (el) {
-    if (el.id && !el.id.startsWith('__')) return el.id
-    el = el.parentElement
-  }
-  return null
-}
-
-/** Compute the text offset of `node` at `offset` relative to `root`'s full text */
-function textOffsetInBlock(root: HTMLElement, node: Node, offset: number): number {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
-  let total = 0
-  let current: Node | null
-  while ((current = walker.nextNode())) {
-    if (current === node) return total + offset
-    total += (current.textContent ?? '').length
-  }
-  return total + offset
+  const el: HTMLElement | null = node instanceof HTMLElement ? node : node?.parentElement ?? null
+  return el?.closest('[data-block-id]')?.getAttribute('data-block-id') ?? null
 }
 
 /* ─── Component ────────────────────────────────────────────────────── */
@@ -115,6 +102,7 @@ export default function AnnotationToolbar({
 
       const startOff = textOffsetInBlock(blockEl, range.startContainer, range.startOffset)
       const endOff = textOffsetInBlock(blockEl, range.endContainer, range.endOffset)
+      if (startOff == null || endOff == null) return // selection not inside this block
 
       // Position toolbar above selection, relative to the content container
       const rect = range.getBoundingClientRect()
@@ -337,15 +325,15 @@ export default function AnnotationToolbar({
               ? 'translate(-50%, 0%)'
               : 'translate(-50%, -100%)',
             zIndex: 100,
-            background: 'var(--chrome-surface, #111827)',
-            border: '1px solid var(--chrome-border, #1e293b)',
-            borderRadius: 20,
-            padding: '6px 12px',
+            background: 'var(--surface-raised)',
+            border: 'var(--hairline)',
+            borderRadius: 16,
+            padding: '6px 10px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             gap: 6,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+            boxShadow: 'var(--shadow-2)',
             userSelect: 'none',
           }}
         >
@@ -359,8 +347,8 @@ export default function AnnotationToolbar({
                 title={`Highlight ${c.key}`}
                 onClick={() => handleHighlight(c.key)}
                 style={{
-                  width: 40,
-                  height: 40,
+                  width: 44,
+                  height: 44,
                   borderRadius: '50%',
                   background: 'transparent',
                   border: 'none',
@@ -407,7 +395,7 @@ export default function AnnotationToolbar({
               style={{
                 width: 1,
                 height: 16,
-                background: 'var(--chrome-border, #1e293b)',
+                background: 'var(--hairline-color, rgba(0,0,0,0.10))',
                 margin: '0 2px',
               }}
             />
@@ -425,14 +413,14 @@ export default function AnnotationToolbar({
                 margin: -8,
                 display: 'flex',
                 alignItems: 'center',
-                color: 'var(--chrome-text, #94a3b8)',
+                color: 'var(--ink-secondary)',
                 transition: 'color 150ms ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'var(--chrome-accent, var(--chrome-accent))'
+                e.currentTarget.style.color = 'var(--accent)'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'var(--chrome-text, #94a3b8)'
+                e.currentTarget.style.color = 'var(--ink-secondary)'
               }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -454,16 +442,16 @@ export default function AnnotationToolbar({
                 display: 'flex',
                 alignItems: 'center',
                 color: showNoteInput
-                  ? 'var(--chrome-accent, var(--chrome-accent))'
-                  : 'var(--chrome-text, #94a3b8)',
+                  ? 'var(--accent)'
+                  : 'var(--ink-secondary)',
                 transition: 'color 150ms ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'var(--chrome-accent, var(--chrome-accent))'
+                e.currentTarget.style.color = 'var(--accent)'
               }}
               onMouseLeave={(e) => {
                 if (!showNoteInput) {
-                  e.currentTarget.style.color = 'var(--chrome-text, #94a3b8)'
+                  e.currentTarget.style.color = 'var(--ink-secondary)'
                 }
               }}
             >
@@ -500,7 +488,7 @@ export default function AnnotationToolbar({
                     ? 'var(--color-error, #f87171)'
                     : confusionState === 'saving'
                     ? '#f59e0b'
-                    : 'var(--chrome-text, #94a3b8)',
+                    : 'var(--ink-secondary)',
                 opacity: confusionState === 'saving' ? 0.7 : 1,
                 transition: 'color 150ms ease',
               }}
@@ -509,7 +497,7 @@ export default function AnnotationToolbar({
               }}
               onMouseLeave={(e) => {
                 if (confusionState === 'idle')
-                  e.currentTarget.style.color = 'var(--chrome-text, #94a3b8)'
+                  e.currentTarget.style.color = 'var(--ink-secondary)'
               }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -567,7 +555,7 @@ export default function AnnotationToolbar({
                   fontFamily: 'var(--font-handwritten, Caveat, cursive)',
                   fontSize: '0.85rem',
                   background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid var(--chrome-border, #1e293b)',
+                  border: '1px solid var(--hairline-color, rgba(0,0,0,0.10))',
                   borderRadius: 8,
                   padding: '6px 8px',
                   color: 'var(--ink-primary, #e2e2e2)',
@@ -581,8 +569,8 @@ export default function AnnotationToolbar({
                 disabled={!noteText.trim()}
                 style={{
                   background: noteText.trim()
-                    ? 'var(--chrome-accent, var(--chrome-accent))'
-                    : 'var(--chrome-border, #1e293b)',
+                    ? 'var(--accent)'
+                    : 'var(--hairline-color, rgba(0,0,0,0.10))',
                   border: 'none',
                   borderRadius: 8,
                   padding: '0 10px',

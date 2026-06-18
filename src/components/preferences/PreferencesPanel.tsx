@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { X, Download, Trash2, AlertTriangle } from 'lucide-react'
+import { annotationStore } from '@/stores/annotationStore'
 
 /* ─── Types ────────────────────────────────────────────────────────── */
 
@@ -184,6 +185,7 @@ export default function PreferencesPanel({ onClose }: Props) {
 
   // Clear all data
   const handleClearAll = useCallback(() => {
+    annotationStore.clearAll() // empty the LIVE store too — not just localStorage (post-rebuild)
     localStorage.removeItem('atheneum-annotations')
     localStorage.removeItem('atheneum-last-read')
     localStorage.removeItem('atheneum-preferences')

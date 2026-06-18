@@ -23,7 +23,7 @@ import AnnotationToolbar from '@/components/annotations/AnnotationToolbar'
 import MarginNoteLayer from '@/components/annotations/MarginNoteLayer'
 import ConfusionIndicator from '@/components/annotations/ConfusionIndicator'
 import BookmarkIndicator from '@/components/annotations/BookmarkIndicator'
-import { useHighlightRenderer } from '@/components/annotations/HighlightRenderer'
+import { highlightAtPoint } from '@/components/annotations/hitTestHighlight'
 import HighlightActionToolbar from '@/components/annotations/HighlightActionToolbar'
 import ExportMenu from '@/components/export/ExportMenu'
 import VersionTimeline from '@/components/history/VersionTimeline'
@@ -213,27 +213,47 @@ export default function Reader() {
 
   // Highlight action toolbar state (shown when clicking an existing highlight)
   const [highlightAction, setHighlightAction] = useState<{
-    id: string; color: string; x: number; y: number
+    id: string; color: string; selectedText?: string; note?: string; x: number; y: number
   } | null>(null)
 
   const handleHighlightClick = useCallback((id: string) => {
-    // Find the <mark> element and position toolbar above it, relative to container
-    const mark = document.querySelector(`mark[data-highlight-id="${id}"]`)
-    if (!mark) return
+    // Anchor the action toolbar to the highlight's overlay rect (a div carrying the same
+    // data-highlight-id — no longer a <mark>), relative to the container.
+    const rectEl = document.querySelector(`[data-highlight-id="${id}"]`)
     const container = contentAreaRef.current
-    if (!container) return
-    const rect = mark.getBoundingClientRect()
+    if (!rectEl || !container) return
+    const rect = rectEl.getBoundingClientRect()
     const containerRect = container.getBoundingClientRect()
-    const hl = highlights.find(h => h.id === id)
+    const hl = highlights.find((h) => h.id === id)
     setHighlightAction({
       id,
       color: hl?.color ?? 'yellow',
+      selectedText: hl?.selectedText,
+      note: hl?.note,
       x: rect.left - containerRect.left + rect.width / 2,
       y: rect.top - containerRect.top - 8,
     })
   }, [highlights])
 
-  useHighlightRenderer(highlights, handleHighlightClick)
+  // Tap an existing highlight → open the action toolbar. Overlay rects are pointer-
+  // transparent, so resolve the tap by caret hit-testing against the live highlights.
+  // ONE container listener (the old renderer re-bound a document-level click every render).
+  const highlightsRef = useRef(highlights)
+  highlightsRef.current = highlights
+  useEffect(() => {
+    const el = contentAreaRef.current
+    if (!el) return
+    const onPointerUp = (e: PointerEvent) => {
+      const sel = window.getSelection()
+      if (sel && !sel.isCollapsed) return // a new text selection → let the selection toolbar own it
+      // Don't steal taps meant for interactive content (links, buttons, concept hovercards).
+      if (e.target instanceof Element && e.target.closest('a, button, input, textarea, select, [data-concept], [role="button"]')) return
+      const hit = highlightAtPoint(e.clientX, e.clientY, highlightsRef.current)
+      if (hit) handleHighlightClick(hit.id)
+    }
+    el.addEventListener('pointerup', onPointerUp)
+    return () => el.removeEventListener('pointerup', onPointerUp)
+  }, [handleHighlightClick])
 
   // Find current chapter index for prev/next navigation
   const currentIndex = book?.chapters.findIndex((c) => c.id === activeChapterId) ?? -1
@@ -321,6 +341,11 @@ export default function Reader() {
       const dx = t.clientX - touchStartRef.current.x
       const dy = t.clientY - touchStartRef.current.y
       touchStartRef.current = null
+
+      // A drag that produced a text selection is the reader highlighting — never treat it
+      // as a chapter swipe (the gesture would clobber the selection mid-highlight).
+      const sel = window.getSelection()
+      if (sel && !sel.isCollapsed) return
 
       // Must be a horizontal swipe: >80px horizontal, <50px vertical drift
       if (Math.abs(dx) < 80 || Math.abs(dy) > 50) return
@@ -464,11 +489,19 @@ export default function Reader() {
       const el = document.getElementById(hash)
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        el.style.outline = '2px solid var(--chrome-accent, var(--chrome-accent))'
+        el.style.outline = '2px solid var(--accent)'
         el.style.outlineOffset = '4px'
         el.style.borderRadius = '4px'
         el.style.transition = 'outline-color 2s ease'
         setTimeout(() => { el.style.outlineColor = 'transparent' }, 2000)
+        // If the deep-link lands on a highlighted block (e.g. from the Notebook), pulse
+        // the highlight rects so the eye lands on the exact passage.
+        el.querySelectorAll('[data-highlight-id]').forEach((r) => {
+          const d = r as HTMLElement
+          d.style.transition = 'filter 220ms ease'
+          d.style.filter = 'brightness(1.45) saturate(1.35)'
+          setTimeout(() => { d.style.filter = '' }, 750)
+        })
         // Clear hash so it doesn't re-trigger
         window.history.replaceState(null, '', window.location.pathname)
       }
@@ -1330,9 +1363,12 @@ export default function Reader() {
               <HighlightActionToolbar
                 highlightId={highlightAction?.id ?? null}
                 currentColor={highlightAction?.color ?? 'yellow'}
+                selectedText={highlightAction?.selectedText}
+                note={highlightAction?.note}
                 x={highlightAction?.x ?? 0}
                 y={highlightAction?.y ?? 0}
                 onChangeColor={(id, color) => updateAnnotation(id, { color } as any)}
+                onUpdateNote={(id, note) => updateAnnotation(id, { note } as any)}
                 onRemove={removeAnnotation}
                 onClose={() => setHighlightAction(null)}
               />

@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import type { Block } from '@/types'
 import ErrorBoundary from './ErrorBoundary'
 import DraftIndicator from './DraftIndicator'
+import HighlightLayer from '@/components/annotations/HighlightLayer'
 
 import HeadingBlock from './HeadingBlock'
 import TextBlock from './TextBlock'
@@ -77,6 +79,13 @@ function renderBlock(block: Block, isFirstTextBlock?: boolean, bookId?: string, 
   }
 }
 
+// Block types that hold no selectable prose → no highlight layer (and no store
+// subscription) is mounted for them, keeping the per-write re-render fan-out small.
+const NON_HIGHLIGHTABLE = new Set([
+  'divider', 'figure', 'code', 'math', 'reactive-math', 'sandbox', 'diagram',
+  'embed', 'scrolly-figure', 'derivation', 'quiz', 'flashcard',
+])
+
 interface BlockRendererProps {
   block: Block
   isFirstTextBlock?: boolean
@@ -96,8 +105,15 @@ export default function BlockRenderer({
   onBlockApproved,
   onBlockDismissed,
 }: BlockRendererProps) {
+  // Callback ref → state so the highlight overlay gets the real element once it mounts.
+  const [blockEl, setBlockEl] = useState<HTMLElement | null>(null)
   return (
-    <div id={block.id} data-block-id={block.id} className={className}>
+    <div ref={setBlockEl} id={block.id} data-block-id={block.id} className={className} style={{ position: 'relative' }}>
+      {/* Non-destructive highlight overlay — never touches the prose subtree below it.
+          Skipped for non-prose blocks so they don't subscribe to the annotation store. */}
+      {!NON_HIGHLIGHTABLE.has(block.type) && (
+        <HighlightLayer blockEl={blockEl} bookId={bookId} chapterId={chapterId} blockId={block.id} />
+      )}
       <ErrorBoundary>
         <DraftIndicator
           isDraft={block.status === 'draft'}
