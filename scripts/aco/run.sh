@@ -4,7 +4,11 @@
 # AAA, grounded content improvement, then commits locally + reports. Mirrors the
 # proven JARVIS autonomous-session pattern (jarvis_autonomous_run.sh).
 export HOME=/Users/r-amogh
-export PATH="/Users/r-amogh/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
+# /usr/local/bin (Node 22) BEFORE /opt/homebrew/bin (Node 25): the server's native
+# better-sqlite3 is built for Node 22's ABI, so any npm/node/tsx the daemon runs against
+# the-codex must resolve to Node 22 too — otherwise a code-wish `npm install` would
+# rebuild the addon for the wrong ABI and crash-loop the server.
+export PATH="/Users/r-amogh/.local/bin:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin"
 ROOT=/Users/r-amogh/the-codex
 cd "$ROOT" || exit 1
 mkdir -p "$ROOT/.aco/state"

@@ -1,5 +1,5 @@
 /// <reference path="./proper-lockfile-shim.d.ts" />
-import { execSync } from 'child_process'
+import { execFileSync } from 'child_process'
 import lockfile from 'proper-lockfile'
 import { existsSync, writeFileSync, mkdirSync } from 'fs'
 import path from 'path'
@@ -28,47 +28,49 @@ export async function withFileLock<T>(filePath: string, fn: () => Promise<T>): P
 let commitTimer: ReturnType<typeof setTimeout> | null = null
 let pendingFiles: Set<string> = new Set()
 let pendingDescription: string = ''
+let firstPendingAt = 0
+const DEBOUNCE_MS = 2000
+const MAX_WAIT_MS = 15000 // commit at least this often under a continuous change stream
 
 export function scheduleCommit(contentDir: string, filePath: string, description: string) {
   pendingFiles.add(filePath)
   pendingDescription = description  // last description wins for single-file, multi-file gets generic msg
+  if (!firstPendingAt) firstPendingAt = Date.now()
 
   if (commitTimer) clearTimeout(commitTimer)
-
-  // Batch commits: wait 2s after last change before committing
+  // Debounce 2s after the last change, but cap the total wait: a daemon seeding a whole
+  // book back-to-back faster than 2s would otherwise keep pushing the timer forever.
+  const wait = Math.min(DEBOUNCE_MS, Math.max(0, firstPendingAt + MAX_WAIT_MS - Date.now()))
   commitTimer = setTimeout(() => {
+    const files = [...pendingFiles]
+    const desc = pendingDescription
+    pendingFiles.clear(); pendingDescription = ''; firstPendingAt = 0; commitTimer = null
     try {
-      for (const f of pendingFiles) {
-        execSync(`git add "${f}"`, { cwd: contentDir, stdio: 'ignore' })
+      for (const f of files) {
+        // argv form (execFileSync) NEVER invokes a shell, so a filename containing
+        // $(...), backticks, quotes, or spaces can't inject. `-A` on an EXPLICIT
+        // pathspec stages add/modify/delete for THAT path only (so deletions commit)
+        // without sweeping the untracked .state/.annotations trap a bare --all would.
+        execFileSync('git', ['add', '-A', '--', f], { cwd: contentDir, stdio: 'ignore' })
       }
 
-      // Check if there are actually staged changes
+      // diff --cached --quiet exits 1 when there ARE staged changes; 0 means nothing.
       try {
-        execSync('git diff --cached --quiet', { cwd: contentDir, stdio: 'ignore' })
-        // If the above succeeds, nothing is staged — skip commit
+        execFileSync('git', ['diff', '--cached', '--quiet'], { cwd: contentDir, stdio: 'ignore' })
         console.log('[git] No changes to commit')
-        pendingFiles.clear()
-        pendingDescription = ''
         return
-      } catch {
-        // diff --cached --quiet exits 1 when there ARE changes — proceed
-      }
+      } catch { /* there ARE staged changes — proceed */ }
 
-      const message = pendingFiles.size === 1
-        ? `[atheneum] ${pendingDescription}`
-        : `[atheneum] Updated ${pendingFiles.size} files`
+      const message = files.length === 1
+        ? `[atheneum] ${desc}`
+        : `[atheneum] Updated ${files.length} files`
 
-      execSync(`git commit -m "${message.replace(/"/g, '\\"')}"`, {
-        cwd: contentDir,
-        stdio: 'ignore',
-      })
+      execFileSync('git', ['commit', '-m', message], { cwd: contentDir, stdio: 'ignore' })
       console.log(`[git] Committed: ${message}`)
     } catch (e: any) {
       if (!e.message?.includes('nothing to commit')) {
         console.error('[git] Commit failed:', e.message)
       }
     }
-    pendingFiles.clear()
-    pendingDescription = ''
-  }, 2000)
+  }, wait)
 }

@@ -1,49 +1,17 @@
 import { Hono } from 'hono'
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
-import { sanitizeId, safePath } from '../utils.js'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-const CONTENT_DIR = path.join(__dirname, '..', '..', 'content')
+import { sanitizeId } from '../utils.js'
+import { getReadingPosition, saveReadingPosition } from '../lib/db.js'
 
 export const readingPositionRouter = new Hono()
 
-function getStatePath(bookId: string): string | null {
-  const clean = sanitizeId(bookId)
-  if (!clean) return null
-  const dir = safePath(CONTENT_DIR, clean, '.state')
-  if (!dir) return null
-  return path.join(dir, 'reading-position.json')
-}
-
-function ensureDir(filePath: string) {
-  const dir = path.dirname(filePath)
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true })
-  }
-}
-
 // ─── GET /:bookId → Get reading position ────────────────────────
 readingPositionRouter.get('/:bookId', (c) => {
-  const filePath = getStatePath(c.req.param('bookId'))
-  if (!filePath) return c.json({ error: 'invalid bookId' }, 400)
-
-  if (!existsSync(filePath)) {
-    return c.json({ position: null })
-  }
-
-  try {
-    const data = JSON.parse(readFileSync(filePath, 'utf-8'))
-    return c.json({ position: data })
-  } catch {
-    return c.json({ position: null })
-  }
+  const bookId = sanitizeId(c.req.param('bookId'))
+  if (!bookId) return c.json({ error: 'invalid bookId' }, 400)
+  return c.json({ position: getReadingPosition(bookId) })
 })
 
-// ─── POST / → Save reading position ─────────────────────────────
+// ─── POST / → Save reading position (atomic upsert; was a raw non-atomic write) ──
 readingPositionRouter.post('/', async (c) => {
   let body: { bookId?: string; chapterId?: string; scrollPercent?: number; timestamp?: string }
   try {
@@ -56,18 +24,16 @@ readingPositionRouter.post('/', async (c) => {
     return c.json({ error: 'missing required fields: bookId, chapterId, scrollPercent' }, 400)
   }
 
-  const filePath = getStatePath(body.bookId)
-  if (!filePath) return c.json({ error: 'invalid bookId' }, 400)
+  const bookId = sanitizeId(body.bookId)
+  if (!bookId) return c.json({ error: 'invalid bookId' }, 400)
 
   try {
-    ensureDir(filePath)
-    const data = {
-      bookId: body.bookId,
+    saveReadingPosition({
+      bookId,
       chapterId: body.chapterId,
       scrollPercent: body.scrollPercent,
       timestamp: body.timestamp || new Date().toISOString(),
-    }
-    writeFileSync(filePath, JSON.stringify(data, null, 2) + '\n', 'utf-8')
+    })
     return c.json({ saved: true })
   } catch (e) {
     console.error('[reading-position] save failed:', (e as Error).message)

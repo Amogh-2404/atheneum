@@ -118,9 +118,6 @@ export default function Reader() {
     catch { return {} }
   })
 
-  // Focus mode
-  const { focusModeActive, focusedBlockId, toggleFocusMode } = useFocusMode(contentAreaRef)
-
   // Redirect to first chapter if none specified
   useEffect(() => {
     if (book && !chapterId && book.chapters.length > 0) {
@@ -135,6 +132,12 @@ export default function Reader() {
   // chapter's headings instead of the previous chapter's dead nodes.
   const activeHeadingId = useActiveHeading(chapter?.id)
   useReadingTelemetry(bookId, chapter?.id)
+
+  // Focus mode — re-keys on the LOADED chapter id (same reason as the heading-spy
+  // above): without the key its IntersectionObserver kept watching the previous
+  // chapter's unmounted blocks, so the focused block never updated on scroll until
+  // you toggled focus off/on (which flipped `active` and forced the effect to re-run).
+  const { focusModeActive, focusedBlockId, toggleFocusMode } = useFocusMode(contentAreaRef, chapter?.id)
 
   // Fetch history when panel opens
   const openHistory = useCallback(() => {
@@ -424,7 +427,10 @@ export default function Reader() {
     // 2) Also check server — use server position if more recent
     fetch(`/api/reading-position/${bookId}`)
       .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
-      .then((serverPos: { bookId: string; chapterId: string; scrollPercent: number; timestamp: string }) => {
+      .then((body: { position: { bookId: string; chapterId: string; scrollPercent: number; timestamp: string } | null }) => {
+        // The route returns { position }, not the bare object — unwrap it (this was the
+        // dead-restore bug: reading serverPos.bookId off the envelope was always undefined).
+        const serverPos = body?.position
         if (!serverPos || serverPos.bookId !== bookId || serverPos.chapterId !== activeChapterId) return
         if (serverPos.scrollPercent <= 0) return
 

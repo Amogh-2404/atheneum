@@ -1,66 +1,27 @@
 import { Hono } from 'hono'
-import { readFileSync, existsSync, mkdirSync } from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
-import { sanitizeId, safePath } from '../utils.js'
-import { withFileLock } from '../git.js'
-import { atomicWriteJSON } from '../lib/write-gate.js'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-const CONTENT_DIR = path.join(__dirname, '..', '..', 'content')
+import { sanitizeId } from '../utils.js'
+import { getAnnotations, getConfusionAnnotations, syncAnnotations, deleteAnnotation } from '../lib/db.js'
 
 export const annotationsRouter = new Hono()
 
-function getAnnotationsPath(bookId: string): string | null {
-  const clean = sanitizeId(bookId)
-  if (!clean) return null
-  const dir = safePath(CONTENT_DIR, clean, '.annotations')
-  if (!dir) return null
-  return path.join(dir, 'annotations.json')
-}
-
-function ensureDir(filePath: string) {
-  const dir = path.dirname(filePath)
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true })
-  }
-}
-
-function readAnnotations(filePath: string): any[] {
-  if (!existsSync(filePath)) return []
-  try {
-    const data = JSON.parse(readFileSync(filePath, 'utf-8'))
-    return Array.isArray(data) ? data : []
-  } catch {
-    return []
-  }
-}
-
 // ─── GET /:bookId → All annotations for a book ──────────────────
 annotationsRouter.get('/:bookId', (c) => {
-  const filePath = getAnnotationsPath(c.req.param('bookId'))
-  if (!filePath) return c.json({ error: 'invalid bookId' }, 400)
-
-  const annotations = readAnnotations(filePath)
-  return c.json({ annotations })
+  const bookId = sanitizeId(c.req.param('bookId'))
+  if (!bookId) return c.json({ error: 'invalid bookId' }, 400)
+  return c.json({ annotations: getAnnotations(bookId) })
 })
 
 // ─── GET /:bookId/confusion → Confusion markers only ────────────
 annotationsRouter.get('/:bookId/confusion', (c) => {
-  const filePath = getAnnotationsPath(c.req.param('bookId'))
-  if (!filePath) return c.json({ error: 'invalid bookId' }, 400)
-
-  const all = readAnnotations(filePath)
-  const confusion = all.filter((a: any) => a.type === 'confusion')
-  return c.json({ annotations: confusion })
+  const bookId = sanitizeId(c.req.param('bookId'))
+  if (!bookId) return c.json({ error: 'invalid bookId' }, 400)
+  return c.json({ annotations: getConfusionAnnotations(bookId) })
 })
 
-// ─── POST /:bookId → Create or sync annotations ─────────────────
+// ─── POST /:bookId → Create or sync annotations (merge by id) ────
 annotationsRouter.post('/:bookId', async (c) => {
-  const filePath = getAnnotationsPath(c.req.param('bookId'))
-  if (!filePath) return c.json({ error: 'invalid bookId' }, 400)
+  const bookId = sanitizeId(c.req.param('bookId'))
+  if (!bookId) return c.json({ error: 'invalid bookId' }, 400)
 
   let body: { annotations?: any[] }
   try {
@@ -74,28 +35,8 @@ annotationsRouter.post('/:bookId', async (c) => {
   }
 
   try {
-    ensureDir(filePath)
-    // Read-merge-write inside a per-file lock so a concurrent annotation sync
-    // (or any other writer racing this file) can't clobber the merge. Behaviour
-    // is otherwise identical: incoming annotations replace by ID, new ones added.
-    const merged = await withFileLock(filePath, async () => {
-      const existing = readAnnotations(filePath)
-      const existingMap = new Map(existing.map((a: any) => [a.id, a]))
-
-      for (const ann of body.annotations!) {
-        if (ann.id) {
-          existingMap.set(ann.id, ann)
-        }
-      }
-
-      const next = Array.from(existingMap.values())
-      // Atomic temp+rename even for this sidecar — a torn annotations.json would
-      // fail JSON.parse and silently drop every annotation for the book on next read.
-      atomicWriteJSON(filePath, next)
-      return next
-    })
-
-    return c.json({ synced: body.annotations.length, total: merged.length })
+    const total = syncAnnotations(bookId, body.annotations)
+    return c.json({ synced: body.annotations.length, total })
   } catch (e) {
     console.error('[annotations] sync failed:', (e as Error).message)
     return c.json({ error: 'failed to sync annotations' }, 500)
@@ -104,31 +45,16 @@ annotationsRouter.post('/:bookId', async (c) => {
 
 // ─── DELETE /:bookId/:annotationId → Remove one annotation ──────
 annotationsRouter.delete('/:bookId/:annotationId', async (c) => {
-  const filePath = getAnnotationsPath(c.req.param('bookId'))
-  if (!filePath) return c.json({ error: 'invalid bookId' }, 400)
+  const bookId = sanitizeId(c.req.param('bookId'))
+  if (!bookId) return c.json({ error: 'invalid bookId' }, 400)
 
   const annotationId = c.req.param('annotationId')
   if (!annotationId) return c.json({ error: 'missing annotationId' }, 400)
 
   try {
-    // Read-filter-write inside a per-file lock to avoid racing a concurrent sync.
-    const result = await withFileLock(filePath, async () => {
-      const existing = readAnnotations(filePath)
-      const filtered = existing.filter((a: any) => a.id !== annotationId)
-
-      if (filtered.length === existing.length) {
-        return { removed: false }
-      }
-
-      ensureDir(filePath)
-      atomicWriteJSON(filePath, filtered)
-      return { removed: true }
-    })
-
-    if (!result.removed) {
+    if (!deleteAnnotation(bookId, annotationId)) {
       return c.json({ error: 'not found' }, 404)
     }
-
     return c.json({ removed: 1 })
   } catch (e) {
     console.error('[annotations] delete failed:', (e as Error).message)

@@ -15,7 +15,7 @@
  *   tsx scripts/forge.ts <bookId> [--dry-run|--stub] [--max N]
  *                        [--min-score 0.6] [--min-confidence 0.66]
  */
-import { readFileSync, existsSync, readdirSync } from 'fs'
+import { readFileSync, readdirSync } from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { execFileSync } from 'child_process'
@@ -46,15 +46,26 @@ if (!dryRun && !stub && process.env.FORGE_ENABLED !== '1') {
 }
 
 const bookDir = path.join(CONTENT, bookId)
-const strugglePath = path.join(bookDir, '.state', 'struggle.json')
-if (!existsSync(strugglePath)) {
-  console.error(`no struggle data at ${strugglePath} — nothing to forge`)
-  process.exit(0)
-}
-
 interface BlockStruggle { score: number; confidence: number; topSignal: string; obs: number }
-const struggle = JSON.parse(readFileSync(strugglePath, 'utf-8')) as {
-  chapters: Record<string, Record<string, BlockStruggle>>
+
+// Struggle now lives in SQLite (the server's source of truth). Read it through the
+// `sqlite3` CLI in read-only mode rather than importing server/lib/db.ts: that module
+// is a NATIVE binding (better-sqlite3) hard-bound to the server's Node ABI and runs
+// heavy boot side-effects on import — pulling it into this script would crash forge
+// under a mismatched node and trigger the migration on every run. The CLI has neither
+// problem. `bookId` is validated dir-name-safe before interpolation (no SQL injection).
+const DB = path.join(__dirname, '..', '.data', 'atheneum.db')
+function readStruggle(book: string): { chapters: Record<string, Record<string, BlockStruggle>> } | null {
+  if (!/^[A-Za-z0-9_-]+$/.test(book)) return null
+  try {
+    const out = execFileSync('/usr/bin/sqlite3', ['-readonly', DB, `SELECT data FROM struggle WHERE book_id = '${book}'`], { encoding: 'utf-8' }).trim()
+    return out ? JSON.parse(out) : null
+  } catch { return null }
+}
+const struggle = readStruggle(bookId)
+if (!struggle) {
+  console.error(`no struggle data for ${bookId} — nothing to forge`)
+  process.exit(0)
 }
 
 // ── Rank candidates across the book ──

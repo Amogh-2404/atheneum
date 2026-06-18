@@ -4,7 +4,13 @@ import { useState, useEffect, useCallback, useRef } from 'react'
  * Focus mode: dims all blocks except the one currently in the viewport center.
  * Returns the ID of the "focused" block and a toggle function.
  */
-export function useFocusMode(contentRef: React.RefObject<HTMLElement | null>) {
+export function useFocusMode(
+  contentRef: React.RefObject<HTMLElement | null>,
+  // Changes whenever a new chapter's content mounts. The observer re-attaches on
+  // change so it watches the CURRENT chapter's blocks, not the previous (now
+  // unmounted) ones. `contentRef` alone can't trigger this — it's a stable ref.
+  contentKey?: string | null,
+) {
   const [active, setActive] = useState(false)
   const [focusedBlockId, setFocusedBlockId] = useState<string | null>(null)
   const observerRef = useRef<IntersectionObserver | null>(null)
@@ -18,6 +24,9 @@ export function useFocusMode(contentRef: React.RefObject<HTMLElement | null>) {
     }
 
     const container = contentRef.current
+    // Drop the previous chapter's highlight immediately so there's no flash of a
+    // stale focused block before the observer reports the new chapter's blocks.
+    setFocusedBlockId(null)
     // Track which blocks are visible and how much
     const visibleBlocks = new Map<string, number>()
 
@@ -63,7 +72,7 @@ export function useFocusMode(contentRef: React.RefObject<HTMLElement | null>) {
       observerRef.current?.disconnect()
       visibleBlocks.clear()
     }
-  }, [active, contentRef])
+  }, [active, contentRef, contentKey])
 
   return { focusModeActive: active, focusedBlockId, toggleFocusMode: toggle }
 }

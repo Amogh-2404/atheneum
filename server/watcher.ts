@@ -10,6 +10,8 @@ export function startWatcher(contentDir: string, cm: ConnectionManager) {
     ignored: [
       /(^|[\/\\])\../,     // dotfiles and dot-directories (.git, .state, .annotations)
       /node_modules/,
+      /\.tmp\.\d+\.\d+$/,  // atomicWriteJSON temp files (`<file>.tmp.<pid>.<ts>`) — the
+                           // rename publishes the real file; never react to the temp.
     ],
     awaitWriteFinish: { stabilityThreshold: 300, pollInterval: 100 },
   })
@@ -27,17 +29,47 @@ export function startWatcher(contentDir: string, cm: ConnectionManager) {
     }, 300))
   }
 
+  // Deletions need their own path: they must NOT readFileSync (the file is gone),
+  // they just stage the removal. Without this, removed files (whole books) fired
+  // unlink events into the void and were never committed — the working tree drifted
+  // from git indefinitely. A delete supersedes any pending change to the same path.
+  function handleDelete(filePath: string) {
+    const existing = pending.get(filePath)
+    if (existing) clearTimeout(existing)
+
+    pending.set(filePath, setTimeout(() => {
+      pending.delete(filePath)
+      const relative = path.relative(contentDir, filePath)
+      scheduleCommit(contentDir, filePath, `Remove ${relative}`)
+      console.log(`[watcher] deleted: ${relative}`)
+    }, 300))
+  }
+
   watcher.on('change', handleChange)
   watcher.on('add', handleChange)
+  watcher.on('unlink', handleDelete)
+  watcher.on('unlinkDir', handleDelete)
 
   console.log(`[watcher] Watching ${contentDir}`)
 }
 
+const ASSET_EXTS = new Set(['.svg', '.png', '.jpg', '.jpeg', '.webp', '.gif'])
+
 function processChange(filePath: string, contentDir: string, cm: ConnectionManager) {
-  // Only process JSON files
+  const relative = path.relative(contentDir, filePath)
+
+  // Figure/image artifacts are real content (the daemon generates SVGs per book).
+  // They need no parse or broadcast, but they MUST be versioned — previously only
+  // `.json` triggered a commit, so every generated figure sat untracked forever.
+  if (ASSET_EXTS.has(path.extname(filePath).toLowerCase())) {
+    scheduleCommit(contentDir, filePath, `Update ${relative}`)
+    console.log(`[watcher] asset changed: ${relative}`)
+    return
+  }
+
+  // Only process JSON files beyond this point
   if (!filePath.endsWith('.json')) return
 
-  const relative = path.relative(contentDir, filePath)
   const parts = relative.split(path.sep)
 
   let data: any

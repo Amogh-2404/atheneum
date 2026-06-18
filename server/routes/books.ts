@@ -1,9 +1,10 @@
 import { Hono } from 'hono'
-import { readFileSync, writeFileSync, readdirSync, existsSync, rmSync } from 'fs'
+import { readFileSync, readdirSync, existsSync, rmSync } from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { sanitizeId, safePath } from '../utils.js'
 import { validateBook, validateOutline } from '../validator.js'
+import { atomicWriteJSON } from '../lib/write-gate.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -141,7 +142,7 @@ booksRouter.delete('/:bookId', async (c) => {
     if (existsSync(indexPath)) {
       const data = JSON.parse(readFileSync(indexPath, 'utf-8'))
       data.books = (data.books ?? []).filter((b: any) => b.id !== bookId)
-      writeFileSync(indexPath, JSON.stringify(data, null, 2) + '\n', 'utf-8')
+      atomicWriteJSON(indexPath, data)
     }
 
     return c.json({ deleted: true, bookId })
@@ -163,7 +164,7 @@ booksRouter.post('/:bookId/archive', async (c) => {
     const book = JSON.parse(readFileSync(bookPath, 'utf-8'))
     book.status = 'archived'
     book.archivedAt = new Date().toISOString()
-    writeFileSync(bookPath, JSON.stringify(book, null, 2) + '\n', 'utf-8')
+    atomicWriteJSON(bookPath, book)
 
     // Update _index.json
     const indexPath = path.join(CONTENT_DIR, '_index.json')
@@ -172,7 +173,7 @@ booksRouter.post('/:bookId/archive', async (c) => {
       for (const b of (data.books ?? [])) {
         if (b.id === bookId) { b.archived = true; b.archivedAt = book.archivedAt }
       }
-      writeFileSync(indexPath, JSON.stringify(data, null, 2) + '\n', 'utf-8')
+      atomicWriteJSON(indexPath, data)
     }
 
     return c.json({ archived: true, bookId })
@@ -195,7 +196,7 @@ booksRouter.post('/:bookId/unarchive', async (c) => {
     delete book.archived
     delete book.archivedAt
     book.status = 'draft'
-    writeFileSync(bookPath, JSON.stringify(book, null, 2) + '\n', 'utf-8')
+    atomicWriteJSON(bookPath, book)
 
     const indexPath = path.join(CONTENT_DIR, '_index.json')
     if (existsSync(indexPath)) {
@@ -203,7 +204,7 @@ booksRouter.post('/:bookId/unarchive', async (c) => {
       for (const b of (data.books ?? [])) {
         if (b.id === bookId) { delete b.archived; delete b.archivedAt }
       }
-      writeFileSync(indexPath, JSON.stringify(data, null, 2) + '\n', 'utf-8')
+      atomicWriteJSON(indexPath, data)
     }
 
     return c.json({ unarchived: true, bookId })

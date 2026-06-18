@@ -41,5 +41,12 @@ scripts/capture-screenshots.mjs
 build/
 .prereq-gen/
 .reader-plan/
+.hardening-plan/
 .aco-seed/
 .aco/state/
+.aco/attachments/
+.aco/wishlist.json
+
+# SQLite user-state (reading position, progress, annotations, struggle) — backed
+# up off-box by scripts/aco/backup.sh, never in git.
+.data/

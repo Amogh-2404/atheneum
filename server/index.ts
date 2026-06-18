@@ -15,6 +15,10 @@ import { historyRouter } from './routes/history.js'
 import { wishlistRouter } from './routes/wishlist.js'
 import { ConnectionManager } from './ws.js'
 import { startWatcher } from './watcher.js'
+// Open the SQLite user-state DB + run the one-time JSON→SQLite migration at boot,
+// before the server serves a single request. (Also loaded transitively by the
+// reading-position/learning-progress/annotations/struggle routes.)
+import './lib/db.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
