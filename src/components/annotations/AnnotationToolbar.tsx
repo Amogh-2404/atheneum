@@ -100,9 +100,17 @@ export default function AnnotationToolbar({
       const blockEl = document.getElementById(blockId)
       if (!blockEl) return
 
-      const startOff = textOffsetInBlock(blockEl, range.startContainer, range.startOffset)
-      const endOff = textOffsetInBlock(blockEl, range.endContainer, range.endOffset)
-      if (startOff == null || endOff == null) return // selection not inside this block
+      let startOff = textOffsetInBlock(blockEl, range.startContainer, range.startOffset)
+      let endOff = textOffsetInBlock(blockEl, range.endContainer, range.endOffset)
+      // NEVER suppress the toolbar over an offset hiccup — that would kill bookmark/note
+      // (which don't need offsets) AND highlight at the same time, which is exactly the
+      // "can't highlight or bookmark anything" symptom. Fall back to locating the text.
+      if (startOff == null || endOff == null || startOff >= endOff) {
+        const full = blockEl.textContent ?? ''
+        const idx = full.indexOf(text)
+        if (idx >= 0) { startOff = idx; endOff = idx + text.length }
+        else { startOff = 0; endOff = text.length }
+      }
 
       // Position toolbar above selection, relative to the content container
       const rect = range.getBoundingClientRect()

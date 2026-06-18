@@ -66,12 +66,24 @@ export function textOffsetInBlock(
   nodeOffset: number,
 ): number | null {
   if (target !== blockEl && !blockEl.contains(target)) return null
+  // Primary: a Range measures leading text uniformly for a Text OR an Element boundary.
   try {
     const r = document.createRange()
     r.selectNodeContents(blockEl)
     r.setEnd(target, nodeOffset)
     return r.toString().length
   } catch {
-    return null
+    /* setEnd can be fussy on some mobile selections — fall through to the walker */
   }
+  // Fallback: text-node walk (the original method), so a valid in-block text boundary
+  // never resolves to null and silently suppresses the toolbar.
+  const walker = document.createTreeWalker(blockEl, NodeFilter.SHOW_TEXT, null)
+  let seen = 0
+  let n = walker.nextNode() as Text | null
+  while (n) {
+    if (n === target) return seen + nodeOffset
+    seen += n.data.length
+    n = walker.nextNode() as Text | null
+  }
+  return null
 }
