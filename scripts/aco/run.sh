@@ -18,6 +18,20 @@ LOG="$ROOT/.aco/state/run-${LABEL}-$(date +%Y%m%d-%H%M%S).log"
 BUDGET="${ACO_BUDGET:-10.00}"
 MODEL="${ACO_MODEL:-opus}"
 
+# Single-instance lock per label. The daemon re-fires every 30 min across its working-
+# hours window; if a session is still going, the next firing must SKIP rather than run a
+# second claude racing the same content. When this one finishes, the next firing picks up
+# where it left off (resume-in-progress + the audit are stateful). PID-reuse-safe.
+LOCKFILE="$ROOT/.aco/state/run-${LABEL}.lock"
+if [ -f "$LOCKFILE" ]; then
+  _oldpid=$(cat "$LOCKFILE" 2>/dev/null)
+  if [ -n "$_oldpid" ] && kill -0 "$_oldpid" 2>/dev/null && ps -p "$_oldpid" -o command= 2>/dev/null | grep -q "run.sh"; then
+    echo "aco[$LABEL]: a session is already running (pid $_oldpid) — skipping this firing"; exit 0
+  fi
+fi
+echo $$ > "$LOCKFILE"
+trap 'rm -f "$LOCKFILE"' EXIT INT TERM
+
 # Refresh + read the OAuth token so headless claude is authenticated. The keychain
 # (via jarvis_auto_auth) is the source of truth; .claude_current_token is its cache.
 # We only READ it — never touch the sacred JARVIS auth/token machinery.
