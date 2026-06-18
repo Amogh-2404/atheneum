@@ -38,6 +38,7 @@ export default function ScrollyFigureBlock(props: ScrollyFigureBlockType & { boo
         {steps.map((step, i) => (
           <div key={i} ref={setStepRef(i)} style={{ minHeight: '85svh', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: '11svh' }}>
             <div
+              className="scrolly-cap"
               style={{
                 pointerEvents: 'auto', maxWidth: '34ch', padding: 'var(--space-3) var(--space-4)', borderRadius: 'var(--radius-2)',
                 background: 'var(--chrome-glass)', backdropFilter: 'var(--glass-blur)', WebkitBackdropFilter: 'var(--glass-blur)',

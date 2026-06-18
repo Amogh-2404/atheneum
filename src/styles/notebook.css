@@ -662,6 +662,37 @@
 }
 
 /* --------------------------------------------------------------------------
+   Scrollytelling caption cards
+   The caption floats over the dark cinematic backdrop on a translucent dark
+   glass card (--chrome-glass) with light text (--chrome-hover-text). Inline
+   markup inside the caption must stay legible against that dark card. The
+   global inline-`code` style paints a LIGHT paper chip (--code-bg) and sets its
+   colour to --text-h — which is undefined in the reader scope, so the glyph
+   colour collapses to the inherited light caption text: light-on-light, i.e.
+   an invisible chip. Re-style code/links scoped to the caption so they read as
+   a warm gold-glass chip with parchment glyphs. Specificity (0,1,1) beats the
+   Tailwind utility's (0,1,0), so this wins without !important.
+   -------------------------------------------------------------------------- */
+
+.scrolly-cap code {
+  background: rgba(244, 226, 176, 0.16);
+  color: #f6edd4;
+  border: 1px solid rgba(244, 226, 176, 0.24);
+  border-radius: var(--radius-1);
+  padding: 0.05em 0.4em;
+}
+
+.scrolly-cap strong {
+  color: #ffffff;
+  font-weight: 650;
+}
+
+.scrolly-cap a {
+  color: var(--accent);
+  text-decoration-color: color-mix(in oklab, var(--accent) 55%, transparent);
+}
+
+/* --------------------------------------------------------------------------
    Responsive
    -------------------------------------------------------------------------- */
 
